@@ -1,4 +1,4 @@
-package com.sdc.transformermaintenance.transformer.domain;
+package com.powergrid.maintenance.tms_backend_application.transformer.domain;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;

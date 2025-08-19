@@ -1,10 +1,10 @@
-package com.sdc.transformermaintenance.transformer.service;
+package com.powergrid.maintenance.tms_backend_application.transformer.service;
 
-import com.sdc.transformermaintenance.common.exception.ConflictException;
-import com.sdc.transformermaintenance.common.exception.NotFoundException;
-import com.sdc.transformermaintenance.transformer.domain.Transformer;
-import com.sdc.transformermaintenance.transformer.dto.*;
-import com.sdc.transformermaintenance.transformer.repo.TransformerRepository;
+import com.powergrid.maintenance.tms_backend_application.common.exception.ConflictException;
+import com.powergrid.maintenance.tms_backend_application.common.exception.NotFoundException;
+import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.*;
+import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;

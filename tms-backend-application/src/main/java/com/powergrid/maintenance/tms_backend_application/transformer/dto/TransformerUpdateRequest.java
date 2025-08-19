@@ -1,4 +1,4 @@
-package com.sdc.transformermaintenance.transformer.dto;
+package com.powergrid.maintenance.tms_backend_application.transformer.dto;
 
 import jakarta.validation.constraints.Size;
 

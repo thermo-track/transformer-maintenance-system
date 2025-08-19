@@ -1,4 +1,4 @@
-package com.sdc.transformermaintenance;
+package com.powergrid.maintenance.tms_backend_application;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,8 +1,7 @@
-package com.sdc.transformermaintenance.transformer.controller;
+package com.powergrid.maintenance.tms_backend_application.transformer.controller;
 
-
-import com.sdc.transformermaintenance.transformer.dto.*;
-import com.sdc.transformermaintenance.transformer.service.TransformerService;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.*;
+import com.powergrid.maintenance.tms_backend_application.transformer.service.TransformerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;

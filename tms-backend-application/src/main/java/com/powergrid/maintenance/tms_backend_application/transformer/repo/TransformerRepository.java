@@ -1,6 +1,6 @@
-package com.sdc.transformermaintenance.transformer.repo;
+package com.powergrid.maintenance.tms_backend_application.transformer.repo;
 
-import com.sdc.transformermaintenance.transformer.domain.Transformer;
+import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

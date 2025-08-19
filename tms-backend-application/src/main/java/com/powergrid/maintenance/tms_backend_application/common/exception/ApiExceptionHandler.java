@@ -1,4 +1,4 @@
-package com.sdc.transformermaintenance.common.exception;
+package com.powergrid.maintenance.tms_backend_application.common.exception;
 
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
