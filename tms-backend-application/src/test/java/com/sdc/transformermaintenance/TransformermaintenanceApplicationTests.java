@@ -1,10 +1,10 @@
-package com.powergrid.maintenance.tms_backend_application;
+package com.sdc.transformermaintenance;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class TmsBackendApplicationTests {
+class TransformermaintenanceApplicationTests {
 
 	@Test
 	void contextLoads() {
