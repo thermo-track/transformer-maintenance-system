@@ -45,7 +45,7 @@ export default function Edit() {
     try {
       setSubmitting(true);
       await update.mutateAsync(payload);
-      nav(`/transformers/${id}`);
+      nav(`/transformers`);
     } catch (error) {
       console.error('Update transformer failed:', error);
       alert(`Failed to update transformer: ${error.message || 'Unknown error'}`);
@@ -63,8 +63,7 @@ export default function Edit() {
       <div className="row" style={{justifyContent:'space-between', alignItems:'center', marginBottom:'1rem'}}>
         <h2 style={{margin:0}}>Edit Transformer</h2>
         <div className="row" style={{gap:'.5rem'}}>
-          <Link className="btn" to={`/transformers/${id}`}>← Back to View</Link>
-          <Link className="btn" to="/transformers">List</Link>
+
         </div>
       </div>
       

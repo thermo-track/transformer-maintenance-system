@@ -12,7 +12,7 @@ import java.time.Instant;
 )
 public class Transformer {
 
-  public enum Region { KANDY, COLOMBO, JAFFNA, TRINCOMALEE, ANURADHAPURA, BATTICALOA }
+  public enum Region { KANDY, COLOMBO, JAFFNA, TRINCOMALEE, ANURADHAPURA, BATTICALOA, NEGOMBO, GALLE }
   public enum Type { BULK, DISTRIBUTION }
 
   @Id @GeneratedValue @UuidGenerator

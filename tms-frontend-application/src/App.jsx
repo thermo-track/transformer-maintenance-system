@@ -9,17 +9,12 @@ import View from './features/transformers/pages/View.jsx';
 export default function App() {
 return (
 <Layout>
-<div className="topnav">
-  <span className="tab active">Transformers</span>
-  <span className="tab disabled">Inspections</span>
-</div>
-
 
 <Routes>
 <Route path="/" element={<Navigate to="/transformers" replace />} />
 <Route path="/transformers" element={<List />} />
 <Route path="/transformers/new" element={<Create />} />
-<Route path="/transformers/:id" element={<View />} />
+{/* <Route path="/transformers/:id" element={<View />} /> */}
 <Route path="/transformers/:id/edit" element={<Edit />} />
 <Route path="*" element={<p>Not found</p>} />
 </Routes>

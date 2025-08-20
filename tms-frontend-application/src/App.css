@@ -11,17 +11,18 @@
 html, body, #root { height: 100%; }
 body { margin: 0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); }
 a { color: var(--accent); text-decoration: none; }
-.topnav { display:flex; gap:1rem; margin-bottom:1rem; }
-.topnav a { padding: .4rem .6rem; border-radius: .5rem; background: var(--card); border: 1px solid var(--border); }
-.topnav a.active { outline: 2px solid var(--accent); }
+
 .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; height: auto;  }
 .row { display:flex; gap:1rem; align-items:center; }
 .table { width:100%; border-collapse: collapse; }
 .table th, .table td { border-bottom: 1px solid var(--border); padding: .6rem .4rem; text-align:left; }
 .btn { display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .7rem; border-radius:.5rem; border:1px solid var(--border); background:#182246; color:var(--text); cursor:pointer; }
 .btn:hover { filter: brightness(1.1); }
+
+.add { display:flex; justify-content:flex-end; margin-bottom:1rem; }
 .btn.primary { background: #1d3b7c; }
+
 .btn.danger { background:#4a1820; border-color:#6b1e2c; }
 .input, .select, .textarea { width:100%; padding:.55rem .6rem; border-radius:.5rem; border:1px solid var(--border); background:#0f1630; color:var(--text); }
 .label { font-size:.9rem; color: var(--muted); margin-bottom:.3rem; display:block; }
@@ -33,3 +34,141 @@ a { color: var(--accent); text-decoration: none; }
 .meta { color: var(--muted); font-size: .9rem; }
 .footer { margin-top:2rem; color: var(--muted); font-size:.85rem; }
 .pagination { display:flex; gap:.5rem; align-items:center; }
+
+
+.menu { position: relative; display:inline-block; }
+.menu-popover {
+  position: absolute; right: 0; top: 110%;
+  background: #0f1630; border: 1px solid var(--border);
+  border-radius: .5rem; min-width: 140px; z-index: 20;
+  box-shadow: 0 10px 20px rgba(0,0,0,.35);
+}
+.menu-item {
+  width: 100%; text-align: left; background: transparent; border: 0;
+  padding: .55rem .7rem; color: var(--text); cursor: pointer;
+}
+.menu-item:hover { background:#182246; }
+.menu-item.danger:hover { background:#4a1820; }
+
+.btnn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .35rem .7rem; border-radius: .5rem; border: 1px solid var(--border);
+  background: #0a7552; color: var(--text); cursor: pointer;
+  transition: filter 0.2s;
+  justify-content: center;
+  width: 100px;
+}
+
+.btnn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.btn.icon {
+  background: none;       /* removes background box */
+  border: none;           /* removes border */
+  color: inherit;         /* uses parent text color */
+  font-size: 1.5rem;      /* makes the dots bigger (adjust as needed) */
+  cursor: pointer;        /* keep pointer cursor */
+  padding: 0.25rem;       /* small click area padding */
+  line-height: 1;         /* tight vertical alignment */
+}
+
+.btn.icon:hover {
+  color: #007bff;         /* optional: change color on hover */
+}
+
+
+.confirm-dialog-overlay {
+  position: fixed;        /* stays in place */
+  top: 0; 
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7); /* darker overlay for dark theme */
+  display: flex;
+  align-items: center;     /* vertical center */
+  justify-content: center; /* horizontal center */
+  z-index: 9999;           /* ensures it's on top */
+  backdrop-filter: blur(2px); /* optional: adds blur effect */
+}
+
+.confirm-dialog {
+  background: #1a1f2e;    /* dark background to match your theme */
+  color: white;            /* white text */
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid #929191; /* matches your border color */
+  z-index: 10000;
+
+}
+
+
+/* Optional: Add animation */
+.confirm-dialog-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.confirm-dialog {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    transform: scale(0.9) translateY(-10px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: scale(1) translateY(0); 
+    opacity: 1; 
+  }
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid #6d727a;
+  border-radius: 10px;           /* full pill */
+  overflow: hidden;                /* clip inner corners */
+  white-space: nowrap;
+  margin-bottom: 10px;
+}
+
+/* each half acts like a button */
+.segmented a {
+  padding: 8px 14px;
+  text-decoration: none;
+  background: #d6e5f5;
+  color: #111827;
+  line-height: 1;
+}
+
+/* the vertical divider between halves */
+.segmented a + a {
+  border-left: 1px solid #181a1d;
+}
+
+/* hover/focus states */
+.segmented a:hover { background: #F3F4F6; }
+.segmented a:focus-visible {
+  outline: 2px solid #090c10;     /* focus ring */
+  outline-offset: 2px;
+}
+
+/* active (current route) — NavLink sets aria-current="page" when active */
+.segmented a[aria-current="page"] {
+  background: #4b6590;
+  color: rgb(255, 255, 255);
+}
+
+/* optional: keep the whole group at the right end of the header */
+.topnav { display: flex; justify-content: flex-end; }
+.topnav.push-right { margin-left: auto; }  /* if header is flex */
+
