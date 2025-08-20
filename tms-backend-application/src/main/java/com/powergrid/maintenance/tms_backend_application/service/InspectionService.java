@@ -1,13 +1,24 @@
 package com.powergrid.maintenance.tms_backend_application.service;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
+import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.dto.InspectionUpdateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.mapper.InspectionMapper;
 import com.powergrid.maintenance.tms_backend_application.repo.InspectionRepo;
 
+import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
+import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
+/* 
 @Service
 public class InspectionService {
 
@@ -24,14 +35,223 @@ public class InspectionService {
         }
     }
 
-    public ResponseEntity<String> updateInspection(Long id, Inspection inspection) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'updateInspection'");
+    public ResponseEntity<String> updateInspection(Integer id, Inspection inspectionDetails) {
+        try {
+            Inspection inspection = inspectionRepo.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Inspection not found with id " + id));
+
+            inspection.setBranch(inspectionDetails.getBranch());
+            inspection.setTransformerId(inspectionDetails.getTransformerId());
+            inspection.setDateOfInspection(inspectionDetails.getDateOfInspection());
+            inspection.setTimeOfInspection(inspectionDetails.getTimeOfInspection());
+
+            inspectionRepo.save(inspection);
+
+            return new ResponseEntity<>("Inspection updated successfully", HttpStatus.OK);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Update failed", HttpStatus.BAD_REQUEST);
+        }
     }
 
-    public ResponseEntity<String> deleteInspection(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteInspection'");
+    public ResponseEntity<String> deleteInspection(Integer id) {
+        try {
+            if (!inspectionRepo.existsById(id)) {
+                return new ResponseEntity<>("Inspection not found", HttpStatus.NOT_FOUND);
+            }
+
+            inspectionRepo.deleteById(id);
+            return new ResponseEntity<>("Inspection deleted successfully", HttpStatus.OK);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Delete failed", HttpStatus.BAD_REQUEST);
+        }
     }
+
 
 }
+ */
+
+
+@Slf4j
+@Transactional
+@Service
+public class InspectionService {
+
+    @Autowired
+    InspectionRepo inspectionRepo;
+
+    @Autowired
+    private InspectionMapper inspectionMapper;
+
+    /**
+     * Create a new inspection
+     */
+    public ResponseEntity<InspectionResponseDTO> createInspection(InspectionCreateRequestDTO requestDTO) {
+        try {
+            // Check for duplicate inspection (same transformer and date)
+            if (inspectionRepo.existsByTransformerIdAndDateOfInspection(
+                    requestDTO.getTransformerId(), requestDTO.getDateOfInspection())) {
+                log.warn("Inspection already exists for transformer {} on date {}", 
+                        requestDTO.getTransformerId(), requestDTO.getDateOfInspection());
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
+            
+            // Convert DTO to entity
+            Inspection inspection = inspectionMapper.toEntity(requestDTO);
+            
+            // Save entity
+            Inspection savedInspection = inspectionRepo.save(inspection);
+            
+            // Convert back to response DTO
+            InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(savedInspection);
+            
+            log.info("Successfully created inspection with ID: {}", savedInspection.getInspectionId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+            
+        } catch (Exception e) {
+            log.error("Error creating inspection: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Update an existing inspection
+     */
+    public ResponseEntity<InspectionResponseDTO> updateInspection(String id, InspectionUpdateRequestDTO requestDTO) {
+        try {
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            
+            if (optionalInspection.isEmpty()) {
+                log.warn("Inspection not found with id: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            Inspection existingInspection = optionalInspection.get();
+            
+            // Check for duplicate if transformer ID or date changed
+            if (!existingInspection.getTransformerId().equals(requestDTO.getTransformerId()) ||
+                !existingInspection.getDateOfInspection().equals(requestDTO.getDateOfInspection())) {
+                
+                if (inspectionRepo.existsByTransformerIdAndDateOfInspection(
+                        requestDTO.getTransformerId(), requestDTO.getDateOfInspection())) {
+                    log.warn("Inspection already exists for transformer {} on date {}", 
+                            requestDTO.getTransformerId(), requestDTO.getDateOfInspection());
+                    return ResponseEntity.status(HttpStatus.CONFLICT).build();
+                }
+            }
+            
+            // Update entity from DTO
+            inspectionMapper.updateEntityFromDTO(existingInspection, requestDTO);
+            
+            // Save updated entity
+            Inspection updatedInspection = inspectionRepo.save(existingInspection);
+            
+            // Convert to response DTO
+            InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(updatedInspection);
+            
+            log.info("Successfully updated inspection with ID: {}", id);
+            return ResponseEntity.ok(responseDTO);
+            
+        } catch (Exception e) {
+            log.error("Error updating inspection with id {}: ", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Delete an inspection
+     */
+    public ResponseEntity<Void> deleteInspection(String id) {
+        try {
+            if (!inspectionRepo.existsById(id)) {
+                log.warn("Inspection not found with id: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            inspectionRepo.deleteById(id);
+            log.info("Successfully deleted inspection with ID: {}", id);
+            return ResponseEntity.noContent().build();
+            
+        } catch (Exception e) {
+            log.error("Error deleting inspection with id {}: ", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get inspection by ID
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<InspectionResponseDTO> getInspectionById(String id) {
+        try {
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            
+            if (optionalInspection.isEmpty()) {
+                log.warn("Inspection not found with id: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(optionalInspection.get());
+            return ResponseEntity.ok(responseDTO);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving inspection with id {}: ", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get all inspections
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<InspectionResponseDTO>> getAllInspections() {
+        try {
+            List<Inspection> inspections = inspectionRepo.findAll();
+            List<InspectionResponseDTO> responseDTOs = inspectionMapper.toResponseDTOList(inspections);
+            
+            return ResponseEntity.ok(responseDTOs);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving all inspections: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get inspections by branch
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<InspectionResponseDTO>> getInspectionsByBranch(String branch) {
+        try {
+            List<Inspection> inspections = inspectionRepo.findByBranch(branch);
+            List<InspectionResponseDTO> responseDTOs = inspectionMapper.toResponseDTOList(inspections);
+            
+            return ResponseEntity.ok(responseDTOs);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving inspections for branch {}: ", branch, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get inspections by date range
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<InspectionResponseDTO>> getInspectionsByDateRange(LocalDate startDate, LocalDate endDate) {
+        try {
+            List<Inspection> inspections = inspectionRepo.findByDateOfInspectionBetween(startDate, endDate);
+            List<InspectionResponseDTO> responseDTOs = inspectionMapper.toResponseDTOList(inspections);
+            
+            return ResponseEntity.ok(responseDTOs);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving inspections for date range {} to {}: ", startDate, endDate, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+}
+
