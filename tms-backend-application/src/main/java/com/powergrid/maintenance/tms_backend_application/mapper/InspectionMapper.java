@@ -24,8 +24,8 @@ public class InspectionMapper {
         inspection.setBranch(dto.getBranch());
         inspection.setTransformerId(dto.getTransformerId());
         inspection.setDateOfInspection(dto.getDateOfInspection());
-        inspection.setTimeOfInspection(dto.getTime());
-        
+        inspection.setTimeOfInspection(dto.getTimeOfInspection());
+
         return inspection;
     }
     
@@ -40,7 +40,7 @@ public class InspectionMapper {
         inspection.setBranch(dto.getBranch());
         inspection.setTransformerId(dto.getTransformerId());
         inspection.setDateOfInspection(dto.getDateOfInspection());
-        inspection.setTimeOfInspection(dto.getTime());
+        inspection.setTimeOfInspection(dto.getTimeOfInspection());
     }
     
     /**
@@ -56,7 +56,7 @@ public class InspectionMapper {
         dto.setBranch(inspection.getBranch());
         dto.setTransformerId(inspection.getTransformerId());
         dto.setDateOfInspection(inspection.getDateOfInspection());
-        dto.setTime(inspection.getTimeOfInspection());
+        dto.setTimeOfInspection(inspection.getTimeOfInspection());
         
         return dto;
     }

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,6 +58,7 @@ public class InspectionController {
 
 @Slf4j
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/inspections")
 public class InspectionController {
 
@@ -161,4 +163,20 @@ public class InspectionController {
         log.info("Retrieving inspections for date range: {} to {}", startDate, endDate);
         return inspectionService.getInspectionsByDateRange(startDate, endDate);
     }
+    // Add this method to your existing InspectionController.java
+
+    @Operation(summary = "Get inspections by transformer ID", description = "Retrieves all inspection records for a specific transformer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Inspections retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "No inspections found for the transformer"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/transformer/{transformerId}")
+    public ResponseEntity<List<InspectionResponseDTO>> getInspectionsByTransformerId(
+            @Parameter(description = "Transformer ID to filter inspections", required = true)
+            @PathVariable String transformerId) {
+        log.info("Retrieving inspections for transformer ID: {}", transformerId);
+        return inspectionService.getInspectionsByTransformerId(transformerId);
+    }
+
 }

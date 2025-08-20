@@ -1,27 +1,20 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+//<Route> Defines a specific URL path and the component to render.
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Inspection from "./pages/Inspections";
+import InspectionsST from "./pages/InspectionsST";
 
 function App() {
-  const [title, setTitle] = useState("Default Title");
-
-  useEffect (() => {
-    fetch('http://localhost:8080/home').then(response=>response.text())
-      .then(text => {
-        setTitle(text);
-      })
-      .catch(error => {
-        console.error('Error fetching title:', error);
-      }
-    );
-  }, []);
-
   return (
-    <>
-      <h1>Welcome to the Transformer Maintenance System</h1>
-      <h1>React + {title}</h1>
+    <Router>
+      <Routes>
+        {/* All inspections */}
+        <Route path="/inspections" element={<Inspection/>} />
 
-    </>
-  )
+        {/* Inspections for a single transformer */}
+        <Route path="/inspections/:transformerId" element={<InspectionsST />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;

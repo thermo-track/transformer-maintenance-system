@@ -28,6 +28,7 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
      */
     List<Inspection> findByDateOfInspectionBetween(LocalDate startDate, LocalDate endDate);
     
+    
     /**
      * Find inspections by branch and date range
      */
@@ -46,4 +47,6 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
      */
     @Query("SELECT i FROM Inspection i WHERE i.transformerId = :transformerId ORDER BY i.dateOfInspection DESC, i.timeOfInspection DESC LIMIT 1")
     Optional<Inspection> findLatestByTransformerId(@Param("transformerId") String transformerId);
+
+    
 }

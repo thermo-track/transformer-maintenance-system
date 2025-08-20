@@ -24,6 +24,6 @@ public class InspectionUpdateRequestDTO {
     private LocalDate dateOfInspection;
     
     @NotNull(message = "Inspection time is required")
-    @JsonFormat(pattern = "HH:mm:ss")
-    private LocalTime time;
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime timeOfInspection;
 }

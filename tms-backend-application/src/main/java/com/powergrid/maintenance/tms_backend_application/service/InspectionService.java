@@ -1,6 +1,7 @@
 package com.powergrid.maintenance.tms_backend_application.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -250,6 +251,32 @@ public class InspectionService {
             
         } catch (Exception e) {
             log.error("Error retrieving inspections for date range {} to {}: ", startDate, endDate, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @Transactional(readOnly = true)
+    
+    public ResponseEntity<List<InspectionResponseDTO>> getInspectionsByTransformerId(String transformerId) {
+        try {
+            log.info("Retrieving inspections for transformer ID: {}", transformerId);
+            
+            // Using the repository method to find inspections by transformer ID
+            List<Inspection> inspections = inspectionRepo.findByTransformerId(transformerId);
+            
+            // Check if any inspections were found
+            if (inspections.isEmpty()) {
+                log.info("No inspections found for transformer ID: {}", transformerId);
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+            
+            // Map entities to DTOs
+            List<InspectionResponseDTO> responseDTOs = inspectionMapper.toResponseDTOList(inspections);
+            
+            log.info("Found {} inspections for transformer ID: {}", inspections.size(), transformerId);
+            return ResponseEntity.ok(responseDTOs);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving inspections for transformer ID {}: ", transformerId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

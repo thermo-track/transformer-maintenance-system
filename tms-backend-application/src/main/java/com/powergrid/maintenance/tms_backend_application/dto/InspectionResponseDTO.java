@@ -16,6 +16,6 @@ public class InspectionResponseDTO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfInspection;
     
-    @JsonFormat(pattern = "HH:mm:ss")
-    private LocalTime time;
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime timeOfInspection;
 }
