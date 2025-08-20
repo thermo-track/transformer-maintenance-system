@@ -84,7 +84,7 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
 
     const payload = { ...values };
     if (mode === 'edit') {
-      // On update, backend ignores nulls; we only send editable fields
+      // On update, backend ignores nulls, only send editable fields
       delete payload.transformerNo;
     }
     onSubmit(payload);
@@ -98,8 +98,6 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
           style={{
             gridColumn: '1 / -1',
             padding: '0.75rem',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
             borderRadius: '6px',
             color: '#dc2626',
             fontSize: '0.9rem',

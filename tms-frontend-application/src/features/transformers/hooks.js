@@ -8,16 +8,13 @@ import {
   fetchMeta 
 } from './api.js';
 
-export function useTransformerList(page = 0, size = 10) {
-  return useQuery({
-    queryKey: ['transformers', { page, size }],
-    queryFn: () => listTransformers({ page, size }),
-    staleTime: 30_000, // Cache for 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    retry: 2,
-    refetchOnWindowFocus: false
-  });
-}
+export function useTransformerList({ page, size, by, q, range }) {
+   return useQuery({
+     queryKey: ['transformers', page, size, by, q, range],
+     queryFn: () => listTransformers({ page, size, by, q, range }),
+     keepPreviousData: true,
+   });
+ }
 
 export function useTransformer(id) {
   return useQuery({

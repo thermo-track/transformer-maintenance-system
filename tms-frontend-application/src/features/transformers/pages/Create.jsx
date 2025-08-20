@@ -10,19 +10,18 @@ export default function Create({ asModal = false }) {
   const [submitting, setSubmitting] = useState(false);
   const create = useCreateTransformer();
 
-  async function handleSubmit(payload) {
-    try {
-      setSubmitting(true);
-      const res = await create.mutateAsync(payload);
-      if (res?.id) nav(`/transformers/${res.id}`);
-      else nav('/transformers');
-    } catch (error) {
-      console.error('Create transformer failed:', error);
-      alert(`Failed to create transformer: ${error.message || 'Unknown error'}`);
-    } finally {
-      setSubmitting(false);
-    }
+async function handleSubmit(payload) {
+  try {
+    setSubmitting(true);
+    await create.mutateAsync(payload);       
+    nav('/transformers', { replace: true });
+  } catch (error) {
+    console.error('Create transformer failed:', error);
+    alert(`Failed to create transformer: ${error.message || 'Unknown error'}`);
+  } finally {
+    setSubmitting(false);
   }
+}
 
   function handleCancel() {
     if (asModal) nav(-1);           // close overlay (return to background page)

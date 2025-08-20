@@ -14,10 +14,25 @@ return Promise.reject(new Error(msg));
 );
 
 
-export async function listTransformers({ page = 0, size = 20 } = {}) {
-const { data } = await http.get('/api/transformers', { params: { page, size } });
-return data;
-}
+export async function listTransformers({ page=0, size=10, by, q, range }) {
+   const params = { page, size };
+   if (q)  params.q  = q;
+   if (by) params.by = by;
+   // If your backend supports date filtering, send from/to based on range.
+   // If not, these extra params will be ignored by the server.
+   if (range && range !== 'all') {
+     const now = new Date();
+     const to = now.toISOString();
+     const fromDate = new Date(now);
+     if (range === '7d')  fromDate.setDate(now.getDate() - 7);
+     if (range === '30d') fromDate.setDate(now.getDate() - 30);
+     if (range === '90d') fromDate.setDate(now.getDate() - 90);
+     params.from = fromDate.toISOString();
+     params.to   = to;
+   }
+   const { data } = await http.get('/api/transformers', { params });
+   return data;
+ }
 
 
 export async function getTransformer(id) {

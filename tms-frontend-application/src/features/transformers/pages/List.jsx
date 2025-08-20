@@ -2,18 +2,40 @@ import { Link, useSearchParams, useNavigate, NavLink } from 'react-router-dom';
 import { useTransformerList, useDeleteTransformer } from '../hooks.js';
 import Pagination from '../../../components/Pagination.jsx';
 import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
+import SearchBar from '../../../components/SearchBar.jsx';
 import { useState, useEffect, useRef } from 'react';
 
 export default function List() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q     = searchParams.get("q")    || "";
+  const by    = searchParams.get("by")   || "transformerNo";
+  const range = searchParams.get("range")|| "all";
+
   const [sp, setSp] = useSearchParams();
   const nav = useNavigate();
   const page = Number(sp.get('page') ?? 0);
   const size = Number(sp.get('size') ?? 10);
-  const { data, isLoading, error } = useTransformerList(page, size);
+  
+  // Fixed: Use consistent parameters for both calls
+  const { data, isLoading, error } = useTransformerList({ page, size, by, q, range });
 
   const [confirmId, setConfirmId] = useState(null);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const del = useDeleteTransformer();
+
+  function doSearch({ by, query, range }) {
+    setSearchParams({
+      page: 0,                   // reset to first page on new search
+      size,
+      by,
+      q: query,
+      range,
+    });
+  }
+
+  function resetFilters() {
+    setSearchParams({ page: 0, size, by: "transformerNo", q: "", range: "all" });
+  }
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -30,7 +52,14 @@ export default function List() {
   }, [menuOpenId]);
 
   function goToPage(p) {
-    setSp({ page: String(p), size: String(size) });
+    // Fixed: Include all current search parameters when changing page
+    setSp({ 
+      page: String(p), 
+      size: String(size),
+      by,
+      q,
+      range
+    });
   }
 
   if (isLoading) return <p>Loading…</p>;
@@ -54,6 +83,14 @@ export default function List() {
       <div className='add'>
                 <Link className="btn primary" to="/transformers/new">Add Transformer</Link>
       </div>
+      {/* Search/filter bar */}
+      <SearchBar
+        initialBy={by}
+        initialQuery={q}
+        initialRange={range}
+        onSearch={doSearch}
+        onReset={resetFilters}
+      />
 
       <table className="table" style={{marginTop:'1rem'}}>
         <thead>
@@ -109,7 +146,7 @@ export default function List() {
             </tr>
           ))}
           {content.length === 0 && (
-            <tr><td colSpan={7} className="meta" style={{textAlign: 'center', padding: '2rem'}}>
+            <tr><td colSpan={6} className="meta" style={{textAlign: 'center', padding: '2rem'}}>
               No transformers found
             </td></tr>
           )}

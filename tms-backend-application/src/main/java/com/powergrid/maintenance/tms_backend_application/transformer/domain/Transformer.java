@@ -12,8 +12,8 @@ import java.time.Instant;
 )
 public class Transformer {
 
-  public enum Region { KANDY, COLOMBO, JAFFNA, TRINCOMALEE, ANURADHAPURA, BATTICALOA, NEGOMBO, GALLE }
-  public enum Type { BULK, DISTRIBUTION }
+  // public enum Region { KANDY, COLOMBO, JAFFNA, TRINCOMALEE, ANURADHAPURA, BATTICALOA, NEGOMBO, GALLE }
+  // public enum Type { BULK, DISTRIBUTION }
 
   @Id @GeneratedValue @UuidGenerator
   private String id;
@@ -24,13 +24,15 @@ public class Transformer {
   @Column(name = "pole_no", nullable = false, length = 64)
   private String poleNo;
 
-  @Enumerated(EnumType.STRING)
+  // @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 32)
-  private Region region;
+  // private Region region;
+  private String region;
 
-  @Enumerated(EnumType.STRING)
+  // @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 32)
-  private Type type;
+  // private Type type;
+  private String type;
 
   @Column(name = "location_details", length = 1024)
   private String locationDetails;
@@ -50,12 +52,29 @@ public class Transformer {
   public void setTransformerNo(String transformerNo) { this.transformerNo = transformerNo; }
   public String getPoleNo() { return poleNo; }
   public void setPoleNo(String poleNo) { this.poleNo = poleNo; }
-  public Region getRegion() { return region; }
-  public void setRegion(Region region) { this.region = region; }
-  public Type getType() { return type; }
-  public void setType(Type type) { this.type = type; }
+  // public Region getRegion() { return region; }
+  // public void setRegion(Region region) { this.region = region; }
+  // public Type getType() { return type; }
+  // public void setType(Type type) { this.type = type; }
+  
   public String getLocationDetails() { return locationDetails; }
   public void setLocationDetails(String locationDetails) { this.locationDetails = locationDetails; }
+  public String getRegion() {
+    return region;
+  }
+
+  public void setRegion(String region) {
+    this.region = region;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
   public Instant getCreatedAt() { return createdAt; }
   public Instant getUpdatedAt() { return updatedAt; }
 }

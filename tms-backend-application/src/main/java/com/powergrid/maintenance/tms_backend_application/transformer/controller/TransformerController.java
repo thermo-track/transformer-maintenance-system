@@ -7,6 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/transformers")
 @RequiredArgsConstructor
@@ -24,10 +29,47 @@ public class TransformerController {
     return TransformerService.toResponse(service.getEntity(id));
   }
 
+  @GetMapping("/meta")
+  public Map<String, List<String>> meta() {
+    return Map.of(
+      "regions", List.of("KANDY", "COLOMBO", "JAFFNA", "TRINCOMALEE", "ANURADHAPURA", "BATTICALOA", "NEGOMBO", "GALLE"),
+      "types", List.of("DISTRIBUTION", "BULK")
+    );
+  }
+
   @GetMapping
   public Page<TransformerResponse> list(@RequestParam(defaultValue = "0") int page,
-                                        @RequestParam(defaultValue = "20") int size) {
-    return service.list(PageRequest.of(page, size, Sort.by("transformerNo").ascending()))
+                                        @RequestParam(defaultValue = "20") int size,
+                                        @RequestParam(required = false) String q,
+                                        @RequestParam(required = false) String by,
+                                        @RequestParam(required = false) String from,
+                                        @RequestParam(required = false) String to) {
+    
+    // Create pageable with sorting
+    Pageable pageable = PageRequest.of(page, size, Sort.by("transformerNo").ascending());
+    
+    // Parse date parameters if provided
+    LocalDateTime fromDate = null;
+    LocalDateTime toDate = null;
+    
+    if (from != null && !from.isEmpty()) {
+      try {
+        fromDate = LocalDateTime.parse(from, DateTimeFormatter.ISO_DATE_TIME);
+      } catch (Exception e) {
+        // Handle parsing error 
+      }
+    }
+    
+    if (to != null && !to.isEmpty()) {
+      try {
+        toDate = LocalDateTime.parse(to, DateTimeFormatter.ISO_DATE_TIME);
+      } catch (Exception e) {
+        // Handle parsing error 
+      }
+    }
+    
+    // Call service method with search parameters
+    return service.list(pageable, q, by, fromDate, toDate)
                   .map(TransformerService::toResponse);
   }
 
