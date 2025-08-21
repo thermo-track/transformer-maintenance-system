@@ -1,27 +1,25 @@
-import { useState, useEffect } from 'react'
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import Layout from './components/Layout.jsx';
+import List from './features/transformers/pages/List.jsx';
+import Create from './features/transformers/pages/Create.jsx';
+import Edit from './features/transformers/pages/Edit.jsx';
+import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
+import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
 import './App.css'
 
-function App() {
-  const [title, setTitle] = useState("Default Title");
+export default function App() {
+return (
+<Layout>
 
-  useEffect (() => {
-    fetch('http://localhost:8080/home').then(response=>response.text())
-      .then(text => {
-        setTitle(text);
-      })
-      .catch(error => {
-        console.error('Error fetching title:', error);
-      }
-    );
-  }, []);
-
-  return (
-    <>
-      <h1>Welcome to the Transformer Maintenance System</h1>
-      <h1>React + {title}</h1>
-
-    </>
-  )
+<Routes>
+<Route path="/" element={<Navigate to="/transformers" replace />} />
+<Route path="/transformers" element={<List />} />
+<Route path="/inspections" element={<InspectionsPage />} />
+<Route path="/transformers/new" element={<Create />} />
+<Route path="/transformers/:id" element={<InspectionsST />} />
+<Route path="/transformers/:id/edit" element={<Edit />} />
+<Route path="*" element={<p>Not found</p>} />
+</Routes>
+</Layout>
+);
 }
-
-export default App

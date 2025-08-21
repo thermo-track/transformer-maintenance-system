@@ -1,0 +1,224 @@
+/* PageHeader Styles */
+.page-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #374151;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Left Section Styles */
+.header-left-section {
+  flex: 1;
+}
+
+.transformer-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #a5bfe3;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.transformer-location {
+  color: #6b7280;
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.transformer-landmark {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Badges Container */
+.badges-container {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 8px 12px;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 70px;
+  border: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.badge:hover {
+  background-color: #e5e7eb;
+}
+
+.badge-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 400;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* Right Section Styles */
+.header-right-section {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.last-inspected-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Button Groups */
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.baseline-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.baseline-button:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.new-element-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #dcfce7;
+  color: #15803d;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid #bbf7d0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-element-button:hover {
+  background-color: #bbf7d0;
+  transform: translateY(-1px);
+}
+
+/* Icon Styles */
+.icon-button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  transform: translateY(-1px);
+}
+
+.icon-view {
+  color: #3b82f6;
+}
+
+.icon-view:hover {
+  color: #2563eb;
+  background-color: #dbeafe;
+}
+
+.icon-delete {
+  color: #dc2626;
+}
+
+.icon-delete:hover {
+  color: #b91c1c;
+  background-color: #fecaca;
+}
+
+.icon-plus {
+  width: 12px;
+  height: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-header-container {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .header-right-section {
+    text-align: left;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .badges-container {
+    gap: 8px;
+  }
+
+  .badge {
+    min-width: 60px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .button-group {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .baseline-button,
+  .new-element-button {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .transformer-title {
+    font-size: 1.25rem;
+  }
+  
+  .badges-container {
+    gap: 6px;
+  }
+  
+  .badge {
+    min-width: 55px;
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+}
