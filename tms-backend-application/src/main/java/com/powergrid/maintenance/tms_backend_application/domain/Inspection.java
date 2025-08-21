@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
@@ -34,6 +35,17 @@ public class Inspection {
 
     @Column(name = "time_of_inspection", nullable = false)
     private LocalTime timeOfInspection;
+
+    @Lob
+    @Column(name = "image_data")
+    private byte[] imageData;
+    
+    @Column(name = "image_name")
+    private String imageName;
+    
+    @Column(name = "image_type")
+    private String imageType;
+
 
 /*     @Column(name = "date_of_maintenance")
     private LocalDate dateOfMaintenance;

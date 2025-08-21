@@ -1,5 +1,6 @@
 package com.powergrid.maintenance.tms_backend_application.service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +17,11 @@ import com.powergrid.maintenance.tms_backend_application.mapper.InspectionMapper
 import com.powergrid.maintenance.tms_backend_application.repo.InspectionRepo;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.extern.slf4j.Slf4j;
 
+import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
 /* 
 @Service
@@ -86,6 +90,14 @@ public class InspectionService {
 
     @Autowired
     private InspectionMapper inspectionMapper;
+
+        // Allowed image types
+    private static final List<String> ALLOWED_IMAGE_TYPES = List.of(
+        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"
+    );
+
+    // Max file size (10MB)
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     /**
      * Create a new inspection
@@ -279,6 +291,67 @@ public class InspectionService {
             log.error("Error retrieving inspections for transformer ID {}: ", transformerId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+        // Image related methods
+    public ImageUploadResponseDTO uploadImage(String inspectionId, MultipartFile file) throws IOException {
+        // Validate file
+        validateImageFile(file);
+        
+        Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
+        if (optionalInspection.isEmpty()) {
+            throw new RuntimeException("Inspection not found with ID: " + inspectionId);
+        }
+        
+        Inspection inspection = optionalInspection.get();
+        
+        // Set image data
+        inspection.setImageData(file.getBytes());
+        inspection.setImageName(file.getOriginalFilename());
+        inspection.setImageType(file.getContentType());
+        
+        Inspection updatedInspection = inspectionRepo.save(inspection);
+        return inspectionMapper.toImageUploadResponseDTO(updatedInspection);
+    }
+
+
+    private void validateImageFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("Please select a file to upload");
+        }
+        
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new RuntimeException("File size should not exceed 5MB");
+        }
+        
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
+            throw new RuntimeException("Only image files (JPEG, PNG, GIF, BMP) are allowed");
+        }
+    }
+        public byte[] getImage(String inspectionId) {
+        return inspectionRepo.findById(inspectionId)
+                .map(Inspection::getImageData)
+                .orElse(null);
+    }
+    
+    public String getImageType(String inspectionId) {
+        return inspectionRepo.findById(inspectionId)
+                .map(Inspection::getImageType)
+                .orElse(null);
+    }
+    
+    public boolean deleteImage(String inspectionId) {
+        Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
+        if (optionalInspection.isPresent()) {
+            Inspection inspection = optionalInspection.get();
+            inspection.setImageData(null);
+            inspection.setImageName(null);
+            inspection.setImageType(null);
+            inspectionRepo.save(inspection);
+            return true;
+        }
+        return false;
     }
 }
 

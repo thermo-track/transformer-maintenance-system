@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
+import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionUpdateRequestDTO;
@@ -72,6 +73,21 @@ public class InspectionMapper {
         return inspections.stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public ImageUploadResponseDTO toImageUploadResponseDTO(Inspection inspection) {
+        if (inspection == null) {
+            return null;
+        }
+        
+        ImageUploadResponseDTO responseDTO = new ImageUploadResponseDTO();
+        responseDTO.setInspectionId(inspection.getInspectionId());
+        responseDTO.setImageName(inspection.getImageName());
+        responseDTO.setImageType(inspection.getImageType());
+        responseDTO.setImageSize(inspection.getImageData() != null ? inspection.getImageData().length : 0);
+        responseDTO.setMessage("Image uploaded successfully");
+        
+        return responseDTO;
     }
     
 }

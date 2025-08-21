@@ -1,0 +1,13 @@
+package com.powergrid.maintenance.tms_backend_application.dto;
+
+import lombok.Data;
+
+@Data
+public class ImageUploadResponseDTO {
+    private String inspectionId;
+    private String imageName;
+    private String imageType;
+    private long imageSize;
+    private String message;
+
+}

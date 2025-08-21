@@ -1,10 +1,14 @@
 package com.powergrid.maintenance.tms_backend_application.controller;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,7 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
 //import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
@@ -177,6 +183,44 @@ public class InspectionController {
             @PathVariable String transformerId) {
         log.info("Retrieving inspections for transformer ID: {}", transformerId);
         return inspectionService.getInspectionsByTransformerId(transformerId);
+    }
+
+    @PostMapping("/{id}/image")
+        public ResponseEntity<?> uploadImage(
+            @PathVariable("id") String inspectionId,
+            @RequestParam("image") MultipartFile file) {
+        try {
+            ImageUploadResponseDTO response = inspectionService.uploadImage(inspectionId, file);
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error uploading image: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }   
+    
+    @GetMapping("/{inspectionId}/image")
+    public ResponseEntity<byte[]> getImage(@PathVariable String inspectionId) {
+        byte[] imageData = inspectionService.getImage(inspectionId);
+        String imageType = inspectionService.getImageType(inspectionId);
+        
+        if (imageData != null && imageType != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(imageType));
+            headers.setContentLength(imageData.length);
+            
+            return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
+        }
+        
+        return ResponseEntity.notFound().build();
+    }
+    @DeleteMapping("/{inspectionId}/image")
+    public ResponseEntity<Void> deleteImage(@PathVariable String inspectionId) {
+        if (inspectionService.deleteImage(inspectionId)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
 }
