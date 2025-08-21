@@ -12,8 +12,8 @@ html, body, #root { height: 100%; }
 body { margin: 0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); }
 a { color: var(--accent); text-decoration: none; }
 
-.container { max-width: 1400px; margin: 0 auto; padding: 2rem 1rem; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; height: auto;  }
+.container { max-width: 1400px; margin: 50px; padding: 2rem 1rem; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; height: auto; max-width: 100%; }
 .row { display:flex; gap:1rem; align-items:center; }
 .table { width:100%; border-collapse: collapse; }
 .table th, .table td { border-bottom: 1px solid var(--border); padding: .6rem .4rem; text-align:left; }

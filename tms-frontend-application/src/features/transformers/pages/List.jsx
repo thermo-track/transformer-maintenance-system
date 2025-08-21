@@ -4,6 +4,8 @@ import Pagination from '../../../components/Pagination.jsx';
 import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import SearchBar from '../../../components/SearchBar.jsx';
 import { useState, useEffect, useRef } from 'react';
+import '../styles/List.css'
+
 
 export default function List() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,7 +75,7 @@ export default function List() {
       <nav className="topnav">
           <div className="segmented">
             <Link  to="/transformers">Transformers</Link>
-            <Link  to="">Inspections</Link> {/*TO BE ADDEDDDDDD */}
+            <Link  to="/inspections">Inspections</Link> 
           </div>
       </nav>
 

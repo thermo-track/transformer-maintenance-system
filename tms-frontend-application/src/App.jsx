@@ -3,8 +3,9 @@ import Layout from './components/Layout.jsx';
 import List from './features/transformers/pages/List.jsx';
 import Create from './features/transformers/pages/Create.jsx';
 import Edit from './features/transformers/pages/Edit.jsx';
-import View from './features/transformers/pages/View.jsx';
-
+import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
+import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
+import './App.css'
 
 export default function App() {
 return (
@@ -13,8 +14,9 @@ return (
 <Routes>
 <Route path="/" element={<Navigate to="/transformers" replace />} />
 <Route path="/transformers" element={<List />} />
+<Route path="/inspections" element={<InspectionsPage />} />
 <Route path="/transformers/new" element={<Create />} />
-{/* <Route path="/transformers/:id" element={<View />} /> */}
+<Route path="/transformers/:id" element={<InspectionsST />} />
 <Route path="/transformers/:id/edit" element={<Edit />} />
 <Route path="*" element={<p>Not found</p>} />
 </Routes>
