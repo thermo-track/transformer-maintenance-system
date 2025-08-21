@@ -46,6 +46,9 @@ public class Inspection {
     @Column(name = "image_type")
     private String imageType;
 
+    @Column(name = "environmental_condition")
+    private String environmentalCondition;
+
 
 /*     @Column(name = "date_of_maintenance")
     private LocalDate dateOfMaintenance;

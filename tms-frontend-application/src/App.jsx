@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Inspection from "./pages/Inspections";
 import InspectionsST from "./pages/InspectionsST";
+import InspectionsSTImage from "./pages/InspectionsSTImage.jsx";
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
 
         {/* Inspections for a single transformer */}
         <Route path="/inspections/:transformerId" element={<InspectionsST />} />
+        {/* Inspections for a single transformer */}
+        <Route path="/inspections/:transformerId/image" element={<InspectionsSTImage />} />
       </Routes>
     </Router>
   );

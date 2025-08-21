@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionUpdateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.enums.EnvironmentalCondition;
 import com.powergrid.maintenance.tms_backend_application.mapper.InspectionMapper;
 import com.powergrid.maintenance.tms_backend_application.repo.InspectionRepo;
 
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 
+import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
 /* 
@@ -293,10 +295,13 @@ public class InspectionService {
         }
     }
 
-        // Image related methods
-    public ImageUploadResponseDTO uploadImage(String inspectionId, MultipartFile file) throws IOException {
+    // Image related methods
+    public ImageUploadResponseDTO uploadImage(String inspectionId, MultipartFile file, ImageUploadDTO imageUploadDTO) throws IOException {
         // Validate file
         validateImageFile(file);
+        
+        // Validate environmental condition
+        EnvironmentalCondition.fromString(imageUploadDTO.getEnvironmentalCondition());
         
         Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
         if (optionalInspection.isEmpty()) {
@@ -309,6 +314,7 @@ public class InspectionService {
         inspection.setImageData(file.getBytes());
         inspection.setImageName(file.getOriginalFilename());
         inspection.setImageType(file.getContentType());
+        inspection.setEnvironmentalCondition(imageUploadDTO.getEnvironmentalCondition().toUpperCase());
         
         Inspection updatedInspection = inspectionRepo.save(inspection);
         return inspectionMapper.toImageUploadResponseDTO(updatedInspection);
@@ -348,6 +354,7 @@ public class InspectionService {
             inspection.setImageData(null);
             inspection.setImageName(null);
             inspection.setImageType(null);
+            inspection.setEnvironmentalCondition(null);
             inspectionRepo.save(inspection);
             return true;
         }

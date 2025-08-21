@@ -84,6 +84,7 @@ public class InspectionMapper {
         responseDTO.setInspectionId(inspection.getInspectionId());
         responseDTO.setImageName(inspection.getImageName());
         responseDTO.setImageType(inspection.getImageType());
+        responseDTO.setEnvironmentalCondition(inspection.getEnvironmentalCondition()); // Add this line
         responseDTO.setImageSize(inspection.getImageData() != null ? inspection.getImageData().length : 0);
         responseDTO.setMessage("Image uploaded successfully");
         

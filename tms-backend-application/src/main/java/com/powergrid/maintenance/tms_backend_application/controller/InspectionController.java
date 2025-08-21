@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
 //import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
@@ -185,20 +187,24 @@ public class InspectionController {
         return inspectionService.getInspectionsByTransformerId(transformerId);
     }
 
-    @PostMapping("/{id}/image")
-        public ResponseEntity<?> uploadImage(
-            @PathVariable("id") String inspectionId,
-            @RequestParam("image") MultipartFile file) {
+    // Image related endpoints
+    @PostMapping(value = "/{inspectionId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImage(
+            @PathVariable String inspectionId,
+            @RequestPart("image") MultipartFile file,
+            @RequestPart("data") @Valid ImageUploadDTO imageUploadDTO) {
         try {
-            ImageUploadResponseDTO response = inspectionService.uploadImage(inspectionId, file);
+            ImageUploadResponseDTO response = inspectionService.uploadImage(inspectionId, file, imageUploadDTO);
             return ResponseEntity.ok(response);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error uploading image: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }   
+    }
     
     @GetMapping("/{inspectionId}/image")
     public ResponseEntity<byte[]> getImage(@PathVariable String inspectionId) {

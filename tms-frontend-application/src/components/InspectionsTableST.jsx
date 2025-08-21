@@ -1,10 +1,12 @@
 // components/InspectionsTable.js
 import React, { useState } from 'react';
+import { useParams, useNavigate } from "react-router-dom";
 import { Eye, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../styles/inspections-table.css';
 
 const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const navigate = useNavigate();
 
   const toggleRowExpansion = (inspectionId) => {
     const newExpanded = new Set(expandedRows);
@@ -108,7 +110,9 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                   </td>
                   <td>
                     <div className="actions">
-                      <button className="action-btn view-btn">
+                      <button 
+                        className="action-btn view-btn"
+                        onClick={() => navigate("image")} >
                         <Eye className="icon-xs" />
                       </button>
                       <button 
