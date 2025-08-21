@@ -1,83 +1,48 @@
 // components/InspectionModal.js
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import '../styles/modal.css';
 
-const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => {
+const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit, onClose }) => {
   const isEdit = !!inspection;
 
   const [formData, setFormData] = useState({
     branch: '',
-    transformerNo: '',
     dateOfInspection: '',
-    timeOfInspection: ''
+    timeOfInspection: '',
+    transformerNo: transformerNo || '' // keep in state so submit is consistent
   });
 
   const [errors, setErrors] = useState({});
-  const [transformerOptions, setTransformerOptions] = useState([]);
-  const [loadingTransformers, setLoadingTransformers] = useState(false);
 
-  // Hydrate form when editing
+  // Hydrate form
   useEffect(() => {
-    if (inspection) {
+    if (isEdit) {
       setFormData({
         branch: inspection.branch || '',
-        transformerNo: inspection.transformerNo || '',
         dateOfInspection: inspection.dateOfInspection || '',
-        timeOfInspection: inspection.timeOfInspection || ''
+        timeOfInspection: inspection.timeOfInspection || '',
+        transformerNo: transformerNo || inspection.transformerNo || ''
       });
     } else {
-      // ensure clean slate in create
+      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+
       setFormData({
         branch: '',
-        transformerNo: '',
-        dateOfInspection: '',
-        timeOfInspection: ''
+        dateOfInspection: today,
+        timeOfInspection: `${hh}:${mm}`,
+        transformerNo: transformerNo || ''
       });
     }
-  }, [inspection]);
-
-  // Fetch transformer list:
-  // - On initial open (all)
-  // - Whenever branch changes (branch-scoped)
-  useEffect(() => {
-    const fetchTransformers = async () => {
-      try {
-        setLoadingTransformers(true);
-        const qs = formData.branch ? `?region=${encodeURIComponent(formData.branch)}` : '';
-        const res = await fetch(`/api/transformers/numbers${qs}`);
-        if (!res.ok) throw new Error('Failed to load transformer numbers');
-        const data = await res.json();
-
-        let options = Array.isArray(data) ? data : [];
-
-        // If editing and current transformerNo is not in the fetched list,
-        // prepend it so it remains visible/selected.
-        if (isEdit && formData.transformerNo && !options.includes(formData.transformerNo)) {
-          options = [formData.transformerNo, ...options];
-        }
-
-        setTransformerOptions(options);
-      } catch (e) {
-        console.error(e);
-        // Still ensure the current value is available in edit mode even if fetch fails
-        if (isEdit && formData.transformerNo) {
-          setTransformerOptions([formData.transformerNo]);
-        } else {
-          setTransformerOptions([]);
-        }
-      } finally {
-        setLoadingTransformers(false);
-      }
-    };
-    fetchTransformers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.branch, isEdit]); // depends on branch + mode
+  }, [isEdit, inspection, transformerNo]);
 
   const validateForm = () => {
     const newErrors = {};
     if (!formData.branch.trim()) newErrors.branch = 'Branch is required';
-    if (!formData.transformerNo.trim()) newErrors.transformerNo = 'Transformer ID is required';
+    if (!formData.transformerNo.trim()) newErrors.transformerNo = 'Transformer No is required';
     if (!formData.dateOfInspection) newErrors.dateOfInspection = 'Date of inspection is required';
     if (!formData.timeOfInspection) newErrors.timeOfInspection = 'Time of inspection is required';
 
@@ -94,39 +59,26 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
   };
 
   const handleSubmit = () => {
-    if (validateForm()) onSubmit(formData);
+    if (!validateForm()) return;
+    // Always submit transformerNo from frozen state/prop
+    onSubmit({
+      branch: formData.branch.trim(),
+      dateOfInspection: formData.dateOfInspection,
+      timeOfInspection: formData.timeOfInspection,
+      transformerNo: transformerNo || formData.transformerNo
+    });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setFormData(prev => {
-      if (name === 'branch') {
-        // In CREATE: reset transformer when branch changes.
-        // In EDIT: keep the currently selected transformer unless user changes it explicitly.
-        return isEdit
-          ? { ...prev, branch: value }
-          : { ...prev, branch: value, transformerNo: '' };
-      }
-      return { ...prev, [name]: value };
-    });
-
+    if (name === 'transformerNo') return; // frozen; ignore
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') onClose();
-    if (e.key === 'Enter' && e.ctrlKey) handleSubmit();
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => { document.removeEventListener('keydown', handleKeyDown); };
-  }, [formData]);
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -140,6 +92,21 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
 
         <div className="modal-body">
           <div className="form-grid">
+
+            {/* Frozen Transformer No */}
+            <div className="form-group">
+              <label className="form-label">Transformer No *</label>
+              <input
+                type="text"
+                name="transformerNo"
+                value={transformerNo || formData.transformerNo || ''}
+                readOnly
+                disabled
+                className={`form-input ${errors.transformerNo ? 'error' : ''}`}
+              />
+              {errors.transformerNo && <span className="error-message">{errors.transformerNo}</span>}
+            </div>
+
             {/* Branch */}
             <div className="form-group">
               <label className="form-label">Branch *</label>
@@ -150,34 +117,11 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
                 className={`form-select ${errors.branch ? 'error' : ''}`}
               >
                 <option value="">Select Branch</option>
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
+                {branches.map(b => (
+                  <option key={b} value={b}>{b}</option>
                 ))}
               </select>
               {errors.branch && <span className="error-message">{errors.branch}</span>}
-            </div>
-
-            {/* Transformer ID (dropdown) */}
-            <div className="form-group">
-              <label className="form-label">Transformer ID *</label>
-              <select
-                name="transformerNo"
-                value={formData.transformerNo}
-                onChange={handleChange}
-                className={`form-select ${errors.transformerNo ? 'error' : ''}`}
-                disabled={loadingTransformers || transformerOptions.length === 0}
-              >
-                {/* Show placeholder ONLY in Create */}
-                {!isEdit && (
-                  <option value="">
-                    {loadingTransformers ? 'Loading…' : 'Select Transformer'}
-                  </option>
-                )}
-                {transformerOptions.map(no => (
-                  <option key={no} value={no}>{no}</option>
-                ))}
-              </select>
-              {errors.transformerNo && <span className="error-message">{errors.transformerNo}</span>}
             </div>
 
             {/* Date */}
@@ -206,6 +150,7 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
               />
               {errors.timeOfInspection && <span className="error-message">{errors.timeOfInspection}</span>}
             </div>
+
           </div>
         </div>
 
@@ -213,7 +158,7 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
           <div className="footer-buttons">
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
             <button type="button" onClick={handleSubmit} className="btn-primary">
-              {inspection ? 'Update Inspection' : 'Create Inspection'}
+              {isEdit ? 'Update Inspection' : 'Create Inspection'}
             </button>
           </div>
         </div>

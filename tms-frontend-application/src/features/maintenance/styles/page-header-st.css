@@ -34,10 +34,11 @@
 .transformer-landmark {
   font-size: 0.875rem;
   color: #dc2626;
-  margin: 0 0 16px 0;
   display: flex;
   align-items: center;
   gap: 4px;
+  margin-left: -0.3rem;
+  margin-top: 0.8rem;
 }
 
 /* Badges Container */
@@ -94,6 +95,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .baseline-button {
@@ -118,21 +120,20 @@
 
 .new-element-button {
   display: flex;
-  align-items: center;
+  align-items: right;
   gap: 6px;
-  background-color: #dcfce7;
-  color: #15803d;
+  background-color: #2563eb;
+  color: #ffffff;
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
-  border: 1px solid #bbf7d0;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .new-element-button:hover {
-  background-color: #bbf7d0;
+  background-color: #13398e;
   transform: translateY(-1px);
 }
 
@@ -198,6 +199,7 @@
   .button-group {
     gap: 8px;
     flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .baseline-button,

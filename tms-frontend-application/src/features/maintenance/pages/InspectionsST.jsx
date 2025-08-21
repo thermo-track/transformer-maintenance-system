@@ -1,5 +1,6 @@
 import { useParams, useLocation } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import "../styles/inspections.css";
 import InspectionModal from "../components/InspectionModal";
 import { inspectionService } from "../services/inspectionService";
@@ -10,21 +11,20 @@ import PageHeaderST from "../components/PageHeaderST.jsx";
 
 function InspectionsST() {
   const { transformerNo } = useParams();
-  const { state } = useLocation(); // optional: data passed from Link state
-  // state may already contain: { id, transformerNo, poleNo, region, type, locationDetails }
+  const { state } = useLocation(); // may contain: { id, transformerNo, poleNo, region, type, locationDetails }
 
-  // --- transformer meta (from state or fetch by number) ---
+  // transformer meta
   const [transformer, setTransformer] = useState(
     state && state.transformerNo ? state : null
   );
   const [tLoading, setTLoading] = useState(!(state && state.transformerNo));
   const [tError, setTError] = useState(null);
 
-  // --- inspections data ---
+  // inspections data
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- pagination/filter/ui ---
+  // pagination/filter/ui
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -48,7 +48,7 @@ function InspectionsST() {
   ];
   const statuses = ["Completed", "In Progress", "Pending", "Scheduled"];
 
-  // Fetch transformer meta by number if we don't have state (refresh/direct link)
+  // fetch transformer meta by number if no state (refresh/direct open)
   useEffect(() => {
     if (!transformerNo) return;
 
@@ -61,7 +61,7 @@ function InspectionsST() {
       )
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.json(); // Page<TransformerResponse>
+          return r.json();
         })
         .then((page) => {
           const item = page?.content?.[0];
@@ -76,24 +76,24 @@ function InspectionsST() {
     }
   }, [transformer, transformerNo]);
 
-  // Load inspections for this transformer number
+  // load inspections for this transformer
   useEffect(() => {
     if (!transformerNo) return;
     fetchInspectionsByTransformer(transformerNo);
   }, [transformerNo]);
 
-  // ---- fetch inspections for a specific transformerNo ----
   const fetchInspectionsByTransformer = async (tNo) => {
     try {
       setLoading(true);
       const data = await inspectionService.getInspectionsByTransformer(tNo);
-
-      // Enrich client-side fields (dummy data and combined date-time)
       const enrichedData = data.map((inspection) => ({
         ...inspection,
         inspectedDateTime:
           inspection.inspectedDateTime ||
-          combineDateTime(inspection.dateOfInspection, inspection.timeOfInspection),
+          combineDateTime(
+            inspection.dateOfInspection,
+            inspection.timeOfInspection
+          ),
         maintenanceDateTime: getRandomMaintenanceDateTime(),
         inspectorName: getRandomInspector(),
         status: getRandomStatus(),
@@ -104,42 +104,31 @@ function InspectionsST() {
         weather: getRandomWeather(),
         duration: getRandomDuration(),
       }));
-
       setInspections(enrichedData);
     } catch (error) {
       console.error("Error fetching inspections for transformer:", error);
-      const mockData = getMockData();
-      const filteredMockData = mockData.filter(
-        (inspection) => inspection.transformerNo === tNo
+      const mockData = getMockData().filter(
+        (x) => x.transformerNo === tNo
       );
-      setInspections(filteredMockData);
+      setInspections(mockData);
     } finally {
       setLoading(false);
     }
   };
 
-  // ---- helpers for dummy/enrichment fields ----
+  // helpers (unchanged)
   const getRandomInspector = () => {
-    const inspectors = [
-      "John Silva",
-      "Mary Fernando",
-      "David Perera",
-      "Sarah Wickramasinghe",
-      "Mike Rajapaksa",
-    ];
-    return inspectors[Math.floor(Math.random() * inspectors.length)];
+    const xs = ["John Silva","Mary Fernando","David Perera","Sarah Wickramasinghe","Mike Rajapaksa"];
+    return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getRandomStatus = () => {
-    const xs = ["Completed", "In Progress", "Pending", "Scheduled"];
+    const xs = ["Completed","In Progress","Pending","Scheduled"];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getRandomPriority = () => {
-    const xs = ["High", "Medium", "Low"];
+    const xs = ["High","Medium","Low"];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getRandomFindings = () => {
     const xs = [
       "All systems normal",
@@ -151,13 +140,11 @@ function InspectionsST() {
     ];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getNextInspectionDate = (currentDate) => {
     const date = new Date(currentDate);
     date.setMonth(date.getMonth() + 6);
     return date.toISOString().split("T")[0];
   };
-
   const getRandomLocation = () => {
     const xs = [
       "Main Distribution Center",
@@ -169,17 +156,14 @@ function InspectionsST() {
     ];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getRandomWeather = () => {
     const xs = ["Clear", "Rainy", "Cloudy", "Sunny", "Overcast"];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getRandomDuration = () => {
     const xs = ["2.5 hrs", "3 hrs", "4 hrs", "1.5 hrs", "5 hrs"];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-
   const getRandomMaintenanceDateTime = () => {
     const dates = [
       "2024-03-15T09:30:00",
@@ -190,95 +174,73 @@ function InspectionsST() {
       "2024-08-12T13:30:00",
       "Not scheduled",
     ];
-    const randomDate = dates[Math.floor(Math.random() * dates.length)];
-    if (randomDate === "Not scheduled") return "Not scheduled";
-    const dateObj = new Date(randomDate);
-    const options = {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    };
-    return dateObj.toLocaleDateString("en-US", options);
+    const d = dates[Math.floor(Math.random() * dates.length)];
+    if (d === "Not scheduled") return "Not scheduled";
+    const dt = new Date(d);
+    return dt.toLocaleDateString("en-US", {
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: true,
+    });
   };
-
   const combineDateTime = (date, time) => {
     if (!date || !time) return "";
     const dt = new Date(`${date}T${time}`);
     return isNaN(dt.getTime()) ? "" : dt.toISOString();
   };
+  const getMockData = () => [];
 
-  // Mock data fallback
-  const getMockData = () => {
-    return [];
-  };
-
-  // ---- create / edit / delete handlers ----
+  // create/edit/delete
   const handleCreate = async (formData) => {
     try {
-      const inspectionData = {
-        ...formData,
-        transformerNo, // backend expects transformerNo
-      };
-      await inspectionService.createInspection(inspectionData);
+      const payload = { ...formData, transformerNo };
+      await inspectionService.createInspection(payload);
       fetchInspectionsByTransformer(transformerNo);
       setShowCreateModal(false);
-    } catch (error) {
-      console.error("Error creating inspection:", error);
+    } catch (e) {
+      console.error("Error creating inspection:", e);
       alert("Error creating inspection. Please try again.");
     }
   };
-
   const handleEdit = async (formData) => {
     try {
       await inspectionService.updateInspection(
-        selectedInspection.inspectionId,
-        formData
+        selectedInspection.inspectionId, formData
       );
       fetchInspectionsByTransformer(transformerNo);
       setShowEditModal(false);
       setSelectedInspection(null);
-    } catch (error) {
-      console.error("Error updating inspection:", error);
+    } catch (e) {
+      console.error("Error updating inspection:", e);
       alert("Error updating inspection. Please try again.");
     }
   };
-
   const handleDelete = async (inspectionId) => {
-    if (window.confirm("Are you sure you want to delete this inspection?")) {
-      try {
-        await inspectionService.deleteInspection(inspectionId);
-        fetchInspectionsByTransformer(transformerNo);
-      } catch (error) {
-        console.error("Error deleting inspection:", error);
-        alert("Error deleting inspection. Please try again.");
-      }
+    try {
+      await inspectionService.deleteInspection(inspectionId);
+      fetchInspectionsByTransformer(transformerNo);
+    } catch (e) {
+      console.error("Error deleting inspection:", e);
+      alert("Error deleting inspection. Please try again.");
     }
   };
 
-  // ---- filters/pagination ----
+  // filters/pagination
   const filteredInspections = inspections.filter((inspection) => {
     const term = (filters.searchTerm || "").toLowerCase();
-
     const matchesSearch =
       term === "" ||
       (inspection.transformerNo || "").toLowerCase().includes(term) ||
       (inspection.inspectionId || "").includes(filters.searchTerm || "") ||
       (inspection.inspectorName || "").toLowerCase().includes(term);
-
     const matchesStatus =
-      filters.selectedStatus === "" ||
+      (filters.selectedStatus || "") === "" ||
       (inspection.status || "").toLowerCase() ===
         (filters.selectedStatus || "").toLowerCase();
-
     const matchesDateRange =
       (!filters.startDate ||
         (inspection.dateOfInspection || "") >= filters.startDate) &&
       (!filters.endDate ||
         (inspection.dateOfInspection || "") <= filters.endDate);
-
     return matchesSearch && matchesStatus && matchesDateRange;
   });
 
@@ -289,24 +251,33 @@ function InspectionsST() {
     startIndex + itemsPerPage
   );
 
-  // ---- render ----
   return (
     <div className="inspections-page">
       <PageHeaderST
-        onNewInspection={() => setShowCreateModal(true)}
-        transformerNo={transformer.transformerNo}
-        transformerLocation={transformer.locationDetails}
-        transformerRegion={transformer.region}
-        transformerPoleno={transformer.poleNo}
-        transformerType={transformer.type}
+        transformerNo={transformer?.transformerNo}
+        transformerLocation={transformer?.locationDetails}
+        transformerRegion={transformer?.region}
+        transformerPoleno={transformer?.poleNo}
+        transformerType={transformer?.type}
       />
+
+      {/* New button row moved here */}
+      <div className="button-group" style={{ marginTop: 8, marginBottom: 12 }}>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="new-element-button"
+        >
+          <Plus className="icon-plus" />
+          Add Inspection
+        </button>
+      </div>
 
       {showCreateModal && (
         <InspectionModal
           title="Create New Inspection"
           inspection={null}
           branches={branches}
-          transformerNo={transformerNo} // ensure modal/form includes transformerNo in payload
+          transformerNo={transformerNo}
           onSubmit={handleCreate}
           onClose={() => setShowCreateModal(false)}
         />
@@ -318,7 +289,7 @@ function InspectionsST() {
         statuses={statuses}
       />
 
-      <h2>Inspections for Transformer {transformer.transformerNo}</h2>
+      <h2>Transformer Inspections</h2>
 
       {loading ? (
         <div>Loading inspections...</div>
@@ -348,6 +319,7 @@ function InspectionsST() {
           title="Edit Inspection"
           inspection={selectedInspection}
           branches={branches}
+          transformerNo={transformerNo}  
           onSubmit={handleEdit}
           onClose={() => {
             setShowEditModal(false);
@@ -355,6 +327,10 @@ function InspectionsST() {
           }}
         />
       )}
+
+      {/* transformer header status/errors */}
+      {tLoading && <div>Loading transformer…</div>}
+      {tError && <div style={{ color: "crimson" }}>Error: {tError}</div>}
     </div>
   );
 }

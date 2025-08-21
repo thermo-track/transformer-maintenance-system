@@ -2,9 +2,12 @@
 import React, { useState } from 'react';
 import { Eye, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../styles/inspections-table.css';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 
 const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);     
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const toggleRowExpansion = (inspectionId) => {
     const newExpanded = new Set(expandedRows);
@@ -35,6 +38,25 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
     }
   };
 
+   // dialog handlers
+  const askDelete = (id) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (pendingDeleteId) {
+      onDelete(pendingDeleteId);
+    }
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
   return (
     <div className="inspections-table-container">
       <div className="table-header">
@@ -46,7 +68,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
           <thead>
             <tr>
               <th></th>
-              <th>#</th>
+              <th></th>
               <th>Inspection ID</th>
               <th>Transformer ID</th>
               <th>Branch</th>
@@ -55,7 +77,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
               <th>Inspector</th>
               <th>Status</th>
               <th>Priority</th>
-              <th>Actions</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +139,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                       </button>
                       <button 
                         className="action-btn delete-btn"
-                        onClick={() => onDelete(inspection.inspectionId)}
+                        onClick={() => askDelete(inspection.inspectionId)}   
                       >
                         <Trash2 className="icon-xs" />
                       </button>
@@ -166,6 +188,15 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
           </div>
         )}
       </div>
+      {/* Confirm delete dialog */}
+            {confirmOpen && (
+              <ConfirmDialog
+                title="Delete inspection?"
+                text={`Inspection #${pendingDeleteId} will be permanently deleted.`}
+                onConfirm={confirmDelete}
+                onCancel={cancelDelete}
+              />
+            )}
     </div>
   );
 };

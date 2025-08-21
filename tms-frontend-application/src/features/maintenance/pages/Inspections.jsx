@@ -190,7 +190,6 @@ const InspectionsPage = () => {
   };
 
   const handleDelete = async (inspectionId) => {
-    if (window.confirm('Are you sure you want to delete this inspection?')) {
       try {
         await inspectionService.deleteInspection(inspectionId);
         fetchInspections();
@@ -198,7 +197,6 @@ const InspectionsPage = () => {
         console.error('Error deleting inspection:', error);
         alert('Error deleting inspection. Please try again.');
       }
-    }
   };
 
   const filteredInspections = inspections.filter(inspection => {
