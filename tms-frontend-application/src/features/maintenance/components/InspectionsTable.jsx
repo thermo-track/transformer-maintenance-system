@@ -80,7 +80,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                     {inspection.inspectionId}
                   </td>
                   <td className="transformer-id">
-                    {inspection.transformerId}
+                    {inspection.transformerNo}
                   </td>
                   <td className="branch">
                     {inspection.branch}

@@ -21,7 +21,7 @@ a { color: var(--accent); text-decoration: none; }
 .btn:hover { filter: brightness(1.1); }
 
 .add { display:flex; justify-content:flex-end; margin-bottom:1rem; }
-.btn.primary { background: #1d3b7c; }
+.btn.primary { background: #2563eb; font-size: 1rem;}
 
 .btn.danger { background:#4a1820; border-color:#6b1e2c; }
 .input, .select, .textarea { width:100%; padding:.55rem .6rem; border-radius:.5rem; border:1px solid var(--border); background:#0f1630; color:var(--text); }
@@ -249,4 +249,44 @@ a { color: var(--accent); text-decoration: none; }
 
 .searchbar-select option {
   background: #0f172a;   /* dropdown menu background */
+}
+
+.user-corner {
+  position: absolute;
+  top: 1.5rem;
+  right: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 1rem;       /* slightly bigger */
+  font-weight: 600;      /* bold for emphasis */
+  color: #e0dcdc;
+}
+
+.user-email {
+  font-size: 0.85rem;    /* smaller */
+  color: #7c7c7c;
+}
+
+.heading {
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
 }

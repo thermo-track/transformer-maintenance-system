@@ -37,6 +37,14 @@ public class TransformerController {
     );
   }
 
+  // ---- NEW: list transformer numbers (optionally by region) ----
+  // GET /api/transformers/numbers
+  // GET /api/transformers/numbers?region=KANDY
+  @GetMapping("/numbers")
+  public List<String> getTransformerNumbers(@RequestParam(required = false) String region) {
+    return service.getAllTransformerNos();
+  }
+
   @GetMapping
   public Page<TransformerResponse> list(@RequestParam(defaultValue = "0") int page,
                                         @RequestParam(defaultValue = "20") int size,
@@ -44,31 +52,24 @@ public class TransformerController {
                                         @RequestParam(required = false) String by,
                                         @RequestParam(required = false) String from,
                                         @RequestParam(required = false) String to) {
-    
-    // Create pageable with sorting
+
     Pageable pageable = PageRequest.of(page, size, Sort.by("transformerNo").ascending());
-    
-    // Parse date parameters if provided
+
     LocalDateTime fromDate = null;
     LocalDateTime toDate = null;
-    
+
     if (from != null && !from.isEmpty()) {
       try {
         fromDate = LocalDateTime.parse(from, DateTimeFormatter.ISO_DATE_TIME);
-      } catch (Exception e) {
-        // Handle parsing error 
-      }
+      } catch (Exception ignored) {}
     }
-    
+
     if (to != null && !to.isEmpty()) {
       try {
         toDate = LocalDateTime.parse(to, DateTimeFormatter.ISO_DATE_TIME);
-      } catch (Exception e) {
-        // Handle parsing error 
-      }
+      } catch (Exception ignored) {}
     }
-    
-    // Call service method with search parameters
+
     return service.list(pageable, q, by, fromDate, toDate)
                   .map(TransformerService::toResponse);
   }

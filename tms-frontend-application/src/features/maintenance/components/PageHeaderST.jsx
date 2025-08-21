@@ -5,12 +5,12 @@ import { Eye, Trash2, Plus } from 'lucide-react';
 import '../styles/page-header-st.css';
 import transformers from "../data/transformers";
 
-const PageHeaderST = ({ onNewInspection, transformerId = 0 }) => {
+const PageHeaderST = ({ onNewInspection, transformerNo , transformerLocation, transformerRegion, transformerPoleno, transformerType }) => {
   // Get the transformer data - using the first transformer or specified by ID
   useEffect(() => {
-          console.log("Transformer ID passed:", transformerId);
-      }, [transformerId]);
-  const transformer = transformers.find(t => t.id === transformerId) || transformers[0];
+          console.log("Transformer ID passed:", transformerNo);
+      }, [transformerNo]);
+  const transformer = transformers.find(t => t.id === transformerNo) || transformers[0];
 
   return (
     <div>
@@ -18,16 +18,16 @@ const PageHeaderST = ({ onNewInspection, transformerId = 0 }) => {
     <div className="page-header-container">
       {/* Left Section */}
       <div className="header-left-section">
-        <h2 className="transformer-title">{transformer.id}</h2>
-        <p className="transformer-location">{transformer.location}</p>
+        <h2 className="transformer-title">{transformerNo}</h2>
+        <p className="transformer-location">{transformerLocation}</p>
         <p className="transformer-landmark">
-          📍 {transformer.landmark}
+          📍 {transformerRegion}
         </p>
         
         {/* Badges */}
         <div className="badges-container">
           <span className="badge">
-            {transformer.poleNo}
+            {transformerPoleno}
             <span className="badge-label">Pole No</span>
           </span>
           
@@ -37,7 +37,7 @@ const PageHeaderST = ({ onNewInspection, transformerId = 0 }) => {
           </span>
           
           <span className="badge">
-            {transformer.type}
+            {transformerType}
             <span className="badge-label">Type</span>
           </span>
           

@@ -5,21 +5,40 @@ import Create from './features/transformers/pages/Create.jsx';
 import Edit from './features/transformers/pages/Edit.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
-import './App.css'
+import './App.css';
+import avatar from './assets/pic.jpg'
+
+function UserCorner() {
+  return (
+    <div className="user-corner">
+      <img
+        src={avatar}
+        alt="User"
+        className="user-avatar"
+      />
+      <div className="user-info">
+        <span className="user-name">Username</span>
+        <span className="user-email">user@gmail.com</span>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-return (
-<Layout>
+  return (
+    <Layout>
+      {/* Persistent user corner */}
+      <UserCorner />
 
-<Routes>
-<Route path="/" element={<Navigate to="/transformers" replace />} />
-<Route path="/transformers" element={<List />} />
-<Route path="/inspections" element={<InspectionsPage />} />
-<Route path="/transformers/new" element={<Create />} />
-<Route path="/transformers/:id" element={<InspectionsST />} />
-<Route path="/transformers/:id/edit" element={<Edit />} />
-<Route path="*" element={<p>Not found</p>} />
-</Routes>
-</Layout>
-);
+      <Routes>
+        <Route path="/" element={<Navigate to="/transformers" replace />} />
+        <Route path="/transformers" element={<List />} />
+        <Route path="/inspections" element={<InspectionsPage />} />
+        <Route path="/transformers/new" element={<Create />} />
+        <Route path="/transformer/:transformerNo" element={<InspectionsST />} />
+        <Route path="/transformer/:id/edit" element={<Edit />} />
+        <Route path="*" element={<p>Not found</p>} />
+      </Routes>
+    </Layout>
+  );
 }

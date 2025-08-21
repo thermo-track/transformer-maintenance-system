@@ -1,65 +1,92 @@
 // components/InspectionModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import '../styles/modal.css';
 
 const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => {
+  const isEdit = !!inspection;
+
   const [formData, setFormData] = useState({
     branch: '',
-    transformerId: '',
+    transformerNo: '',
     dateOfInspection: '',
     timeOfInspection: ''
   });
 
   const [errors, setErrors] = useState({});
+  const [transformerOptions, setTransformerOptions] = useState([]);
+  const [loadingTransformers, setLoadingTransformers] = useState(false);
 
+  // Hydrate form when editing
   useEffect(() => {
     if (inspection) {
       setFormData({
         branch: inspection.branch || '',
-        transformerId: inspection.transformerId || '',
+        transformerNo: inspection.transformerNo || '',
         dateOfInspection: inspection.dateOfInspection || '',
         timeOfInspection: inspection.timeOfInspection || ''
+      });
+    } else {
+      // ensure clean slate in create
+      setFormData({
+        branch: '',
+        transformerNo: '',
+        dateOfInspection: '',
+        timeOfInspection: ''
       });
     }
   }, [inspection]);
 
+  // Fetch transformer list:
+  // - On initial open (all)
+  // - Whenever branch changes (branch-scoped)
+  useEffect(() => {
+    const fetchTransformers = async () => {
+      try {
+        setLoadingTransformers(true);
+        const qs = formData.branch ? `?region=${encodeURIComponent(formData.branch)}` : '';
+        const res = await fetch(`/api/transformers/numbers${qs}`);
+        if (!res.ok) throw new Error('Failed to load transformer numbers');
+        const data = await res.json();
+
+        let options = Array.isArray(data) ? data : [];
+
+        // If editing and current transformerNo is not in the fetched list,
+        // prepend it so it remains visible/selected.
+        if (isEdit && formData.transformerNo && !options.includes(formData.transformerNo)) {
+          options = [formData.transformerNo, ...options];
+        }
+
+        setTransformerOptions(options);
+      } catch (e) {
+        console.error(e);
+        // Still ensure the current value is available in edit mode even if fetch fails
+        if (isEdit && formData.transformerNo) {
+          setTransformerOptions([formData.transformerNo]);
+        } else {
+          setTransformerOptions([]);
+        }
+      } finally {
+        setLoadingTransformers(false);
+      }
+    };
+    fetchTransformers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.branch, isEdit]); // depends on branch + mode
+
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.branch.trim()) {
-      newErrors.branch = 'Branch is required';
-    }
-    
-    if (!formData.transformerId.trim()) {
-      newErrors.transformerId = 'Transformer ID is required';
-    }
-    
-    if (!formData.dateOfInspection) {
-      newErrors.dateOfInspection = 'Date of inspection is required';
-    }
-    
-    if (!formData.timeOfInspection) {
-      newErrors.timeOfInspection = 'Time of inspection is required';
-    }
+    if (!formData.branch.trim()) newErrors.branch = 'Branch is required';
+    if (!formData.transformerNo.trim()) newErrors.transformerNo = 'Transformer ID is required';
+    if (!formData.dateOfInspection) newErrors.dateOfInspection = 'Date of inspection is required';
+    if (!formData.timeOfInspection) newErrors.timeOfInspection = 'Time of inspection is required';
 
-    // Validate date is not in the future
+    // Date cannot be in the future
     if (formData.dateOfInspection) {
       const selectedDate = new Date(formData.dateOfInspection);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      if (selectedDate > today) {
-        newErrors.dateOfInspection = 'Inspection date cannot be in the future';
-      }
-    }
-
-    // Validate transformer ID format (optional - adjust pattern as needed)
-    if (formData.transformerId.trim()) {
-      const transformerIdPattern = /^[A-Z]{1,2}-\d{4}$/;
-      if (!transformerIdPattern.test(formData.transformerId.trim())) {
-        newErrors.transformerId = 'Transformer ID format should be like AZ-9867';
-      }
+      if (selectedDate > today) newErrors.dateOfInspection = 'Inspection date cannot be in the future';
     }
 
     setErrors(newErrors);
@@ -67,47 +94,38 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
   };
 
   const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit(formData);
-    }
+    if (validateForm()) onSubmit(formData);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+
+    setFormData(prev => {
+      if (name === 'branch') {
+        // In CREATE: reset transformer when branch changes.
+        // In EDIT: keep the currently selected transformer unless user changes it explicitly.
+        return isEdit
+          ? { ...prev, branch: value }
+          : { ...prev, branch: value, transformerNo: '' };
+      }
+      return { ...prev, [name]: value };
+    });
+
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget) onClose();
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-    if (e.key === 'Enter' && e.ctrlKey) {
-      handleSubmit();
-    }
+    if (e.key === 'Escape') onClose();
+    if (e.key === 'Enter' && e.ctrlKey) handleSubmit();
   };
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [formData]);
 
   return (
@@ -119,9 +137,10 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
             <X className="icon-sm" />
           </button>
         </div>
-        
+
         <div className="modal-body">
           <div className="form-grid">
+            {/* Branch */}
             <div className="form-group">
               <label className="form-label">Branch *</label>
               <select
@@ -138,21 +157,30 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
               {errors.branch && <span className="error-message">{errors.branch}</span>}
             </div>
 
+            {/* Transformer ID (dropdown) */}
             <div className="form-group">
               <label className="form-label">Transformer ID *</label>
-              <input
-                type="text"
-                name="transformerId"
-                value={formData.transformerId}
+              <select
+                name="transformerNo"
+                value={formData.transformerNo}
                 onChange={handleChange}
-                className={`form-input ${errors.transformerId ? 'error' : ''}`}
-                placeholder="Enter transformer ID (e.g., AZ-9867)"
-                maxLength="10"
-              />
-              {errors.transformerId && <span className="error-message">{errors.transformerId}</span>}
-              <small className="form-hint">Format: Two letters followed by dash and four digits</small>
+                className={`form-select ${errors.transformerNo ? 'error' : ''}`}
+                disabled={loadingTransformers || transformerOptions.length === 0}
+              >
+                {/* Show placeholder ONLY in Create */}
+                {!isEdit && (
+                  <option value="">
+                    {loadingTransformers ? 'Loading…' : 'Select Transformer'}
+                  </option>
+                )}
+                {transformerOptions.map(no => (
+                  <option key={no} value={no}>{no}</option>
+                ))}
+              </select>
+              {errors.transformerNo && <span className="error-message">{errors.transformerNo}</span>}
             </div>
 
+            {/* Date */}
             <div className="form-group">
               <label className="form-label">Date of Inspection *</label>
               <input
@@ -166,6 +194,7 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
               {errors.dateOfInspection && <span className="error-message">{errors.dateOfInspection}</span>}
             </div>
 
+            {/* Time */}
             <div className="form-group">
               <label className="form-label">Time of Inspection *</label>
               <input
@@ -178,24 +207,12 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
               {errors.timeOfInspection && <span className="error-message">{errors.timeOfInspection}</span>}
             </div>
           </div>
-
-
         </div>
 
         <div className="modal-footer">
           <div className="footer-buttons">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="btn-primary"
-            >
+            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+            <button type="button" onClick={handleSubmit} className="btn-primary">
               {inspection ? 'Update Inspection' : 'Create Inspection'}
             </button>
           </div>

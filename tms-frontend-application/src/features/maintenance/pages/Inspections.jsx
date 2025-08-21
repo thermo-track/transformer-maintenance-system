@@ -7,6 +7,7 @@ import InspectionModal from '../components/InspectionModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import { inspectionService } from '../services/inspectionService';
+import SegmentedNav from '../../../components/SegmentedNav';
 import '../styles/inspections.css';
 
 const InspectionsPage = () => {
@@ -120,7 +121,7 @@ const InspectionsPage = () => {
       {
         inspectionId: '000000001',
         branch: 'KANDY',
-        transformerId: 'AZ-9867',
+        transformerNo: 'AZ-9867',
         dateOfInspection: '2024-08-15',
         timeOfInspection: '09:30:00',
         inspectorName: 'John Silva',
@@ -135,7 +136,7 @@ const InspectionsPage = () => {
       {
         inspectionId: '000000002',
         branch: 'COLOMBO',
-        transformerId: 'BZ-1234',
+        transformerNo: 'BZ-1234',
         dateOfInspection: '2024-08-16',
         timeOfInspection: '14:15:00',
         inspectorName: 'Mary Fernando',
@@ -150,7 +151,7 @@ const InspectionsPage = () => {
       {
         inspectionId: '000000003',
         branch: 'GALLE',
-        transformerId: 'CZ-5678',
+        transformerNo: 'CZ-5678',
         dateOfInspection: '2024-08-17',
         timeOfInspection: '11:45:00',
         inspectorName: 'David Perera',
@@ -202,7 +203,7 @@ const InspectionsPage = () => {
 
   const filteredInspections = inspections.filter(inspection => {
     const matchesSearch = filters.searchTerm === '' || 
-      inspection.transformerId.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+      inspection.transformerNo.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
       inspection.inspectionId.includes(filters.searchTerm) ||
       inspection.branch.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
       inspection.inspectorName.toLowerCase().includes(filters.searchTerm.toLowerCase());
@@ -225,6 +226,7 @@ const InspectionsPage = () => {
 
   return (
     <div className="inspections-page">
+      <SegmentedNav />
       <PageHeader onNewInspection={() => setShowCreateModal(true)} />
       
       <FilterSection 
@@ -259,6 +261,19 @@ const InspectionsPage = () => {
           branches={branches}
           onSubmit={handleCreate}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {showEditModal && (
+        <InspectionModal
+          title="Edit Inspection"
+          inspection={selectedInspection}
+          branches={branches}
+          onSubmit={handleEdit}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedInspection(null);
+          }}
         />
       )}
 
