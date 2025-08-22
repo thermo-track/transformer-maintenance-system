@@ -180,7 +180,7 @@ const ThermalImageComparison = ({
             
             <div className="modal-content">
               <p className="warning-text">
-                Are you sure you want to delete inspection thermal image? This action cannot be undone.
+                Are you sure you want to delete inspection thermal image? <br /> This action cannot be undone.
               </p>
             </div>
             

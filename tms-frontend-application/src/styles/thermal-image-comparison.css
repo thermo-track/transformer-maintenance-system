@@ -583,6 +583,7 @@
   display: flex;
   align-items: center; /* vertically center icon and title */
   gap: 10px;           /* space between icon and title */
+  flex-direction: row
 }
 
 .warning-icon {
