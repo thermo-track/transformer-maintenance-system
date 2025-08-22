@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.domain;
+package com.powergrid.maintenance.tms_backend_application.inspection.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +10,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.powergrid.maintenance.tms_backend_application.util.NineDigitId;
+import com.powergrid.maintenance.tms_backend_application.inspection.util.NineDigitId;
 
 import lombok.Data;
 

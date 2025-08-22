@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.util;
+package com.powergrid.maintenance.tms_backend_application.inspection.util;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.enums;
+package com.powergrid.maintenance.tms_backend_application.inspection.enums;
 
 public enum EnvironmentalCondition {
     SUNNY("Sunny"),

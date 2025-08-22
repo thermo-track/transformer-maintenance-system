@@ -1,8 +1,7 @@
-package com.powergrid.maintenance.tms_backend_application.dto;
+package com.powergrid.maintenance.tms_backend_application.inspection.inspection.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -12,7 +11,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
-public class InspectionCreateRequestDTO {
+public class InspectionUpdateRequestDTO {
     @NotBlank(message = "Branch cannot be empty")
     private String branch;
     

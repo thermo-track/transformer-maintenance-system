@@ -1,15 +1,15 @@
-package com.powergrid.maintenance.tms_backend_application.mapper;
+package com.powergrid.maintenance.tms_backend_application.inspection.mapper;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
-import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionUpdateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 
 @Component
 public class InspectionMapper {

@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.config;
+package com.powergrid.maintenance.tms_backend_application.inspection.config;
 
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;

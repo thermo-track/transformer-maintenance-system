@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.repo;
+package com.powergrid.maintenance.tms_backend_application.inspection.repo;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 
 @Repository
 public interface InspectionRepo extends JpaRepository<Inspection, String> {

@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.controller;
+package com.powergrid.maintenance.tms_backend_application.inspection.controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -23,13 +23,12 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
-//import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionUpdateRequestDTO;
-import com.powergrid.maintenance.tms_backend_application.service.InspectionService;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.service.InspectionService;
 
 import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;

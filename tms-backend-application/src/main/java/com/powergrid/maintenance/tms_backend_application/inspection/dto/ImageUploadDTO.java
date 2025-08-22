@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.dto;
+package com.powergrid.maintenance.tms_backend_application.inspection.inspection.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

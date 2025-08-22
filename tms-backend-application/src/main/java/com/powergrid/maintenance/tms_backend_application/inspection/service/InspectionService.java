@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.service;
+package com.powergrid.maintenance.tms_backend_application.inspection.service;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -10,76 +10,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.powergrid.maintenance.tms_backend_application.domain.Inspection;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionResponseDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionUpdateRequestDTO;
-import com.powergrid.maintenance.tms_backend_application.enums.EnvironmentalCondition;
-import com.powergrid.maintenance.tms_backend_application.mapper.InspectionMapper;
-import com.powergrid.maintenance.tms_backend_application.repo.InspectionRepo;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.enums.EnvironmentalCondition;
+import com.powergrid.maintenance.tms_backend_application.inspection.mapper.InspectionMapper;
+import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
-
-import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.ImageUploadResponseDTO;
-import com.powergrid.maintenance.tms_backend_application.dto.InspectionCreateRequestDTO;
-/* 
-@Service
-public class InspectionService {
-
-    @Autowired
-    InspectionRepo inspectionRepo;
-
-    public ResponseEntity<String> addInspection(Inspection inspection) {
-        try{
-            inspectionRepo.save(inspection);
-            return new ResponseEntity<>("success", HttpStatus.CREATED);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("failure", HttpStatus.BAD_GATEWAY);
-        }
-    }
-
-    public ResponseEntity<String> updateInspection(Integer id, Inspection inspectionDetails) {
-        try {
-            Inspection inspection = inspectionRepo.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Inspection not found with id " + id));
-
-            inspection.setBranch(inspectionDetails.getBranch());
-            inspection.setTransformerId(inspectionDetails.getTransformerId());
-            inspection.setDateOfInspection(inspectionDetails.getDateOfInspection());
-            inspection.setTimeOfInspection(inspectionDetails.getTimeOfInspection());
-
-            inspectionRepo.save(inspection);
-
-            return new ResponseEntity<>("Inspection updated successfully", HttpStatus.OK);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Update failed", HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    public ResponseEntity<String> deleteInspection(Integer id) {
-        try {
-            if (!inspectionRepo.existsById(id)) {
-                return new ResponseEntity<>("Inspection not found", HttpStatus.NOT_FOUND);
-            }
-
-            inspectionRepo.deleteById(id);
-            return new ResponseEntity<>("Inspection deleted successfully", HttpStatus.OK);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Delete failed", HttpStatus.BAD_REQUEST);
-        }
-    }
-
-
-}
- */
 
 
 @Slf4j
