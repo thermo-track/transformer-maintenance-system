@@ -5,6 +5,7 @@ import '../styles/modal.css';
 
 const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit, onClose }) => {
   const isEdit = !!inspection;
+  const isPerTransformerPage = !!transformerNo;
 
   const [formData, setFormData] = useState({
     branch: '',
@@ -14,30 +15,68 @@ const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit,
   });
 
   const [errors, setErrors] = useState({});
+  const [transformerOptions, setTransformerOptions] = useState([]);
+  const [loadingTransformers, setLoadingTransformers] = useState(false);
 
   // Hydrate form
   useEffect(() => {
-    if (isEdit) {
+    if (inspection) {
       setFormData({
         branch: inspection.branch || '',
         dateOfInspection: inspection.dateOfInspection || '',
         timeOfInspection: inspection.timeOfInspection || '',
-        transformerNo: transformerNo || inspection.transformerNo || ''
+        transformerNo: inspection.transformerNo || ''
       });
     } else {
-      const today = new Date().toISOString().slice(0, 10);
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-
       setFormData({
         branch: '',
-        dateOfInspection: today,
-        timeOfInspection: `${hh}:${mm}`,
-        transformerNo: transformerNo || ''
+        transformerNo: isPerTransformerPage ? transformerNo : '', // Pre-fill if on per-transformer page
+        dateOfInspection: '',
+        timeOfInspection: '',
       });
     }
-  }, [isEdit, inspection, transformerNo]);
+  }, [inspection, transformerNo, isPerTransformerPage]);
+
+  useEffect(() => {
+    // Skip fetching transformers if we're on per-transformer page
+    if (isPerTransformerPage) {
+      setTransformerOptions([transformerNo]);
+      return;
+    }
+
+    const fetchTransformers = async () => {
+      try {
+        setLoadingTransformers(true);
+        const qs = formData.branch ? `?region=${encodeURIComponent(formData.branch)}` : '';
+        const res = await fetch(`/api/transformers/numbers${qs}`);
+        if (!res.ok) throw new Error('Failed to load transformer numbers');
+        const data = await res.json();
+        let options = Array.isArray(data) ? data : [];
+
+        // If editing and current transformerNo is not in the fetched list,
+        // prepend it so it remains visible/selected.
+        if (isEdit && formData.transformerNo && !options.includes(formData.transformerNo)) {
+          options = [formData.transformerNo, ...options];
+        }
+
+        setTransformerOptions(options);
+      } catch (e) {
+        console.error(e);
+
+        // Still ensure the current value is available in edit mode even if fetch fails
+        if (isEdit && formData.transformerNo) {
+          setTransformerOptions([formData.transformerNo]);
+        } else {
+          setTransformerOptions([]);
+        }
+      } finally {
+        setLoadingTransformers(false);
+      }
+    };
+
+    fetchTransformers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.branch, isEdit, isPerTransformerPage]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -94,18 +133,47 @@ const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit,
           <div className="form-grid">
 
             {/* Frozen Transformer No */}
-            <div className="form-group">
-              <label className="form-label">Transformer No *</label>
-              <input
-                type="text"
-                name="transformerNo"
-                value={transformerNo || formData.transformerNo || ''}
-                readOnly
-                disabled
-                className={`form-input ${errors.transformerNo ? 'error' : ''}`}
-              />
-              {errors.transformerNo && <span className="error-message">{errors.transformerNo}</span>}
+             <div className="form-group">
+              <label className="form-label">
+                Transformer ID * {isPerTransformerPage && <span className="text-muted"></span>}
+              </label>
+              {isPerTransformerPage ? (
+                // Show as read-only input on per-transformer page
+                <input
+                  type="text"
+                  name="transformerNo"
+                  value={formData.transformerNo}
+                  className="form-input readonly"
+                  readOnly
+                  style={{cursor: 'not-allowed' }}
+                />
+              ) : (
+                // Show as dropdown on all-transformers page
+                <select
+                  name="transformerNo"
+                  value={formData.transformerNo}
+                  onChange={handleChange}
+                  className={`form-select ${errors.transformerNo ? 'error' : ''}`}
+                  disabled={loadingTransformers || transformerOptions.length === 0}
+                >
+                  {/* Show placeholder ONLY in Create mode on all-transformers page */}
+                  {!isEdit && (
+                    <option value="">
+                      {loadingTransformers ? 'Loading…' : 'Select Transformer'}
+                    </option>
+                  )}
+                  {transformerOptions.map((no) => (
+                    <option key={no} value={no}>
+                      {no}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.transformerNo && (
+                <span className="error-message">{errors.transformerNo}</span>
+              )}
             </div>
+
 
             {/* Branch */}
             <div className="form-group">
