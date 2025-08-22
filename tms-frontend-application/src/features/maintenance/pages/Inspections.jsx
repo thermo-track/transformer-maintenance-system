@@ -1,7 +1,7 @@
 // components/InspectionsPage.js
 import React, { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
-import FilterSection from '../components/FilterSection';
+import FilterSectionAll from '../components/FilterSectionAll';
 import InspectionsTable from '../components/InspectionsTable';
 import InspectionModal from '../components/InspectionModal';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +11,9 @@ import SegmentedNav from '../../../components/SegmentedNav';
 import '../styles/inspections.css';
 
 const InspectionsPage = () => {
+  // Define branches as a constant at the top
+  const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
+  
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,7 +28,9 @@ const InspectionsPage = () => {
     endDate: ''
   });
 
-  const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
+  // Debug logging
+  console.log('InspectionsPage - branches:', branches);
+  console.log('InspectionsPage - filters:', filters);
 
   useEffect(() => {
     fetchInspections();
@@ -226,8 +231,8 @@ const InspectionsPage = () => {
     <div className="inspections-page">
       <SegmentedNav />
       <PageHeader onNewInspection={() => setShowCreateModal(true)} />
-      
-      <FilterSection 
+
+      <FilterSectionAll
         filters={filters}
         setFilters={setFilters}
         branches={branches}
@@ -274,10 +279,6 @@ const InspectionsPage = () => {
           }}
         />
       )}
-
-
-
-
     </div>
   );
 };
