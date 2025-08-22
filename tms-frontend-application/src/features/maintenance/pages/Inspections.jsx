@@ -6,7 +6,7 @@ import InspectionsTable from '../components/InspectionsTable';
 import InspectionModal from '../components/InspectionModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
-import { inspectionService } from '../services/inspectionService';
+import { inspectionService } from '../services/InspectionService';
 import SegmentedNav from '../../../components/SegmentedNav';
 import '../styles/inspections.css';
 

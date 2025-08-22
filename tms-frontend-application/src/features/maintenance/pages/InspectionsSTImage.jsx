@@ -2,10 +2,10 @@ import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import '../styles/global.css';
 import '../styles/inspections.css';
-import InspectionModal from '../components/InspectionModal.jsx';
-import ThermalImageComponent from '../components/ThermalImageComponent.jsx';
-import { inspectionService } from '../services/inspectionService.jsx';
-import PageHeaderST from '../components/PageHeaderST.jsx';
+import InspectionModal from '../components/InspectionModal';
+import ThermalImageComponent from '../components/ThermalImageComponent';
+import { inspectionService } from '../services/InspectionService';
+import PageHeaderST from '../components/PageHeaderST';
 
 function InspectionsSTImage() {
   const { transformerId, inspectionId } = useParams(); // Get both parameters

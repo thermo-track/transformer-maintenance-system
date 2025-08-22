@@ -2,7 +2,7 @@ import '../styles/thermal-images.css';
 import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, X, AlertTriangle } from 'lucide-react';
 import ThermalImageComparison from './ThermalImageComparison';
-import { inspectionService } from '../services/inspectionService';
+import { inspectionService } from '../services/InspectionService';
 
 const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete }) => {
   const [selectedFile, setSelectedFile] = useState(null);

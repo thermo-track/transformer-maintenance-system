@@ -4,11 +4,11 @@ import { Plus } from "lucide-react";
 // import '../styles/global.css';
 import '../styles/inspections.css';
 import InspectionModal from '../components/InspectionModal';
-import { inspectionService } from '../services/inspectionService';
+import { inspectionService } from '../services/InspectionService';
 import InspectionsTable from '../components/InspectionsTableST';
 import FilterSection from '../components/FilterSection';
 import Pagination from '../components/Pagination';
-import PageHeaderST from '../components/PageHeaderST.jsx';
+import PageHeaderST from '../components/PageHeaderST';
 
 function InspectionsST() {
   const { transformerNo } = useParams();

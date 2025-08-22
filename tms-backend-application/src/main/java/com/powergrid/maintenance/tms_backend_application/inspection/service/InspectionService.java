@@ -102,13 +102,13 @@ public class InspectionService {
             Inspection existingInspection = optionalInspection.get();
             
             // Check for duplicate if transformer ID or date changed
-            if (!existingInspection.getTransformerId().equals(requestDTO.getTransformerId()) ||
+            if (!existingInspection.getTransformerNo().equals(requestDTO.getTransformerNo()) ||
                 !existingInspection.getDateOfInspection().equals(requestDTO.getDateOfInspection())) {
                 
                 if (inspectionRepo.existsByTransformerIdAndDateOfInspection(
-                        requestDTO.getTransformerId(), requestDTO.getDateOfInspection())) {
+                        requestDTO.getTransformerNo(), requestDTO.getDateOfInspection())) {
                     log.warn("Inspection already exists for transformer {} on date {}", 
-                            requestDTO.getTransformerId(), requestDTO.getDateOfInspection());
+                            requestDTO.getTransformerNo(), requestDTO.getDateOfInspection());
                     return ResponseEntity.status(HttpStatus.CONFLICT).build();
                 }
             }
@@ -230,7 +230,7 @@ public class InspectionService {
             log.info("Retrieving inspections for transformer ID: {}", transformerId);
             
             // Using the repository method to find inspections by transformer ID
-            List<Inspection> inspections = inspectionRepo.findByTransformerId(transformerId);
+            List<Inspection> inspections = inspectionRepo.findByTransformerNo(transformerId);
             
             // Check if any inspections were found
             if (inspections.isEmpty()) {

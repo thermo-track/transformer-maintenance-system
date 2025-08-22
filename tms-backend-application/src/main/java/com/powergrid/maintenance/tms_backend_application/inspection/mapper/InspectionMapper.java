@@ -23,7 +23,7 @@ public class InspectionMapper {
         
         Inspection inspection = new Inspection();
         inspection.setBranch(dto.getBranch());
-        inspection.setTransformerId(dto.getTransformerNo());
+        inspection.setTransformerNo(dto.getTransformerNo());
         inspection.setDateOfInspection(dto.getDateOfInspection());
         inspection.setTimeOfInspection(dto.getTimeOfInspection());
 
@@ -39,7 +39,7 @@ public class InspectionMapper {
         }
         
         inspection.setBranch(dto.getBranch());
-        inspection.setTransformerId(dto.getTransformerNo());
+        inspection.setTransformerNo(dto.getTransformerNo());
         inspection.setDateOfInspection(dto.getDateOfInspection());
         inspection.setTimeOfInspection(dto.getTimeOfInspection());
     }
@@ -53,9 +53,9 @@ public class InspectionMapper {
         }
         
         InspectionResponseDTO dto = new InspectionResponseDTO();
-        dto.setInspectionId(inspection.getInspectionNo());
+        dto.setInspectionId(inspection.getInspectionId());
         dto.setBranch(inspection.getBranch());
-        dto.setTransformerId(inspection.getTransformerNo());
+        dto.setTransformerNo(inspection.getTransformerNo());
         dto.setDateOfInspection(inspection.getDateOfInspection());
         dto.setTimeOfInspection(inspection.getTimeOfInspection());
         
@@ -81,7 +81,7 @@ public class InspectionMapper {
         }
         
         ImageUploadResponseDTO responseDTO = new ImageUploadResponseDTO();
-        responseDTO.setInspectionId(inspection.getInspectionNo());
+        responseDTO.setInspectionId(inspection.getInspectionId());
         responseDTO.setImageName(inspection.getImageName());
         responseDTO.setImageType(inspection.getImageType());
         responseDTO.setEnvironmentalCondition(inspection.getEnvironmentalCondition()); // Add this line

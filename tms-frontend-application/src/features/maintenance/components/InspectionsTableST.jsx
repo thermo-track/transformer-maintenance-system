@@ -8,8 +8,8 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);        // <-- new
   const [pendingDeleteId, setPendingDeleteId] = useState(null); // <-- new
-  // const { transformerId } = useParams();
-  // const navigate = useNavigate();
+  const { transformerNo } = useParams();
+  const navigate = useNavigate();
 
   const toggleRowExpansion = (inspectionId) => {
     const newExpanded = new Set(expandedRows);
@@ -59,28 +59,11 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
     setPendingDeleteId(null);
   };
 
-  // dialog handlers
-  const askDelete = (id) => {
-    setPendingDeleteId(id);
-    setConfirmOpen(true);
-  };
 
-  const confirmDelete = () => {
-    if (pendingDeleteId) {
-      onDelete(pendingDeleteId);
-    }
-    setConfirmOpen(false);
-    setPendingDeleteId(null);
-  };
-
-  const cancelDelete = () => {
-    setConfirmOpen(false);
-    setPendingDeleteId(null);
-  };
 
   const handleViewInspection = (inspection) => {
     // Navigate to image page using the new route structure with inspectionId parameter
-    navigate(`/inspections/${transformerId}/${inspection.inspectionId}/image`, {
+    navigate(`/transformer/${transformerNo }/${inspection.inspectionId}/image`, {
       state: {
         selectedInspection: inspection // Optional: pass additional inspection data
       }
@@ -89,7 +72,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
 
 /*     const handleViewInspection = (inspection) => {
     // Navigate to image page using the new route structure with inspectionId parameter
-    navigate(`/inspections/${transformerId}/${inspection.inspectionId}/image`, {
+    navigate(`/inspections/${transformerNo}/${inspection.inspectionId}/image`, {
       state: {
         selectedInspection: inspection // Optional: pass additional inspection data
       }
