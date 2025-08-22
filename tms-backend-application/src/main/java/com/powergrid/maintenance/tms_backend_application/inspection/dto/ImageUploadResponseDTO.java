@@ -1,4 +1,4 @@
-package com.powergrid.maintenance.tms_backend_application.inspection.inspection.dto;
+package com.powergrid.maintenance.tms_backend_application.inspection.dto;
 
 import lombok.Data;
 
