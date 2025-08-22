@@ -228,5 +228,12 @@ public class InspectionController {
         }
         return ResponseEntity.notFound().build();
     }
+    @GetMapping("/{inspectionId}/has-image")
+    public ResponseEntity<Boolean> checkIfInspectionHasImage(@PathVariable String inspectionId) {
+        byte[] imageData = inspectionService.getImage(inspectionId);
+        boolean hasImage = imageData != null && imageData.length > 0;
+        return ResponseEntity.ok(hasImage);
+    }
+    
 
 }

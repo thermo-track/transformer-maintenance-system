@@ -6,6 +6,7 @@ import '../styles/inspections-table.css';
 
 const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const { transformerId } = useParams();
   const navigate = useNavigate();
 
   const toggleRowExpansion = (inspectionId) => {
@@ -37,6 +38,14 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
     }
   };
 
+  const handleViewInspection = (inspection) => {
+    // Navigate to image page using the new route structure with inspectionId parameter
+    navigate(`/inspections/${transformerId}/${inspection.inspectionId}/image`, {
+      state: {
+        selectedInspection: inspection // Optional: pass additional inspection data
+      }
+    });
+  };
   return (
     <div className="inspections-table-container">
       <div className="table-header">
@@ -112,7 +121,9 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                     <div className="actions">
                       <button 
                         className="action-btn view-btn"
-                        onClick={() => navigate("image")} >
+                        onClick={() => handleViewInspection(inspection)}
+                        title={`View thermal images for inspection ${inspection.inspectionId}`}
+                      >
                         <Eye className="icon-xs" />
                       </button>
                       <button 

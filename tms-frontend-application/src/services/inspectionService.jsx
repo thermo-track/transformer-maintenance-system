@@ -158,6 +158,131 @@ async createInspection(inspectionData) {
       throw error;
     }
   }
+// Image-related methods
+async uploadInspectionImage(inspectionId, imageFile, environmentalCondition) {
+  try {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    // Create a Blob with the correct content type for JSON
+    const jsonBlob = new Blob([JSON.stringify({
+      environmentalCondition: environmentalCondition
+    })], { type: 'application/json' });
+    
+    formData.append('data', jsonBlob);
+
+    console.log("Uploading image for inspection ID:", inspectionId);
+    
+    const response = await fetch(`${API_BASE_URL}/${inspectionId}/image`, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header - let browser set it with boundary for multipart
+    });
+
+    console.log("Image upload response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Image upload error response:", errorText);
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log("Image upload response data:", responseData);
+    return responseData;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
 }
 
+  async getInspectionImage(inspectionId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${inspectionId}/image`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.blob();
+    } catch (error) {
+      console.error('Error fetching image:', error);
+      throw error;
+    }
+  }
+
+  async deleteInspectionImage(inspectionId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${inspectionId}/image`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      throw error;
+    }
+  }
+  async checkIfInspectionHasImage(inspectionId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${inspectionId}/has-image`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking image:', error);
+      return false;
+    }
+  }
+
+  async getEnvironmentalConditions() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/environmental-conditions`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching environmental conditions:', error);
+      // Return default conditions if API fails
+      return ['SUNNY', 'CLOUDY', 'RAINY'];
+    }
+  }
+
+  async getInspectionsByEnvironmentalCondition(condition) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/by-condition/${condition}`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching inspections by condition:', error);
+      throw error;
+    }
+  }
+  
+
+
+}
+  
 export const inspectionService = new InspectionService();

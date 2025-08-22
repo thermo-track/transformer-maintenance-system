@@ -99,7 +99,7 @@ public class InspectionService {
     );
 
     // Max file size (10MB)
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024;
 
     /**
      * Create a new inspection

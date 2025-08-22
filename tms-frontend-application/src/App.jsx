@@ -14,7 +14,7 @@ function App() {
         {/* Inspections for a single transformer */}
         <Route path="/inspections/:transformerId" element={<InspectionsST />} />
         {/* Inspections for a single transformer */}
-        <Route path="/inspections/:transformerId/image" element={<InspectionsSTImage />} />
+        <Route path="/inspections/:transformerId/:inspectionId/image" element={<InspectionsSTImage />} />
       </Routes>
     </Router>
   );
