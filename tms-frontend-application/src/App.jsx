@@ -1,28 +1,23 @@
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import Layout from './components/Layout.jsx';
-import List from './features/transformers/pages/List.jsx';
-import Create from './features/transformers/pages/Create.jsx';
-import Edit from './features/transformers/pages/Edit.jsx';
+//<Route> Defines a specific URL path and the component to render.
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Inspection from "./pages/Inspections";
-import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
-import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
+import InspectionsST from "./pages/InspectionsST";
 import InspectionsSTImage from "./pages/InspectionsSTImage.jsx";
-import './App.css'
 
-export default function App() {
-return (
-<Layout>
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* All inspections */}
+        <Route path="/inspections" element={<Inspection/>} />
 
-<Routes>
-<Route path="/" element={<Navigate to="/transformers" replace />} />
-<Route path="/transformers" element={<List />} />
-<Route path="/inspections" element={<InspectionsPage />} />
-<Route path="/transformers/new" element={<Create />} />
-<Route path="/transformers/:id" element={<InspectionsST />} />
-<Route path="/transformers/:id/edit" element={<Edit />} />
-<Route path="/inspections/:transformerId/:inspectionId/image" element={<InspectionsSTImage />} />
-<Route path="*" element={<p>Not found</p>} />
-</Routes>
-</Layout>
-);
+        {/* Inspections for a single transformer */}
+        <Route path="/inspections/:transformerId" element={<InspectionsST />} />
+        {/* Inspections for a single transformer */}
+        <Route path="/inspections/:transformerId/:inspectionId/image" element={<InspectionsSTImage />} />
+      </Routes>
+    </Router>
+  );
 }
+
+export default App;

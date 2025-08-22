@@ -1,17 +1,11 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClientProvider } from '@tanstack/react-query';
-import App from './App.jsx';
-import queryClient from './lib/queryClient.js';
-
-
-createRoot(document.getElementById('root')).render(
-<React.StrictMode>
-<QueryClientProvider client={queryClient}>
-<BrowserRouter>
-<App />
-</BrowserRouter>
-</QueryClientProvider>
-</React.StrictMode>
+// to enable additional checks and warnings during development.
+import { StrictMode } from "react";
+// for creating a root for the React app
+import { createRoot } from "react-dom/client";
+import App from "./App.jsx";
+//Initializes a React root in the DOM (Document Object Model) by targeting the HTML element with the ID root
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
 );
