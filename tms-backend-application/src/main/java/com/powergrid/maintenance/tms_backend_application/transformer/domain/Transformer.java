@@ -1,10 +1,12 @@
 package com.powergrid.maintenance.tms_backend_application.transformer.domain;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
 
+@Data
 @Entity
 @Table(
   name = "transformer",
@@ -12,48 +14,67 @@ import java.time.Instant;
 )
 public class Transformer {
 
-  @Id @GeneratedValue @UuidGenerator
-  private String id;
+   @Id 
+   @GeneratedValue 
+   @UuidGenerator
+   private String id;
 
-  @Column(name = "transformer_no", nullable = false, unique = true, length = 64)
-  private String transformerNo;
+   @Column(name = "transformer_no", nullable = false, unique = true, length = 64)
+   private String transformerNo;
 
-  @Column(name = "pole_no", nullable = false, length = 64)
-  private String poleNo;
+   @Column(name = "pole_no", nullable = false, length = 64)
+   private String poleNo;
 
-  @Column(nullable = false, length = 32)
-  private String region;
+   @Column(nullable = false, length = 32)
+   private String region;
 
-  @Column(nullable = false, length = 32)
-  private String type;
+   @Column(nullable = false, length = 32)
+   private String type;
 
-  @Column(name = "location_details", length = 1024)
-  private String locationDetails;
+   @Column(name = "location_details", length = 1024)
+   private String locationDetails;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt = Instant.now();
+   @Column(name = "created_at", nullable = false, updatable = false)
+   private Instant createdAt = Instant.now();
 
-  @Column(name = "updated_at", nullable = false)
-  private Instant updatedAt = Instant.now();
+   @Column(name = "updated_at", nullable = false)
+   private Instant updatedAt = Instant.now();
 
-  @PreUpdate
-  public void touch() { this.updatedAt = Instant.now(); }
+   @PreUpdate
+   public void touch() { 
+       this.updatedAt = Instant.now(); 
+   }
 
-  // --- getters & setters ---
-  public String getId() { return id; }
-  public String getTransformerNo() { return transformerNo; }
-  public void setTransformerNo(String transformerNo) { this.transformerNo = transformerNo; }
-  public String getPoleNo() { return poleNo; }
-  public void setPoleNo(String poleNo) { this.poleNo = poleNo; }
-  public String getLocationDetails() { return locationDetails; }
-  public void setLocationDetails(String locationDetails) { this.locationDetails = locationDetails; }
+   @Lob
+   @Basic(fetch = FetchType.LAZY)
+   @Column(name = "rainy_image_data")
+   private byte[] rainyImageData;
 
-  public String getRegion() { return region; }
-  public void setRegion(String region) { this.region = region; }
+   @Column(name = "rainy_image_name")
+   private String rainyImageName;
 
-  public String getType() { return type; }
-  public void setType(String type) { this.type = type; }
+   @Column(name = "rainy_image_type")
+   private String rainyImageType;
 
-  public Instant getCreatedAt() { return createdAt; }
-  public Instant getUpdatedAt() { return updatedAt; }
+   @Lob
+   @Basic(fetch = FetchType.LAZY)
+   @Column(name = "sunny_image_data")
+   private byte[] sunnyImageData;
+
+   @Column(name = "sunny_image_name")
+   private String sunnyImageName;
+
+   @Column(name = "sunny_image_type")
+   private String sunnyImageType;
+
+   @Lob
+   @Basic(fetch = FetchType.LAZY)
+   @Column(name = "cloudy_image_data")
+   private byte[] cloudyImageData;
+
+   @Column(name = "cloudy_image_name")
+   private String cloudyImageName;
+
+   @Column(name = "cloudy_image_type")
+   private String cloudyImageType;
 }
