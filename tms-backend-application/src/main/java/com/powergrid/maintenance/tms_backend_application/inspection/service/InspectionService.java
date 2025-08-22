@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
+
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
@@ -32,10 +34,15 @@ import lombok.extern.slf4j.Slf4j;
 public class InspectionService {
 
     @Autowired
-    InspectionRepo inspectionRepo;
+    // InspectionMapper inspectionMapper;
+    private InspectionRepo inspectionRepo;
 
     @Autowired
     private InspectionMapper inspectionMapper;
+
+    // Optional but recommended: verify transformer exists by transformerNo
+    @Autowired
+    private TransformerRepository transformerRepo;
 
         // Allowed image types
     private static final List<String> ALLOWED_IMAGE_TYPES = List.of(
@@ -50,11 +57,14 @@ public class InspectionService {
      */
     public ResponseEntity<InspectionResponseDTO> createInspection(InspectionCreateRequestDTO requestDTO) {
         try {
+
+            transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
+                    .orElseThrow(() -> new RuntimeException("Transformer not found"));
             // Check for duplicate inspection (same transformer and date)
             if (inspectionRepo.existsByTransformerIdAndDateOfInspection(
-                    requestDTO.getTransformerId(), requestDTO.getDateOfInspection())) {
+                    requestDTO.getTransformerNo(), requestDTO.getDateOfInspection())) {
                 log.warn("Inspection already exists for transformer {} on date {}", 
-                        requestDTO.getTransformerId(), requestDTO.getDateOfInspection());
+                        requestDTO.getTransformerNo(), requestDTO.getDateOfInspection());
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();
             }
             
@@ -87,7 +97,8 @@ public class InspectionService {
                 log.warn("Inspection not found with id: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
-            
+            transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
+                    .orElseThrow(() -> new RuntimeException("Transformer not found"));
             Inspection existingInspection = optionalInspection.get();
             
             // Check for duplicate if transformer ID or date changed

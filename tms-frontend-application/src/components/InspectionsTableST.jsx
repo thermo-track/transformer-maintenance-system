@@ -1,13 +1,15 @@
-// components/InspectionsTable.js
 import React, { useState } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 import { Eye, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../styles/inspections-table.css';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 
 const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
-  const { transformerId } = useParams();
-  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);        // <-- new
+  const [pendingDeleteId, setPendingDeleteId] = useState(null); // <-- new
+  // const { transformerId } = useParams();
+  // const navigate = useNavigate();
 
   const toggleRowExpansion = (inspectionId) => {
     const newExpanded = new Set(expandedRows);
@@ -38,6 +40,44 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
     }
   };
 
+  // dialog handlers
+  const askDelete = (id) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (pendingDeleteId) {
+      onDelete(pendingDeleteId);
+    }
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  // dialog handlers
+  const askDelete = (id) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (pendingDeleteId) {
+      onDelete(pendingDeleteId);
+    }
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
   const handleViewInspection = (inspection) => {
     // Navigate to image page using the new route structure with inspectionId parameter
     navigate(`/inspections/${transformerId}/${inspection.inspectionId}/image`, {
@@ -46,25 +86,30 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
       }
     });
   };
+
+/*     const handleViewInspection = (inspection) => {
+    // Navigate to image page using the new route structure with inspectionId parameter
+    navigate(`/inspections/${transformerId}/${inspection.inspectionId}/image`, {
+      state: {
+        selectedInspection: inspection // Optional: pass additional inspection data
+      }
+    });
+  }; */
   return (
     <div className="inspections-table-container">
-      <div className="table-header">
-        <h2 className="table-title">Inspections</h2>
-      </div>
-
       <div className="table-wrapper">
         <table className="inspections-table">
           <thead>
             <tr>
               <th></th>
-              <th>#</th>
+              <th></th>
               <th>Inspection No</th>
               <th>Inspected Date</th>
               <th>Maintenance Date</th>
               <th>Inspector</th>
               <th>Status</th>
               <th>Priority</th>
-              <th>Actions</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -76,9 +121,9 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                       className="expand-btn"
                       onClick={() => toggleRowExpansion(inspection.inspectionId)}
                     >
-                      {expandedRows.has(inspection.inspectionId) ? 
-                        <ChevronDown className="icon-sm" /> : 
-                        <ChevronRight className="icon-sm" />
+                      {expandedRows.has(inspection.inspectionId)
+                        ? <ChevronDown className="icon-sm" />
+                        : <ChevronRight className="icon-sm" />
                       }
                     </button>
                   </td>
@@ -89,18 +134,18 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                     {inspection.inspectionId}
                   </td>
                   <td className="inspected-date">
-                      {inspection.inspectedDateTime 
-                        ? new Date(inspection.inspectedDateTime).toLocaleString('en-GB', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false
-                          })
-                        : `${inspection.dateOfInspection} ${inspection.timeOfInspection}`
-                      }
-                    </td>
+                    {inspection.inspectedDateTime
+                      ? new Date(inspection.inspectedDateTime).toLocaleString('en-GB', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        })
+                      : `${inspection.dateOfInspection} ${inspection.timeOfInspection}`
+                    }
+                  </td>
                   <td className="maintenance-datetime">
                     {inspection.maintenanceDateTime}
                   </td>
@@ -126,22 +171,22 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                       >
                         <Eye className="icon-xs" />
                       </button>
-                      <button 
+                      <button
                         className="action-btn edit-btn"
                         onClick={() => onEdit(inspection)}
                       >
                         <Edit className="icon-xs" />
                       </button>
-                      <button 
+                      <button
                         className="action-btn delete-btn"
-                        onClick={() => onDelete(inspection.inspectionId)}
+                        onClick={() => askDelete(inspection.inspectionId)}   // <-- open dialog
                       >
                         <Trash2 className="icon-xs" />
                       </button>
                     </div>
                   </td>
                 </tr>
-                
+
                 {expandedRows.has(inspection.inspectionId) && (
                   <tr className="expanded-row">
                     <td colSpan="11">
@@ -172,13 +217,23 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
             ))}
           </tbody>
         </table>
-        
+
         {inspections.length === 0 && (
           <div className="empty-state">
             <p>No inspections found matching your criteria.</p>
           </div>
         )}
       </div>
+
+      {/* Confirm delete dialog */}
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Delete inspection?"
+          text={`Inspection #${pendingDeleteId} will be permanently deleted.`}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+        />
+      )}
     </div>
   );
 };

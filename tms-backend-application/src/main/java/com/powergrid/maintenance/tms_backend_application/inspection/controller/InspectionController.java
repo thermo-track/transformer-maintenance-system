@@ -37,31 +37,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 
-/* @RestController
-@RequestMapping("/inspections")
-public class InspectionController {
-
-    @Autowired
-    InspectionService inspectionService;
-
-    @PostMapping("addInspection")
-    public ResponseEntity<String> addInspection(@RequestBody Inspection inspection) {
-        return inspectionService.addInspection(inspection);
-    }
-
-    @PutMapping("updateInspection/{id}")
-    public ResponseEntity<String> updateInspection(@PathVariable Integer id, @RequestBody Inspection inspection) {
-        return inspectionService.updateInspection(id, inspection);
-    }
-
-    @DeleteMapping("deleteInspection/{id}")
-    public ResponseEntity<String> deleteInspection(@PathVariable Integer id) {
-        return inspectionService.deleteInspection(id);
-    }
-}
- */
-
-
 
 @Slf4j
 @RestController
@@ -82,7 +57,7 @@ public class InspectionController {
     @PostMapping
     public ResponseEntity<InspectionResponseDTO> createInspection(
             @Valid @RequestBody InspectionCreateRequestDTO requestDTO) {
-        log.info("Creating new inspection for transformer: {}", requestDTO.getTransformerId());
+        log.info("Creating new inspection for transformer: {}", requestDTO.getTransformerNo());
         return inspectionService.createInspection(requestDTO);
     }
 

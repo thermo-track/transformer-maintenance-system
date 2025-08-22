@@ -14,15 +14,15 @@ import lombok.Data;
 public class InspectionUpdateRequestDTO {
     @NotBlank(message = "Branch cannot be empty")
     private String branch;
-    
-    @NotBlank(message = "Transformer ID cannot be empty")
-    @Pattern(regexp = "^[A-Za-z0-9-_]+$", message = "Transformer ID can only contain alphanumeric characters, hyphens, and underscores")
-    private String transformerId;
-    
+
+    @NotBlank(message = "Transformer No cannot be empty")
+    @Pattern(regexp = "^[A-Za-z0-9-_]+$", message = "Transformer No can only contain alphanumeric characters, hyphens, and underscores")
+    private String transformerNo;
+
     @NotNull(message = "Date of inspection is required")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfInspection;
-    
+
     @NotNull(message = "Inspection time is required")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime timeOfInspection;

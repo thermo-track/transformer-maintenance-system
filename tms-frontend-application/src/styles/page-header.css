@@ -5,11 +5,13 @@
 }
 
 .page-title {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  text-align: center;
-  margin-bottom: 1.5rem;
+  text-align: left;
+  margin-bottom: 0rem;
   color: #ffffff;
+  margin-top: 0.5rem;
+  
 }
 
 .navigation-tabs {
@@ -49,6 +51,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  font-family: system-ui, Arial, sans-serif;
 }
 
 /* Mobile responsiveness */
@@ -75,4 +78,28 @@
   .navigation-tabs {
     margin-bottom: 1rem;
   }
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:disabled {
+  background-color: #64748b;
+  cursor: not-allowed;
 }

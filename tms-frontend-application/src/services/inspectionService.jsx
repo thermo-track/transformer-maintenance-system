@@ -28,10 +28,10 @@ class InspectionService {
       throw error;
     }
   }
-  async getInspectionsByTransformer(transformerId) {
+  async getInspectionsByTransformer(transformerNo) {
     try {
-      console.log("Fetching inspections for transformer ID:", transformerId);
-      const response = await fetch(`${API_BASE_URL}/transformer/${transformerId}`, {
+      console.log("Fetching inspections for transformer ID:", transformerNo);
+      const response = await fetch(`${API_BASE_URL}/transformer/${transformerNo}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });

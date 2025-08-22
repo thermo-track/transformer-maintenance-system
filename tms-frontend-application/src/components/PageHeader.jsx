@@ -6,24 +6,14 @@ import '../styles/page-header.css';
 const PageHeader = ({ onNewInspection }) => {
   return (
     <div className="page-header">
-      <h1 className="page-title">Power Grid Inspections</h1>
-      
-      <div className="navigation-tabs">
-        <div className="nav-tab active">
-          Inspections
-        </div>
-        <button className="nav-tab inactive">
-          New Inspection
-        </button>
-      </div>
+      <h1 className="page-title">Inspections</h1>
 
       <div className="header-actions">
         <button 
           onClick={onNewInspection}
           className="btn-primary"
         >
-          <Plus className="icon" />
-          New
+          Add Inspection
         </button>
       </div>
     </div>

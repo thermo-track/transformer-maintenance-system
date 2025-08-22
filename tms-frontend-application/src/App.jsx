@@ -1,23 +1,46 @@
-//<Route> Defines a specific URL path and the component to render.
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Inspection from "./pages/Inspections";
-import InspectionsST from "./pages/InspectionsST";
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import Layout from './components/Layout.jsx';
+import List from './features/transformers/pages/List.jsx';
+import Create from './features/transformers/pages/Create.jsx';
+import Edit from './features/transformers/pages/Edit.jsx';
+import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
+import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
 import InspectionsSTImage from "./pages/InspectionsSTImage.jsx";
+import './App.css';
+import avatar from './assets/pic.jpg'
 
-function App() {
+function UserCorner() {
   return (
-    <Router>
-      <Routes>
-        {/* All inspections */}
-        <Route path="/inspections" element={<Inspection/>} />
-
-        {/* Inspections for a single transformer */}
-        <Route path="/inspections/:transformerId" element={<InspectionsST />} />
-        {/* Inspections for a single transformer */}
-        <Route path="/inspections/:transformerId/:inspectionId/image" element={<InspectionsSTImage />} />
-      </Routes>
-    </Router>
+    <div className="user-corner">
+      <img
+        src={avatar}
+        alt="User"
+        className="user-avatar"
+      />
+      <div className="user-info">
+        <span className="user-name">Username</span>
+        <span className="user-email">user@gmail.com</span>
+      </div>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Layout>
+      {/* Persistent user corner */}
+      <UserCorner />
+
+      <Routes>
+        <Route path="/" element={<Navigate to="/transformers" replace />} />
+        <Route path="/transformers" element={<List />} />
+        <Route path="/inspections" element={<InspectionsPage />} />
+        <Route path="/transformers/new" element={<Create />} />
+        <Route path="/transformer/:transformerNo" element={<InspectionsST />} />
+        <Route path="/transformer/:id/edit" element={<Edit />} />
+        <Route path="*" element={<p>Not found</p>} />
+        <Route path="/inspections/:transformerId/:inspectionId/image" element={<InspectionsSTImage />} />
+      </Routes>
+    </Layout>
+  );
+}

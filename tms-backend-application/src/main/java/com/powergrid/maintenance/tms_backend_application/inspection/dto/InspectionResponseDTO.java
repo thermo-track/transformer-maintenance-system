@@ -11,11 +11,11 @@ import lombok.Data;
 public class InspectionResponseDTO {
     private String inspectionId;
     private String branch;
-    private String transformerId;
-    
+    private String transformerNo;
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfInspection;
-    
+
     @JsonFormat(pattern = "HH:mm")
     private LocalTime timeOfInspection;
 }

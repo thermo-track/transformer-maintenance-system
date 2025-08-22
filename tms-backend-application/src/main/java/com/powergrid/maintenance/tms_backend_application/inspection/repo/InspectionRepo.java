@@ -19,9 +19,9 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
     List<Inspection> findByBranch(String branch);
     
     /**
-     * Find inspections by transformer ID
+     * Find inspections by transformer No
      */
-    List<Inspection> findByTransformerId(String transformerId);
+    List<Inspection> findByTransformerNo(String transformerNo);
     
     /**
      * Find inspections by date range
@@ -40,13 +40,13 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
     /**
      * Check if inspection exists by transformer ID and date
      */
-    boolean existsByTransformerIdAndDateOfInspection(String transformerId, LocalDate dateOfInspection);
+    boolean existsByTransformerIdAndDateOfInspection(String transformerNo, LocalDate dateOfInspection);
     
     /**
-     * Find latest inspection by transformer ID
+     * Find latest inspection by transformer No
      */
-    @Query("SELECT i FROM Inspection i WHERE i.transformerId = :transformerId ORDER BY i.dateOfInspection DESC, i.timeOfInspection DESC LIMIT 1")
-    Optional<Inspection> findLatestByTransformerId(@Param("transformerId") String transformerId);
+    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo ORDER BY i.dateOfInspection DESC, i.timeOfInspection DESC LIMIT 1")
+    Optional<Inspection> findLatestByTransformerNo(@Param("transformerNo") String transformerNo);
 
     
 }
