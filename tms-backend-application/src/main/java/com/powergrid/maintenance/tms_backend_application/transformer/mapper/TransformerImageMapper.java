@@ -17,19 +17,25 @@ public class TransformerImageMapper {
         responseDTO.setWeatherCondition(weatherCondition.toUpperCase());
         responseDTO.setImageSize(imageSize);
         
-        // Set image name and type based on weather condition
+        // Set image name, type, and upload info based on weather condition
         switch (weatherCondition.toUpperCase()) {
             case "SUNNY":
                 responseDTO.setImageName(transformer.getSunnyImageName());
                 responseDTO.setImageType(transformer.getSunnyImageType());
+                responseDTO.setUploadedBy(transformer.getSunnyImageUploadedBy());
+                responseDTO.setUploadedAt(transformer.getSunnyImageUploadedAt());
                 break;
             case "CLOUDY":
                 responseDTO.setImageName(transformer.getCloudyImageName());
                 responseDTO.setImageType(transformer.getCloudyImageType());
+                responseDTO.setUploadedBy(transformer.getCloudyImageUploadedBy());
+                responseDTO.setUploadedAt(transformer.getCloudyImageUploadedAt());
                 break;
             case "RAINY":
                 responseDTO.setImageName(transformer.getRainyImageName());
                 responseDTO.setImageType(transformer.getRainyImageType());
+                responseDTO.setUploadedBy(transformer.getRainyImageUploadedBy());
+                responseDTO.setUploadedAt(transformer.getRainyImageUploadedAt());
                 break;
         }
         
@@ -52,6 +58,8 @@ public class TransformerImageMapper {
         sunnyInfo.setImageName(transformer.getSunnyImageName());
         sunnyInfo.setImageType(transformer.getSunnyImageType());
         sunnyInfo.setHasImage(transformer.getSunnyImageName() != null);
+        sunnyInfo.setUploadedBy(transformer.getSunnyImageUploadedBy());
+        sunnyInfo.setUploadedAt(transformer.getSunnyImageUploadedAt());
         // Avoid accessing LOB data directly to prevent "Unable to access lob stream" error
         sunnyInfo.setImageSize(0);
         dto.setSunnyImage(sunnyInfo);
@@ -61,6 +69,8 @@ public class TransformerImageMapper {
         cloudyInfo.setImageName(transformer.getCloudyImageName());
         cloudyInfo.setImageType(transformer.getCloudyImageType());
         cloudyInfo.setHasImage(transformer.getCloudyImageName() != null);
+        cloudyInfo.setUploadedBy(transformer.getCloudyImageUploadedBy());
+        cloudyInfo.setUploadedAt(transformer.getCloudyImageUploadedAt());
         // Avoid accessing LOB data directly to prevent "Unable to access lob stream" error
         cloudyInfo.setImageSize(0);
         dto.setCloudyImage(cloudyInfo);
@@ -70,6 +80,8 @@ public class TransformerImageMapper {
         rainyInfo.setImageName(transformer.getRainyImageName());
         rainyInfo.setImageType(transformer.getRainyImageType());
         rainyInfo.setHasImage(transformer.getRainyImageName() != null);
+        rainyInfo.setUploadedBy(transformer.getRainyImageUploadedBy());
+        rainyInfo.setUploadedAt(transformer.getRainyImageUploadedAt());
         // Avoid accessing LOB data directly to prevent "Unable to access lob stream" error
         rainyInfo.setImageSize(0);
         dto.setRainyImage(rainyInfo);

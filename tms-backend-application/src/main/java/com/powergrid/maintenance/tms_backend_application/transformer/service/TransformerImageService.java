@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,10 +29,11 @@ public class TransformerImageService {
     
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     
-    public ImageUploadResponseDTO uploadBaseImage(String transformerNo, String weatherCondition,
-            MultipartFile file, ImageUploadDTO imageUploadDTO) throws IOException {
+    public ImageUploadResponseDTO uploadBaseImage(String transformerNo, ImageUploadDTO imageUploadDTO,
+            MultipartFile file) throws IOException {
         
         validateImageFile(file);
+        String weatherCondition = imageUploadDTO.getWeatherCondition();
         validateWeatherCondition(weatherCondition);
         
         Optional<Transformer> optionalTransformer = transformerRepository.findByTransformerNo(transformerNo);
@@ -43,6 +45,7 @@ public class TransformerImageService {
         
         try {
             byte[] imageBytes = file.getBytes();
+            Instant uploadTime = Instant.now();
             
             // Set image data based on weather condition
             switch (weatherCondition.toUpperCase()) {
@@ -50,16 +53,22 @@ public class TransformerImageService {
                     transformer.setSunnyImageData(imageBytes);
                     transformer.setSunnyImageName(file.getOriginalFilename());
                     transformer.setSunnyImageType(file.getContentType());
+                    transformer.setSunnyImageUploadedBy(imageUploadDTO.getAdminUserId());
+                    transformer.setSunnyImageUploadedAt(uploadTime);
                     break;
                 case "CLOUDY":
                     transformer.setCloudyImageData(imageBytes);
                     transformer.setCloudyImageName(file.getOriginalFilename());
                     transformer.setCloudyImageType(file.getContentType());
+                    transformer.setCloudyImageUploadedBy(imageUploadDTO.getAdminUserId());
+                    transformer.setCloudyImageUploadedAt(uploadTime);
                     break;
                 case "RAINY":
                     transformer.setRainyImageData(imageBytes);
                     transformer.setRainyImageName(file.getOriginalFilename());
                     transformer.setRainyImageType(file.getContentType());
+                    transformer.setRainyImageUploadedBy(imageUploadDTO.getAdminUserId());
+                    transformer.setRainyImageUploadedAt(uploadTime);
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid weather condition: " + weatherCondition);

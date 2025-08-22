@@ -1,6 +1,8 @@
+// TransformerImageInfoDTO.java
 package com.powergrid.maintenance.tms_backend_application.transformer.dto;
 
 import lombok.Data;
+import java.time.Instant;
 
 @Data
 public class TransformerImageInfoDTO {
@@ -16,5 +18,7 @@ public class TransformerImageInfoDTO {
         private String imageType;
         private long imageSize;
         private boolean hasImage;
+        private String uploadedBy;
+        private Instant uploadedAt;
     }
 }

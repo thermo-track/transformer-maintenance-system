@@ -5,8 +5,6 @@ import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUp
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerImageInfoDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.service.TransformerImageService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Pattern;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,17 +22,14 @@ public class TransformerImageController {
     @Autowired
     private TransformerImageService transformerImageService;
 
-    @PostMapping(value = "/{transformerNo}/image/{weatherCondition}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{transformerNo}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImage(
             @PathVariable String transformerNo,
-            @PathVariable @Pattern(regexp = "^(sunny|cloudy|rainy)$", 
-                         flags = Pattern.Flag.CASE_INSENSITIVE,
-                         message = "Weather condition must be one of: sunny, cloudy, rainy") String weatherCondition,
             @RequestPart("image") MultipartFile file,
-            @RequestPart(value = "data", required = false) @Valid ImageUploadDTO imageUploadDTO) {
+            @RequestPart("data") @Valid ImageUploadDTO imageUploadDTO) {
         try {
             ImageUploadResponseDTO response = transformerImageService.uploadBaseImage(
-                transformerNo, weatherCondition, file, imageUploadDTO);
+                transformerNo, imageUploadDTO, file);
             return ResponseEntity.ok(response);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

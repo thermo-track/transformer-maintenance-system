@@ -45,6 +45,7 @@ public class Transformer {
        this.updatedAt = Instant.now(); 
    }
 
+   // Rainy weather image fields
    @Lob
    @Basic(fetch = FetchType.LAZY)
    @Column(name = "rainy_image_data")
@@ -56,6 +57,13 @@ public class Transformer {
    @Column(name = "rainy_image_type")
    private String rainyImageType;
 
+   @Column(name = "rainy_image_uploaded_by", length = 64)
+   private String rainyImageUploadedBy;
+
+   @Column(name = "rainy_image_uploaded_at")
+   private Instant rainyImageUploadedAt;
+
+   // Sunny weather image fields
    @Lob
    @Basic(fetch = FetchType.LAZY)
    @Column(name = "sunny_image_data")
@@ -67,6 +75,13 @@ public class Transformer {
    @Column(name = "sunny_image_type")
    private String sunnyImageType;
 
+   @Column(name = "sunny_image_uploaded_by", length = 64)
+   private String sunnyImageUploadedBy;
+
+   @Column(name = "sunny_image_uploaded_at")
+   private Instant sunnyImageUploadedAt;
+
+   // Cloudy weather image fields
    @Lob
    @Basic(fetch = FetchType.LAZY)
    @Column(name = "cloudy_image_data")
@@ -77,4 +92,10 @@ public class Transformer {
 
    @Column(name = "cloudy_image_type")
    private String cloudyImageType;
+
+   @Column(name = "cloudy_image_uploaded_by", length = 64)
+   private String cloudyImageUploadedBy;
+
+   @Column(name = "cloudy_image_uploaded_at")
+   private Instant cloudyImageUploadedAt;
 }
