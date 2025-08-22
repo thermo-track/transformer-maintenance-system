@@ -3,63 +3,55 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import '../styles/modal.css';
 
-const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => {
+const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit, onClose }) => {
+  const isEdit = !!inspection;
+
   const [formData, setFormData] = useState({
     branch: '',
-    transformerId: '',
     dateOfInspection: '',
-    timeOfInspection: ''
+    timeOfInspection: '',
+    transformerNo: transformerNo || '' // keep in state so submit is consistent
   });
 
   const [errors, setErrors] = useState({});
 
+  // Hydrate form
   useEffect(() => {
-    if (inspection) {
+    if (isEdit) {
       setFormData({
         branch: inspection.branch || '',
-        transformerId: inspection.transformerId || '',
         dateOfInspection: inspection.dateOfInspection || '',
-        timeOfInspection: inspection.timeOfInspection || ''
+        timeOfInspection: inspection.timeOfInspection || '',
+        transformerNo: transformerNo || inspection.transformerNo || ''
+      });
+    } else {
+      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+
+      setFormData({
+        branch: '',
+        dateOfInspection: today,
+        timeOfInspection: `${hh}:${mm}`,
+        transformerNo: transformerNo || ''
       });
     }
-  }, [inspection]);
+  }, [isEdit, inspection, transformerNo]);
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.branch.trim()) {
-      newErrors.branch = 'Branch is required';
-    }
-    
-    if (!formData.transformerId.trim()) {
-      newErrors.transformerId = 'Transformer ID is required';
-    }
-    
-    if (!formData.dateOfInspection) {
-      newErrors.dateOfInspection = 'Date of inspection is required';
-    }
-    
-    if (!formData.timeOfInspection) {
-      newErrors.timeOfInspection = 'Time of inspection is required';
-    }
+    if (!formData.branch.trim()) newErrors.branch = 'Branch is required';
+    if (!formData.transformerNo.trim()) newErrors.transformerNo = 'Transformer No is required';
+    if (!formData.dateOfInspection) newErrors.dateOfInspection = 'Date of inspection is required';
+    if (!formData.timeOfInspection) newErrors.timeOfInspection = 'Time of inspection is required';
 
-    // Validate date is not in the future
+    // Date cannot be in the future
     if (formData.dateOfInspection) {
       const selectedDate = new Date(formData.dateOfInspection);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      if (selectedDate > today) {
-        newErrors.dateOfInspection = 'Inspection date cannot be in the future';
-      }
-    }
-
-    // Validate transformer ID format (optional - adjust pattern as needed)
-    if (formData.transformerId.trim()) {
-      const transformerIdPattern = /^[A-Z]{1,2}-\d{4}$/;
-      if (!transformerIdPattern.test(formData.transformerId.trim())) {
-        newErrors.transformerId = 'Transformer ID format should be like AZ-9867';
-      }
+      if (selectedDate > today) newErrors.dateOfInspection = 'Inspection date cannot be in the future';
     }
 
     setErrors(newErrors);
@@ -67,48 +59,26 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
   };
 
   const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit(formData);
-    }
+    if (!validateForm()) return;
+    // Always submit transformerNo from frozen state/prop
+    onSubmit({
+      branch: formData.branch.trim(),
+      dateOfInspection: formData.dateOfInspection,
+      timeOfInspection: formData.timeOfInspection,
+      transformerNo: transformerNo || formData.transformerNo
+    });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    if (name === 'transformerNo') return; // frozen; ignore
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget) onClose();
   };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-    if (e.key === 'Enter' && e.ctrlKey) {
-      handleSubmit();
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [formData]);
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -119,9 +89,25 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
             <X className="icon-sm" />
           </button>
         </div>
-        
+
         <div className="modal-body">
           <div className="form-grid">
+
+            {/* Frozen Transformer No */}
+            <div className="form-group">
+              <label className="form-label">Transformer No *</label>
+              <input
+                type="text"
+                name="transformerNo"
+                value={transformerNo || formData.transformerNo || ''}
+                readOnly
+                disabled
+                className={`form-input ${errors.transformerNo ? 'error' : ''}`}
+              />
+              {errors.transformerNo && <span className="error-message">{errors.transformerNo}</span>}
+            </div>
+
+            {/* Branch */}
             <div className="form-group">
               <label className="form-label">Branch *</label>
               <select
@@ -131,28 +117,14 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
                 className={`form-select ${errors.branch ? 'error' : ''}`}
               >
                 <option value="">Select Branch</option>
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
+                {branches.map(b => (
+                  <option key={b} value={b}>{b}</option>
                 ))}
               </select>
               {errors.branch && <span className="error-message">{errors.branch}</span>}
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Transformer ID *</label>
-              <input
-                type="text"
-                name="transformerId"
-                value={formData.transformerId}
-                onChange={handleChange}
-                className={`form-input ${errors.transformerId ? 'error' : ''}`}
-                placeholder="Enter transformer ID (e.g., AZ-9867)"
-                maxLength="10"
-              />
-              {errors.transformerId && <span className="error-message">{errors.transformerId}</span>}
-              <small className="form-hint">Format: Two letters followed by dash and four digits</small>
-            </div>
-
+            {/* Date */}
             <div className="form-group">
               <label className="form-label">Date of Inspection *</label>
               <input
@@ -166,6 +138,7 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
               {errors.dateOfInspection && <span className="error-message">{errors.dateOfInspection}</span>}
             </div>
 
+            {/* Time */}
             <div className="form-group">
               <label className="form-label">Time of Inspection *</label>
               <input
@@ -177,26 +150,15 @@ const InspectionModal = ({ title, inspection, branches, onSubmit, onClose }) => 
               />
               {errors.timeOfInspection && <span className="error-message">{errors.timeOfInspection}</span>}
             </div>
+
           </div>
-
-
         </div>
 
         <div className="modal-footer">
           <div className="footer-buttons">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="btn-primary"
-            >
-              {inspection ? 'Update Inspection' : 'Create Inspection'}
+            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+            <button type="button" onClick={handleSubmit} className="btn-primary">
+              {isEdit ? 'Update Inspection' : 'Create Inspection'}
             </button>
           </div>
         </div>

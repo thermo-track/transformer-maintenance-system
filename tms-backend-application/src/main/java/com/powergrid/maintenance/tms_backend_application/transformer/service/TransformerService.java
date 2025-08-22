@@ -45,60 +45,45 @@ public class TransformerService {
 
   // New method with search support
   public Page<Transformer> list(Pageable pageable, String query, String searchBy, LocalDateTime fromDate, LocalDateTime toDate) {
-    
-    // If no search parameters, use the existing method
+
     if ((query == null || query.trim().isEmpty()) && fromDate == null && toDate == null) {
-        return list(pageable);
+      return list(pageable);
     }
-    
-    // Build dynamic query using Specification
+
     Specification<Transformer> spec = (root, criteriaQuery, criteriaBuilder) -> {
-        List<Predicate> predicates = new ArrayList<>();
-        
-        // Search by field
-        if (query != null && !query.trim().isEmpty() && searchBy != null) {
-            String searchQuery = "%" + query.trim().toLowerCase() + "%";
-            
-            switch (searchBy) {
-                case "transformerNo":
-                    predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("transformerNo")), searchQuery));
-                    break;
-                case "poleNo":
-                    // Handle null pole numbers gracefully
-                    Predicate poleNoNotNull = criteriaBuilder.isNotNull(root.get("poleNo"));
-                    Predicate poleNoMatch = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("poleNo")), searchQuery);
-                    predicates.add(criteriaBuilder.and(poleNoNotNull, poleNoMatch));
-                    break;
-                default:
-                    // Search both fields if searchBy is invalid or not specified
-                    Predicate transformerNoMatch = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("transformerNo")), searchQuery);
-                    
-                    Predicate poleNoNotNull2 = criteriaBuilder.isNotNull(root.get("poleNo"));
-                    Predicate poleNoMatch2 = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("poleNo")), searchQuery);
-                    Predicate poleNoCondition = criteriaBuilder.and(poleNoNotNull2, poleNoMatch2);
-                    
-                    predicates.add(criteriaBuilder.or(transformerNoMatch, poleNoCondition));
-            }
+      List<Predicate> predicates = new ArrayList<>();
+
+      if (query != null && !query.trim().isEmpty() && searchBy != null) {
+        String searchQuery = "%" + query.trim().toLowerCase() + "%";
+
+        switch (searchBy) {
+          case "transformerNo":
+            predicates.add(criteriaBuilder.like(
+              criteriaBuilder.lower(root.get("transformerNo")), searchQuery));
+            break;
+          case "poleNo":
+            Predicate poleNoNotNull = criteriaBuilder.isNotNull(root.get("poleNo"));
+            Predicate poleNoMatch = criteriaBuilder.like(
+              criteriaBuilder.lower(root.get("poleNo")), searchQuery);
+            predicates.add(criteriaBuilder.and(poleNoNotNull, poleNoMatch));
+            break;
+          default:
+            Predicate transformerNoMatch = criteriaBuilder.like(
+              criteriaBuilder.lower(root.get("transformerNo")), searchQuery);
+
+            Predicate poleNoNotNull2 = criteriaBuilder.isNotNull(root.get("poleNo"));
+            Predicate poleNoMatch2 = criteriaBuilder.like(
+              criteriaBuilder.lower(root.get("poleNo")), searchQuery);
+            Predicate poleNoCondition = criteriaBuilder.and(poleNoNotNull2, poleNoMatch2);
+
+            predicates.add(criteriaBuilder.or(transformerNoMatch, poleNoCondition));
         }
-        
-        // Date range filter - only add if there are date fields in Transformer entity
-        /*
-        if (fromDate != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdDate"), fromDate));
-        }
-        
-        if (toDate != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdDate"), toDate));
-        }
-        */
-        
-        return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+      }
+
+      // Date filters commented out intentionally (no date fields exposed yet)
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
     };
-    
+
     return repo.findAll(spec, pageable);
   }
 
@@ -124,5 +109,14 @@ public class TransformerService {
       t.getType(),
       t.getLocationDetails()
     );
+  }
+
+  // ---- NEW: transformer number list helpers ----
+  public List<String> getAllTransformerNos() {
+    return repo.findAllTransformerNos();
+  }
+
+  public List<String> getTransformerNosByRegion(String region) {
+    return repo.findTransformerNosByRegion(region);
   }
 }

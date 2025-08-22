@@ -3,6 +3,7 @@ import { useTransformerList, useDeleteTransformer } from '../hooks.js';
 import Pagination from '../../../components/Pagination.jsx';
 import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import SearchBar from '../../../components/SearchBar.jsx';
+import SegmentedNav from '../../../components/SegmentedNav.jsx';
 import { useState, useEffect, useRef } from 'react';
 import '../styles/List.css'
 
@@ -71,16 +72,10 @@ export default function List() {
 
   return (
     <div>
-
-      <nav className="topnav">
-          <div className="segmented">
-            <Link  to="/transformers">Transformers</Link>
-            <Link  to="/inspections">Inspections</Link> 
-          </div>
-      </nav>
+      <SegmentedNav />
 
       <div className="row" style={{justifyContent:'space-between'}}>
-        <h2 style={{margin:0}}>Transformers</h2>
+        <div className='heading' style={{margin:0}}>Transformers</div>
       </div>
       <div className='add'>
                 <Link className="btn primary" to="/transformers/new">Add Transformer</Link>
@@ -115,7 +110,21 @@ export default function List() {
               <td><span className="badge">{row.type ?? '-'}</span></td>
               <td>
   <div className="row" style={{gap:'.4rem', justifyContent:'flex-start'}}>
-    <Link className="btnn" to={`/transformers/${row.id}`}>View</Link>
+        <Link
+      className="btnn"
+      to={`/transformer/${row.transformerNo}`}
+      state={{
+        // keep the uuid too
+        id: row.id,
+        transformerNo: row.transformerNo,
+        poleNo: row.poleNo,
+        region: row.region,
+        type: row.type,
+        locationDetails: row.locationDetails
+      }}
+    >
+      View
+    </Link>
 
     <div className="menu">
       <button
@@ -130,7 +139,7 @@ export default function List() {
         <div className="menu-popover" role="menu">
           <button
             className="menu-item"
-            onClick={() => { setMenuOpenId(null); nav(`/transformers/${row.id}/edit`); }}
+            onClick={() => { setMenuOpenId(null); nav(`/transformer/${row.id}/edit`); }}
           >
             Edit
           </button>
