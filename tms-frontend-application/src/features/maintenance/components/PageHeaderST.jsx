@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { Eye, Trash2 } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 import '../styles/page-header-st.css';
 import transformers from '../data/transformers';
 
@@ -10,12 +11,14 @@ const PageHeaderST = ({
   transformerPoleno,
   transformerType,
 }) => {
-  useEffect(() => {
-    console.log('Transformer No passed:', transformerNo);
-  }, [transformerNo]);
+  const navigate = useNavigate();
 
   // NOTE: demo-only local data (capacity/feeders/lastInspected)
   const transformer = transformers.find(t => t.id === transformerNo) || transformers[0];
+
+  const handleBaselineImagesClick = () => {
+    navigate(`/transformer/${transformerNo}/baseimage`);
+  };
 
   return (
     <div>
@@ -57,16 +60,16 @@ const PageHeaderST = ({
             Last Updated Date: {transformer?.lastInspected}
           </p>
 
-          {/* First row of buttons */}
+          {/* Baseline Images Navigation Button */}
           <div className="button-group">
-            <button className="baseline-button">
-              📷 Baseline Image
-              <Eye className="icon-button icon-view" size={20} />
-              <Trash2 className="icon-button icon-delete" size={20} />
+            <button 
+              onClick={handleBaselineImagesClick}
+              className="baseline-images-nav-btn"
+            >
+              <Camera size={20} />
+              Manage Baseline Images
             </button>
           </div>
-
-          {/* (New Element button moved to InspectionsST) */}
         </div>
       </div>
     </div>
