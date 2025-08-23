@@ -31,7 +31,7 @@ export default function App() {
   return (
     <Layout>
       {/* Persistent user corner */}
-      <UserCorner />
+      {/* <UserCorner /> */}
 
       <Routes>
         <Route path="/" element={<Navigate to="/transformers" replace />} />

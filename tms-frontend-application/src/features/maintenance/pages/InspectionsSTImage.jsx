@@ -6,9 +6,11 @@ import InspectionModal from '../components/InspectionModal';
 import ThermalImageComponent from '../components/ThermalImageComponent';
 import { inspectionService } from '../services/InspectionService';
 import PageHeaderST from '../components/PageHeaderST';
+import { transformerService } from '../services/TransformerService';
+import { baselineImageService } from '../services/BaselineImageService';
 
 function InspectionsSTImage() {
-  const { transformerId, inspectionId } = useParams(); // Get both parameters
+  const { transformerNo, inspectionId } = useParams();
   const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [inspections, setInspections] = useState([]);
@@ -17,20 +19,29 @@ function InspectionsSTImage() {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [selectedInspectionId, setSelectedInspectionId] = useState(inspectionId); // Track selected inspection
   const [imageCheckLoading, setImageCheckLoading] = useState(false); // New state for image check loading
+  const [transformer, setTransformer] = useState(null);
+  const [isLoadingTransformer, setIsLoadingTransformer] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [baselineImages, setBaselineImages] = useState({
+      sunny: null,
+      cloudy: null,
+      rainy: null
+    });
 
   const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
 
   useEffect(() => {
-    console.log("Transformer ID:", transformerId, "Inspection ID:", inspectionId);
-    if (transformerId) {
-      fetchInspectionsByTransformer(transformerId);
+    console.log("Transformer ID:", transformerNo, "Inspection ID:", inspectionId);
+    if (transformerNo) {
+      fetchInspectionsByTransformer(transformerNo);
     }
     
     // Set the selected inspection ID from URL
     if (inspectionId) {
       setSelectedInspectionId(inspectionId);
     }
-  }, [transformerId, inspectionId]);
+  }, [transformerNo, inspectionId]);
 
   // Check if inspection was passed via navigation state
   useEffect(() => {
@@ -73,7 +84,7 @@ function InspectionsSTImage() {
     return [
       {
         inspectionId: `mock_${Date.now()}`, // Changed from 'id' to 'inspectionId'
-        transformerId: transformerId,
+        transformerNo: transformerNo,
         date: new Date().toISOString(),
         status: 'pending',
         branch: 'COLOMBO',
@@ -83,12 +94,69 @@ function InspectionsSTImage() {
     ];
   };
 
+    useEffect(() => {
+      console.log('🚀 Component mounted with transformerNo:', transformerNo);
+      
+      if (transformerNo) {
+        // loadBaselineImages();
+        loadTransformerDetails();
+      } else {
+        console.warn('⚠️ No transformerNo provided in params');
+        setError('No transformer number provided');
+      }
+    }, [transformerNo]);
+
+    const loadBaselineImages = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        console.log('Loading baseline images for transformer:', transformerNo);
+        
+        // Use the simpler approach to load all images directly
+        const images = await baselineImageService.getAllBaselineImages(transformerNo);
+        
+        console.log('Loaded images:', images);
+        setBaselineImages(images);
+        
+      } catch (error) {
+        console.error('Error loading baseline images:', error);
+        setError('Failed to load baseline images: ' + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+  const loadTransformerDetails = async () => {
+      try {
+        console.log('🔄 Starting to load transformer details...');
+        setIsLoadingTransformer(true);
+        setError(null); // Clear any previous errors
+        
+        const t = await transformerService.getTransformerByNumber(transformerNo);
+        console.log('✅ Transformer loaded successfully:', t);
+        
+        if (t) {
+          setTransformer(t);
+        } else {
+          console.warn('⚠️ No transformer found for number:', transformerNo);
+          setError(`No transformer found with number: ${transformerNo}`);
+        }
+        
+      } catch (error) {
+        console.error("❌ Error loading transformer:", error);
+        setError("Failed to load transformer details: " + error.message);
+      } finally {
+        setIsLoadingTransformer(false);
+      }
+    };
+
   // Modified fetchInspectionsByTransformer method
-  const fetchInspectionsByTransformer = async (transformerId) => {
+  const fetchInspectionsByTransformer = async (transformerNo) => {
     try {
       setLoading(true);
       // Call the service method with transformer ID
-      const data = await inspectionService.getInspectionsByTransformer(transformerId);
+      const data = await inspectionService.getInspectionsByTransformer(transformerNo);
       
       console.log('Raw data from backend:', data); // Debug log
       
@@ -130,7 +198,7 @@ function InspectionsSTImage() {
       // Fallback to filtered mock data if API fails
       const mockData = getMockData();
       const filteredMockData = mockData.filter(inspection =>
-        inspection.transformerId === transformerId
+        inspection.transformerNo === transformerNo
       );
       setInspections(filteredMockData);
       
@@ -150,7 +218,7 @@ function InspectionsSTImage() {
       // Create the inspection with transformer ID
       const newInspection = await inspectionService.createInspection({
         ...inspectionData,
-        transformerId: transformerId,
+        transformerNo: transformerNo,
         type: 'thermal_inspection'
       });
       
@@ -160,7 +228,7 @@ function InspectionsSTImage() {
       setCurrentInspection(newInspection);
       
       // Refresh inspections list
-      await fetchInspectionsByTransformer(transformerId);
+      await fetchInspectionsByTransformer(transformerNo);
       
       setShowCreateModal(false);
       setUploadStatus({ 
@@ -198,7 +266,7 @@ function InspectionsSTImage() {
       });
       
       // Refresh inspection data if needed
-      await fetchInspectionsByTransformer(transformerId);
+      await fetchInspectionsByTransformer(transformerNo);
       
       // Check the image status again to update the UI properly
       await checkExistingImage(currentInspection.inspectionId);
@@ -228,7 +296,7 @@ function InspectionsSTImage() {
       });
       
       // Refresh inspection data
-      await fetchInspectionsByTransformer(transformerId);
+      await fetchInspectionsByTransformer(transformerNo);
       
       // Check the image status again to update the UI properly
       await checkExistingImage(currentInspection.inspectionId);
@@ -258,11 +326,11 @@ function InspectionsSTImage() {
       <div className="inspections-page">
         <PageHeaderST 
           onNewInspection={() => setShowCreateModal(true)}
-          transformerId={transformerId}
+          transformerNo={transformerNo}
         />
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading inspections for Transformer {transformerId}...</p>
+          <p>Loading inspections for Transformer {transformerNo}...</p>
         </div>
       </div>
     );
@@ -270,9 +338,13 @@ function InspectionsSTImage() {
 
   return (
     <div className="inspections-page">
-      <PageHeaderST 
+        <PageHeaderST
         onNewInspection={() => setShowCreateModal(true)}
-        transformerId={transformerId}
+        transformerNo={transformer?.transformerNo}
+        transformerLocation={transformer?.locationDetails}
+        transformerRegion={transformer?.region}
+        transformerPoleno={transformer?.poleNo}
+        transformerType={transformer?.type}
       />
 
       {showCreateModal && (
@@ -280,7 +352,7 @@ function InspectionsSTImage() {
           title="Create New Inspection"
           inspection={null}
           branches={branches}
-          transformerId={transformerId}
+          transformerNo={transformerNo}
           onSubmit={handleCreate}
           onClose={() => setShowCreateModal(false)}
         />
@@ -289,7 +361,7 @@ function InspectionsSTImage() {
       <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">
-            Thermal Image Analysis - Transformer {transformerId}
+            Thermal Image Analysis - Transformer {transformerNo} - Inspection {inspectionId}
           </h2>
           <p className="page-subtitle">
             Upload and analyze thermal images to detect potential issues and anomalies in transformer components

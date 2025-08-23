@@ -104,7 +104,7 @@ export default function List() {
           {content.map((row, idx) => (
             <tr key={row.id}>
               <td>{idx + 1 + page * size}</td>
-              <td><Link to={`/transformers/${row.id}`}>{row.transformerNo}</Link></td>
+              <td>{row.transformerNo}</td>
               <td>{row.poleNo ?? '-'}</td>
               <td><span className="badge">{row.region ?? '-'}</span></td>
               <td><span className="badge">{row.type ?? '-'}</span></td>

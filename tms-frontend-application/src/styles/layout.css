@@ -1,0 +1,120 @@
+/* In your sidebar.css file */
+.slide-panel {
+  position: fixed;
+  top: 79px;
+  width: 300px;
+  left: -100%;
+  height: 100vh;
+  max-height: 100vh;
+  background-color: #191c27;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  padding-top: 10px;
+  padding-left: 30px;
+  padding-bottom: 1000px;
+  transition: left 0.3s ease-in-out;
+  z-index: 1001; /* Higher than overlay (1000) */
+  color: white;
+  flex-direction: column;
+}
+
+.slide-panel.open {
+  left: 0; /* Slides in on top of content */
+}
+
+/* App Layout Structure */
+.app-layout {
+  min-height: 100vh;
+  background-color: #1a1d29; /* Match your dark theme */
+}
+
+/* Header with User Corner */
+.app-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 999;
+  padding: 10px 20px;
+  background: transparent;
+}
+
+/* Top Header Bar */
+.top-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #33394f; /* Match your dark theme */
+  z-index: 999;
+  border-bottom: 1px solid #2a2d3a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Left side of header (menu + title) */
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Right side of header (user corner) */
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* App Title */
+.app-title {
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Update main content to account for header */
+.main-content {
+  padding-top: 80px; /* Space for header bar */
+  padding-left: 50px;
+  padding-right: 50px;
+  min-height: 100vh;
+}
+
+/* Remove the separate app-header since we're combining everything */
+/* .app-header can be deleted */
+
+.submenu-link {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Icon stays the same color */
+.submenu-link svg {
+  font-size: 18px;
+  width: 20px;
+  color: white; /* Icon always stays white */
+  transition: none; /* No transition for icon */
+}
+
+/* Only text changes on hover */
+.submenu-link span {
+  transition: color 0.2s ease;
+}
+
+.submenu-link:hover span {
+  color: #04b781; /* Or any color you prefer */
+}
+
+/* Keep icon white even on hover */
+.submenu-link:hover svg {
+  color: white !important;
+}
