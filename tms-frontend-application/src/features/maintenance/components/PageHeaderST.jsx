@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera } from 'lucide-react';
 import '../styles/page-header-st.css';
-import transformers from '../data/transformers';
 
 const PageHeaderST = ({
   transformerNo,
@@ -12,9 +11,6 @@ const PageHeaderST = ({
   transformerType,
 }) => {
   const navigate = useNavigate();
-
-  // NOTE: demo-only local data (capacity/feeders/lastInspected)
-  const transformer = transformers.find(t => t.id === transformerNo) || transformers[0];
 
   const handleBaselineImagesClick = () => {
     navigate(`/transformer/${transformerNo}/baseimage`);
@@ -37,27 +33,30 @@ const PageHeaderST = ({
               <span className="badge-label">Pole No</span>
             </span>
 
-            <span className="badge">
+{/*             <span className="badge">
               {transformer?.capacity}
               <span className="badge-label">Capacity</span>
-            </span>
+            </span> */}
 
             <span className="badge">
               {transformerType}
               <span className="badge-label">Type</span>
             </span>
 
-            <span className="badge">
+{/*             <span className="badge">
               {transformer?.feeders}
               <span className="badge-label">No. of Feeders</span>
-            </span>
+            </span> */}
           </div>
         </div>
 
         {/* Right Section */}
         <div className="header-right-section">
-          <p className="last-inspected-text">
+{/*           <p className="last-inspected-text">
             Last Updated Date: {transformer?.lastInspected}
+          </p> */}
+          <p className="last-inspected-text">
+            Last Updated Date: Date should be updated
           </p>
 
           {/* Baseline Images Navigation Button */}

@@ -38,9 +38,7 @@ public class TransformerController {
     );
   }
 
-  // ---- NEW: list transformer numbers (optionally by region) ----
-  // GET /api/transformers/numbers
-  // GET /api/transformers/numbers?region=KANDY
+
   @GetMapping("/numbers")
   public List<String> getTransformerNumbers(@RequestParam(required = false) String region) {
     return service.getAllTransformerNos();

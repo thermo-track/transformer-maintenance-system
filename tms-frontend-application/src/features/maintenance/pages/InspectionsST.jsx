@@ -1,7 +1,6 @@
 import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-// import '../styles/global.css';
 import '../styles/inspections.css';
 import InspectionModal from '../components/InspectionModal';
 import { inspectionService } from '../services/InspectionService';
