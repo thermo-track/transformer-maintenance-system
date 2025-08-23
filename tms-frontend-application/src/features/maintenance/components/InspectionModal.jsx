@@ -187,7 +187,7 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
             {/* Frozen Transformer No */}
              <div className="form-group">
               <label className="form-label">
-                Transformer ID * {isPerTransformerPage && <span className="text-muted"></span>}
+                Transformer ID {isPerTransformerPage && <span className="text-muted"></span>}
               </label>
               {isPerTransformerPage ? (
                 // Show as read-only input on per-transformer page
@@ -229,7 +229,7 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
 
             {/* Branch */}
             <div className="form-group">
-              <label className="form-label">Branch *</label>
+              <label className="form-label">Branch</label>
               <select
                 name="branch"
                 value={formData.branch}
@@ -246,7 +246,7 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
 
             {/* Date */}
             <div className="form-group">
-              <label className="form-label">Date of Inspection *</label>
+              <label className="form-label">Date of Inspection</label>
               <input
                 type="date"
                 name="dateOfInspection"
@@ -260,7 +260,7 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
 
             {/* Time */}
             <div className="form-group">
-              <label className="form-label">Time of Inspection *</label>
+              <label className="form-label">Time of Inspection</label>
               <input
                 type="time"
                 name="timeOfInspection"

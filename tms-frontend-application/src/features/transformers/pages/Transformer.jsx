@@ -4,11 +4,12 @@ import Pagination from '../../../components/Pagination.jsx';
 import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import SearchBar from '../../../components/SearchBar.jsx';
 import SegmentedNav from '../../../components/SegmentedNav.jsx';
+import TransformerModal from '../components/TransformerModal.jsx'; 
+import { useTransformer } from '../hooks.js'; 
 import { useState, useEffect, useRef } from 'react';
 import '../styles/List.css'
 
-
-export default function List() {
+export default function Transformer() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q     = searchParams.get("q")    || "";
   const by    = searchParams.get("by")   || "transformerNo";
@@ -19,12 +20,19 @@ export default function List() {
   const page = Number(sp.get('page') ?? 0);
   const size = Number(sp.get('size') ?? 10);
   
-  // Fixed: Use consistent parameters for both calls
+  // Use consistent parameters for both calls
   const { data, isLoading, error } = useTransformerList({ page, size, by, q, range });
 
   const [confirmId, setConfirmId] = useState(null);
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTransformer, setEditingTransformer] = useState(null); // Add edit modal state
   const del = useDeleteTransformer();
+
+  // Fetch transformer data when editing
+  const { data: editTransformerData } = useTransformer(editingTransformer?.id, {
+    enabled: !!editingTransformer?.id
+  });
 
   function doSearch({ by, query, range }) {
     setSearchParams({
@@ -55,7 +63,7 @@ export default function List() {
   }, [menuOpenId]);
 
   function goToPage(p) {
-    // Fixed: Include all current search parameters when changing page
+    //Include all current search parameters when changing page
     setSp({ 
       page: String(p), 
       size: String(size),
@@ -63,6 +71,19 @@ export default function List() {
       q,
       range
     });
+  }
+
+  // Handle creation/edit - close modal and optionally refresh data
+  function handleModalSuccess() {
+    setShowCreateModal(false);
+    setEditingTransformer(null);
+    // The modal component will handle navigation/refresh via its hook
+  }
+
+  // Handle edit button click
+  function handleEditClick(transformer) {
+    setMenuOpenId(null);
+    setEditingTransformer(transformer);
   }
 
   if (isLoading) return <p>Loading…</p>;
@@ -78,8 +99,14 @@ export default function List() {
         <div className='heading' style={{margin:0}}>Transformers</div>
       </div>
       <div className='add'>
-                <Link className="btn primary" to="/transformers/new">Add Transformer</Link>
+        <button 
+          className="btn primary" 
+          onClick={() => setShowCreateModal(true)}
+        >
+          Add Transformer
+        </button>
       </div>
+      
       {/* Search/filter bar */}
       <SearchBar
         initialBy={by}
@@ -104,56 +131,56 @@ export default function List() {
           {content.map((row, idx) => (
             <tr key={row.id}>
               <td>{idx + 1 + page * size}</td>
-              <td>{row.transformerNo}</td>
+              <td><Link to={`/transformers/${row.id}`}>{row.transformerNo}</Link></td>
               <td>{row.poleNo ?? '-'}</td>
               <td><span className="badge">{row.region ?? '-'}</span></td>
               <td><span className="badge">{row.type ?? '-'}</span></td>
               <td>
-  <div className="row" style={{gap:'.4rem', justifyContent:'flex-start'}}>
-        <Link
-      className="btnn"
-      to={`/transformer/${row.transformerNo}`}
-      state={{
-        // keep the uuid too
-        id: row.id,
-        transformerNo: row.transformerNo,
-        poleNo: row.poleNo,
-        region: row.region,
-        type: row.type,
-        locationDetails: row.locationDetails
-      }}
-    >
-      View
-    </Link>
+                <div className="row" style={{gap:'.4rem', justifyContent:'flex-start'}}>
+                  <Link
+                    className="btnn"
+                    to={`/transformer/${row.transformerNo}`}
+                    state={{
+                      // keep the uuid too
+                      id: row.id,
+                      transformerNo: row.transformerNo,
+                      poleNo: row.poleNo,
+                      region: row.region,
+                      type: row.type,
+                      locationDetails: row.locationDetails
+                    }}
+                  >
+                    View
+                  </Link>
 
-    <div className="menu">
-      <button
-        className="btn icon"
-        aria-haspopup="menu"
-        aria-expanded={menuOpenId === row.id}
-        onClick={() => setMenuOpenId(menuOpenId === row.id ? null : row.id)}
-        title="More"
-      >⋮</button>
+                  <div className="menu">
+                    <button
+                      className="btn icon"
+                      aria-haspopup="menu"
+                      aria-expanded={menuOpenId === row.id}
+                      onClick={() => setMenuOpenId(menuOpenId === row.id ? null : row.id)}
+                      title="More"
+                    >⋮</button>
 
-      {menuOpenId === row.id && (
-        <div className="menu-popover" role="menu">
-          <button
-            className="menu-item"
-            onClick={() => { setMenuOpenId(null); nav(`/transformer/${row.id}/edit`); }}
-          >
-            Edit
-          </button>
-          <button
-            className="menu-item danger"
-            onClick={() => { setMenuOpenId(null); setConfirmId(row.id); }}
-          >
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
-  </div>
-</td>
+                    {menuOpenId === row.id && (
+                      <div className="menu-popover" role="menu">
+                        <button
+                          className="menu-item"
+                          onClick={() => handleEditClick(row)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="menu-item danger"
+                          onClick={() => { setMenuOpenId(null); setConfirmId(row.id); }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </td>
             </tr>
           ))}
           {content.length === 0 && (
@@ -176,6 +203,28 @@ export default function List() {
         />
       </div>
 
+      {/* Render Create Modal when showCreateModal is true */}
+      {showCreateModal && (
+        <TransformerModal 
+          asModal={true}
+          mode="create"
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleModalSuccess}
+        />
+      )}
+
+      {/* Render Edit Modal when editingTransformer is set */}
+      {editingTransformer && (
+        <TransformerModal 
+          asModal={true}
+          mode="edit"
+          transformer={editTransformerData} // Pass the fetched transformer data
+          transformerId={editingTransformer.id}
+          onClose={() => setEditingTransformer(null)}
+          onSuccess={handleModalSuccess}
+        />
+      )}
+
       {confirmId && (
         <ConfirmDialog
           text="This will permanently delete the transformer. This action cannot be undone."
@@ -184,7 +233,7 @@ export default function List() {
             try {
               await del.mutateAsync(confirmId);
               setConfirmId(null);
-              // Optional: Show success message
+              // Optional - Show success message
             } catch (error) {
               console.error('Delete failed:', error);
               alert(`Failed to delete transformer: ${error.message}`);
