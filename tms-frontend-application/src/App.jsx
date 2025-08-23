@@ -6,26 +6,8 @@ import Edit from './features/transformers/pages/Edit.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
 import InspectionsSTImage from "./features/maintenance/pages/InspectionsSTImage.jsx";
-import BaselineImage from "./features/maintenance/pages/BaseLineImage.jsx";
 import './App.css';
 import avatar from './assets/pic.jpg'
-
-
-function UserCorner() {
-  return (
-    <div className="user-corner">
-      <img
-        src={avatar}
-        alt="User"
-        className="user-avatar"
-      />
-      <div className="user-info">
-        <span className="user-name">Username</span>
-        <span className="user-email">user@gmail.com</span>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   return (
@@ -42,7 +24,6 @@ export default function App() {
         <Route path="/transformer/:id/edit" element={<Edit />} />
         <Route path="*" element={<p>Not found</p>} />
         <Route path="/transformer/:transformerNo/:inspectionId/image" element={<InspectionsSTImage />} />
-        <Route path="/transformer/:transformerNo/baseimage" element={<BaselineImage />} />
       </Routes>
     </Layout>
   );
