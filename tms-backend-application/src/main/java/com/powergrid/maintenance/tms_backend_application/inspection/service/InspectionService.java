@@ -315,5 +315,21 @@ public class InspectionService {
         }
         return false;
     }
+    public String getWeatherCondition(String inspectionId) {
+    try {
+        // Assuming you have a repository method to fetch by inspection ID
+        Optional<Inspection> inspection = inspectionRepo.findById(inspectionId);
+        
+        if (inspection.isPresent()) {
+            return inspection.get().getEnvironmentalCondition();
+        }
+
+        log.warn("No inspection found with ID: " + inspectionId);
+        return null;
+    } catch (Exception e) {
+        log.error("Error fetching weather condition for inspection: " + inspectionId, e);
+        throw new RuntimeException("Failed to fetch weather condition", e);
+    }
+}
 }
 
