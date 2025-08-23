@@ -85,13 +85,65 @@ const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit,
     if (!formData.dateOfInspection) newErrors.dateOfInspection = 'Date of inspection is required';
     if (!formData.timeOfInspection) newErrors.timeOfInspection = 'Time of inspection is required';
 
-    // Date cannot be in the future
-    if (formData.dateOfInspection) {
-      const selectedDate = new Date(formData.dateOfInspection);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate > today) newErrors.dateOfInspection = 'Inspection date cannot be in the future';
-    }
+// Updated validation logic for the validateForm function
+// Replace the existing date validation section with this:
+
+// Date and Time validation - combine and convert to UTC
+if (formData.dateOfInspection && formData.timeOfInspection) {
+  // Combine date and time strings
+  const dateTimeString = `${formData.dateOfInspection}T${formData.timeOfInspection}`;
+  console.log("🔗 Combined DateTime String:", dateTimeString);
+  
+  // Create Date object (this will be in user's local timezone)
+  const selectedDateTime = new Date(dateTimeString);
+  console.log("📅 Selected DateTime (Local):", selectedDateTime.toString());
+  console.log("🌍 Selected DateTime (ISO/UTC):", selectedDateTime.toISOString());
+  
+  // Get current time
+  const now = new Date();
+  console.log("🕒 Current Time (Local):", now.toString());
+  console.log("🌍 Current Time (ISO/UTC):", now.toISOString());
+  
+  // Convert both to UTC timestamps for comparison
+  const selectedUtcTimestamp = selectedDateTime.getTime();
+  const currentUtcTimestamp = now.getTime();
+  
+  console.log("⏰ Selected UTC Timestamp:", selectedUtcTimestamp);
+  console.log("⏰ Current UTC Timestamp:", currentUtcTimestamp);
+  console.log("📊 Difference (ms):", selectedUtcTimestamp - currentUtcTimestamp);
+  console.log("📊 Difference (minutes):", Math.round((selectedUtcTimestamp - currentUtcTimestamp) / (1000 * 60)));
+  
+  if (selectedUtcTimestamp > currentUtcTimestamp) {
+    console.log("❌ Validation Failed: Selected datetime is in the future!");
+    newErrors.dateOfInspection = "Inspection date and time cannot be in the future";
+    // You might also want to show error on time field
+    // newErrors.timeOfInspection = "Inspection date and time cannot be in the future";
+  } else {
+    console.log("✅ Validation Passed: DateTime is in the past or now");
+  }
+} else if (formData.dateOfInspection && !formData.timeOfInspection) {
+  // If only date is provided, we can still do a basic check
+  // but it's less precise since we don't know the exact time
+  console.log("⚠️ Only date provided, doing basic date-only validation");
+  
+  const selectedDate = new Date(formData.dateOfInspection);
+  const today = new Date();
+  
+  const selectedDateStr = selectedDate.toISOString().split("T")[0];
+  const todayStr = today.toISOString().split("T")[0];
+  
+  console.log("📅 Selected Date (YYYY-MM-DD):", selectedDateStr);
+  console.log("📅 Today (YYYY-MM-DD):", todayStr);
+  
+  if (selectedDateStr > todayStr) {
+    console.log("❌ Date-only validation failed: Selected date is in the future!");
+    newErrors.dateOfInspection = "Inspection date cannot be in the future";
+  } else {
+    console.log("✅ Date-only validation passed");
+  }
+}
+
+
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
