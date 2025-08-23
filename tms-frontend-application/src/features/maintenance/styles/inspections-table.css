@@ -183,11 +183,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  background: #0d0441;
 }
 
 .view-btn {
   background-color: #4b5563;
-  color: white;
+  color: #07c357;
 }
 
 .view-btn:hover {
@@ -195,12 +196,12 @@
 }
 
 .edit-btn {
-  background-color: #2563eb;
-  color: white;
+  background-color: #6508fa;
+  color: rgb(151, 97, 244);
 }
 
 .edit-btn:hover {
-  background-color: #1d4ed8;
+  background-color:  #374151;
 }
 
 .delete-btn {

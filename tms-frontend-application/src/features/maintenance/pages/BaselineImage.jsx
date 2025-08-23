@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Upload, X, AlertTriangle, Camera, Trash2, Edit } from 'lucide-react';
-import transformers from '../data/transformers';
 import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/baseline-image-page.css';
+import { transformerService } from '../services/TransformerService';
 
 const BaselineImagePage = () => {
   const { transformerNo } = useParams();
@@ -17,6 +17,8 @@ const BaselineImagePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [uploadingCondition, setUploadingCondition] = useState(null);
+  const [transformer, setTransformer] = useState(null);
+  const [isLoadingTransformer, setIsLoadingTransformer] = useState(false);
 
   const weatherConditions = [
     { value: 'sunny', label: 'Sunny', icon: '☀️', color: '#FFA500' },
@@ -24,14 +26,41 @@ const BaselineImagePage = () => {
     { value: 'rainy', label: 'Rainy', icon: '🌧️', color: '#4682B4' },
   ];
 
-  // Get transformer details
-  const transformer = transformers.find(t => t.id === transformerNo) || transformers[0];
-
   useEffect(() => {
+    console.log('🚀 Component mounted with transformerNo:', transformerNo);
+    
     if (transformerNo) {
       loadBaselineImages();
+      loadTransformerDetails();
+    } else {
+      console.warn('⚠️ No transformerNo provided in params');
+      setError('No transformer number provided');
     }
   }, [transformerNo]);
+
+  const loadTransformerDetails = async () => {
+    try {
+      console.log('🔄 Starting to load transformer details...');
+      setIsLoadingTransformer(true);
+      setError(null); // Clear any previous errors
+      
+      const t = await transformerService.getTransformerByNumber(transformerNo);
+      console.log('✅ Transformer loaded successfully:', t);
+      
+      if (t) {
+        setTransformer(t);
+      } else {
+        console.warn('⚠️ No transformer found for number:', transformerNo);
+        setError(`No transformer found with number: ${transformerNo}`);
+      }
+      
+    } catch (error) {
+      console.error("❌ Error loading transformer:", error);
+      setError("Failed to load transformer details: " + error.message);
+    } finally {
+      setIsLoadingTransformer(false);
+    }
+  };
 
   const loadBaselineImages = async () => {
     try {
@@ -187,6 +216,32 @@ const BaselineImagePage = () => {
     );
   };
 
+  const renderTransformerInfo = () => {
+    if (isLoadingTransformer) {
+      return <p className="transformer-details">Loading transformer details...</p>;
+    }
+    
+    if (!transformer) {
+      return (
+        <p className="transformer-details" style={{color: '#ff6b6b'}}>
+          No transformer data available
+        </p>
+      );
+    }
+
+    // Debug: log the transformer object structure
+    console.log('🏗️ Rendering transformer info:', transformer);
+
+    return (
+      <p className="transformer-details">
+        {transformer.locationDetails || 'Unknown Location'} - 
+        Region: {transformer.region || 'N/A'}, 
+        Pole No: {transformer.poleNo || 'N/A'}, 
+        Type: {transformer.type || 'N/A'}
+      </p>
+    );
+  };
+
   return (
     <div className="baseline-image-page">
       {/* Page Header */}
@@ -203,14 +258,13 @@ const BaselineImagePage = () => {
               <h1 className="page-title">Baseline Images</h1>
               <div className="transformer-info">
                 <h2 className="transformer-number">{transformerNo}</h2>
-                <p className="transformer-details">
-                  {transformer?.location} • {transformer?.region}
-                </p>
+                {renderTransformerInfo()}
               </div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Error Display */}
       {error && (

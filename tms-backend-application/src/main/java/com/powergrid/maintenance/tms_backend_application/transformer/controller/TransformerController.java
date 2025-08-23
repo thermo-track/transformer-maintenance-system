@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/transformers")
 @RequiredArgsConstructor
 public class TransformerController {
@@ -37,9 +38,7 @@ public class TransformerController {
     );
   }
 
-  // ---- NEW: list transformer numbers (optionally by region) ----
-  // GET /api/transformers/numbers
-  // GET /api/transformers/numbers?region=KANDY
+
   @GetMapping("/numbers")
   public List<String> getTransformerNumbers(@RequestParam(required = false) String region) {
     return service.getAllTransformerNos();

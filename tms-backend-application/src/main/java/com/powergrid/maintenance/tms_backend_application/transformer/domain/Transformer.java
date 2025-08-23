@@ -9,7 +9,7 @@ import java.time.Instant;
 @Data
 @Entity
 @Table(
-  name = "transformer",
+  name = "transformers",
   indexes = { @Index(name = "ux_transformer_no", columnList = "transformer_no", unique = true) }
 )
 public class Transformer {
