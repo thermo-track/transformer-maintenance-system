@@ -23,7 +23,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       )}
 
-      <nav className={slide-panel ${isOpen ? 'open' : ''}}>
+      <nav className={`slide-panel ${isOpen ? 'open' : ''}`}>
         <div className="menu-content">
           <ul className="menu-list" style={{ listStyleType: 'none' }}>
             <li className="menu-item2">

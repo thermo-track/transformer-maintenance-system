@@ -147,25 +147,25 @@ const BaselineImagePage = () => {
     const isUploading = uploadingCondition === condition.value;
 
     return (
-      <div key={condition.value} className="weather-box" style={{borderColor: condition.color}}>
-        <div className="weather-header" style={{backgroundColor: condition.color + '20'}}>
-          <span className="weather-icon">{condition.icon}</span>
-          <h3 className="weather-title">{condition.label}</h3>
+      <div key={condition.value} className="weather-boxB" style={{borderColor: condition.color}}>
+        <div className="weather-headerB" style={{backgroundColor: condition.color + '20'}}>
+          <span className="weather-iconB">{condition.icon}</span>
+          <h3 className="weather-titleB">{condition.label}</h3>
         </div>
 
-        <div className="image-container">
+        <div className="image-containerB">
           {hasImage ? (
             <>
               <img 
                 src={hasImage} 
                 alt={`${condition.value} baseline`}
-                className="baseline-image"
+                className="baseline-imageB"
               />
-              <div className="image-overlay">
-                <div className="image-actions">
+              <div className="image-overlayB">
+                <div className="image-actionsB">
                   <button 
                     onClick={() => handleUpdateImage(condition.value)}
-                    className="action-btn update-btn"
+                    className="action-btnB update-btnB"
                     disabled={isLoading || isUploading}
                     title="Update Image"
                   >
@@ -173,7 +173,7 @@ const BaselineImagePage = () => {
                   </button>
                   <button 
                     onClick={() => handleDeleteImage(condition.value)}
-                    className="action-btn delete-btn"
+                    className="action-btnB delete-btnB"
                     disabled={isLoading || isUploading}
                     title="Delete Image"
                   >
@@ -183,17 +183,17 @@ const BaselineImagePage = () => {
               </div>
             </>
           ) : (
-            <div className="upload-area">
+            <div className="upload-areaB">
               {isUploading ? (
-                <div className="uploading-state">
-                  <div className="spinner"></div>
+                <div className="uploading-stateB">
+                  <div className="spinnerB"></div>
                   <p>Uploading...</p>
                 </div>
               ) : (
                 <>
-                  <Camera size={48} className="upload-icon" />
-                  <p className="upload-text">No baseline image</p>
-                  <label htmlFor={`file-input-${condition.value}`} className="upload-button">
+                  <Camera size={48} className="upload-iconB" />
+                  <p className="upload-textB">No baseline image</p>
+                  <label htmlFor={`file-input-${condition.value}`} className="upload-buttonB">
                     <Upload size={16} />
                     Upload Image
                   </label>
@@ -233,7 +233,7 @@ const BaselineImagePage = () => {
     console.log('🏗️ Rendering transformer info:', transformer);
 
     return (
-      <p className="transformer-details">
+      <p className="transformer-detailsB">
         {transformer.locationDetails || 'Unknown Location'} - 
         Region: {transformer.region || 'N/A'}, 
         Pole No: {transformer.poleNo || 'N/A'}, 
@@ -243,21 +243,21 @@ const BaselineImagePage = () => {
   };
 
   return (
-    <div className="baseline-image-page">
+    <div className="baseline-image-pageB">
       {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-left">
+      <div className="page-headerB">
+        <div className="header-contentB">
+          <div className="header-leftB">
             <button 
               onClick={() => navigate(-1)} 
-              className="back-button"
+              className="back-buttonB"
             >
               ← Back
             </button>
-            <div className="header-info">
-              <h1 className="page-title">Baseline Images</h1>
-              <div className="transformer-info">
-                <h2 className="transformer-number">{transformerNo}</h2>
+            <div className="header-infoB">
+              <h1 className="page-titleB">Baseline Images</h1>
+              <div className="transformer-infoB">
+                <h2 className="transformer-numberB">{transformerNo}</h2>
                 {renderTransformerInfo()}
               </div>
             </div>
@@ -268,24 +268,24 @@ const BaselineImagePage = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="error-banner">
+        <div className="error-bannerB">
           <AlertTriangle size={20} />
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="error-close">
+          <button onClick={() => setError(null)} className="error-closeB">
             <X size={16} />
           </button>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="main-content">
-        <div className="weather-grid">
+      <div className="main-contentB">
+        <div className="weather-gridB">
           {weatherConditions.map(condition => renderWeatherBox(condition))}
         </div>
 
         {isLoading && (
-          <div className="loading-overlay">
-            <div className="spinner"></div>
+          <div className="loading-overlayB">
+            <div className="spinnerB"></div>
             <p>Loading...</p>
           </div>
         )}

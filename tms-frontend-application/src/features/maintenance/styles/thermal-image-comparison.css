@@ -29,7 +29,7 @@
   align-items: center;
 }
 
-.action-btn {
+.action-btnT {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -42,30 +42,30 @@
   transition: all 0.2s ease;
 }
 
-.refresh-btn {
+.refresh-btnT {
   background: #e3f2fd;
   color: #1976d2;
 }
 
-.refresh-btn:hover {
+.refresh-btnT:hover {
   background: #bbdefb;
 }
 
-.upload-new-btn {
+.upload-new-btnT {
   background: #e8f5e8;
   color: #2e7d32;
 }
 
-.upload-new-btn:hover {
+.upload-new-btnT:hover {
   background: #c8e6c9;
 }
 
-.delete-btn {
+.delete-btnT {
   background: #ffebee;
   color: #d32f2f;
 }
 
-.delete-btn:hover {
+.delete-btnT:hover {
   background: #ffcdd2;
 }
 
