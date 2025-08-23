@@ -109,7 +109,7 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
       )}
 
       <div>
-        <label className="label">Transformer No *</label>
+        <label className="label">Transformer No</label>
         <input 
           className="input" 
           name="transformerNo" 
@@ -124,7 +124,7 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
       </div>
 
       <div>
-        <label className="label">Pole No *</label>
+        <label className="label">Pole No</label>
         <input 
           className="input" 
           name="poleNo" 
@@ -138,7 +138,7 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
       </div>
 
       <div>
-        <label className="label">Region *</label>
+        <label className="label">Region</label>
         <select 
           className="select" 
           name="region" 
@@ -162,7 +162,7 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
       </div>
 
       <div>
-        <label className="label">Type *</label>
+        <label className="label">Type</label>
         <select 
           className="select" 
           name="type" 
@@ -194,7 +194,7 @@ export default function TransformerForm({ mode = 'create', initial = null, onSub
             name="locationDetails"
             value={values.locationDetails} 
             onChange={handleChange}
-            placeholder="Enter additional location details"
+            placeholder="Enter the location address"
           />
         </div>
       </div>
