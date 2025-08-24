@@ -43,12 +43,7 @@ a { color: var(--accent); text-decoration: none; }
   border-radius: .5rem; min-width: 140px; z-index: 20;
   box-shadow: 0 10px 20px rgba(0,0,0,.35);
 }
-.menu-item {
-  width: 100%; text-align: left; background: transparent; border: 0;
-  padding: .55rem .7rem; color: var(--text); cursor: pointer;
-}
-.menu-item:hover { background:#182246; }
-.menu-item.danger:hover { background:#4a1820; }
+
 
 .btnn {
   display: inline-flex; align-items: center; gap: .4rem;
@@ -219,7 +214,7 @@ a { color: var(--accent); text-decoration: none; }
   height: 40px;
   border-radius: 9999px;
   border: 0;
-  background: #2b2aa0;        /* your primary */
+  background: #2b2aa0;    
   color: white;
   display: inline-grid;
   place-items: center;
@@ -258,3 +253,7 @@ a { color: var(--accent); text-decoration: none; }
   margin-bottom: 1.5rem;
   color: #ffffff;
 }
+
+
+
+
