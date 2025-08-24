@@ -8,6 +8,7 @@ import BaselineImage from "./features/maintenance/pages/BaseLineImage.jsx";
 import TransformerLocations from "./features/maintenance/pages/TransformerLocation.jsx";
 import TransformerLocationPage from './features/transformers/components/TransformerLocationPage.jsx';
 import TransformerLocationWrapper from './features/transformers/components/TransformerLocationWrapper';
+import TransformersMapWrapper from './features/transformers/components/TransformersMapWrapper';
 
 import './App.css';
 
@@ -24,6 +25,8 @@ export default function App() {
         <Route path="/transformer/:transformerNo/baseimage" element={<BaselineImage />} />
         <Route path="/transformers/locations" element={<TransformerLocations />} />
         <Route path="/transformers/:transformerNo/location" element={<TransformerLocationWrapper />} />
+        {/* Use the wrapper component that includes the service */}
+        <Route path="/transformers/map" element={<TransformersMapWrapper />} />
       </Routes>
     </Layout>
   );
