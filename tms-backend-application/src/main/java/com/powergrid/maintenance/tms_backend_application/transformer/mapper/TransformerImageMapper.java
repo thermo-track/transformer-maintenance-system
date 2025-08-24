@@ -3,6 +3,9 @@ package com.powergrid.maintenance.tms_backend_application.transformer.mapper;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerImageInfoDTO;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerLastUpdatedDTO;
+
+import java.time.Instant;
 
 public class TransformerImageMapper {
     
@@ -87,5 +90,45 @@ public class TransformerImageMapper {
         dto.setRainyImage(rainyInfo);
         
         return dto;
+    } // This closing brace was missing!
+    
+    public static TransformerLastUpdatedDTO toLastUpdatedDTO(Transformer transformer) {
+        if (transformer == null) {
+            return null;
+        }
+
+        Instant rainyUpdated = transformer.getRainyImageUploadedAt();
+        Instant sunnyUpdated = transformer.getSunnyImageUploadedAt();
+        Instant cloudyUpdated = transformer.getCloudyImageUploadedAt();
+
+        Instant lastUpdated = null;
+        String lastUpdatedCondition = null;
+        String lastUploadedBy = null;
+
+        // Find the latest updated image among the three weather conditions
+        if (rainyUpdated != null) {
+            lastUpdated = rainyUpdated;
+            lastUpdatedCondition = "RAINY";
+            lastUploadedBy = transformer.getRainyImageUploadedBy();
+        }
+
+        if (sunnyUpdated != null && (lastUpdated == null || sunnyUpdated.isAfter(lastUpdated))) {
+            lastUpdated = sunnyUpdated;
+            lastUpdatedCondition = "SUNNY";
+            lastUploadedBy = transformer.getSunnyImageUploadedBy();
+        }
+
+        if (cloudyUpdated != null && (lastUpdated == null || cloudyUpdated.isAfter(lastUpdated))) {
+            lastUpdated = cloudyUpdated;
+            lastUpdatedCondition = "CLOUDY";
+            lastUploadedBy = transformer.getCloudyImageUploadedBy();
+        }
+
+        return new TransformerLastUpdatedDTO(
+            transformer.getTransformerNo(),
+            lastUpdated,
+            lastUpdatedCondition,
+            lastUploadedBy
+        );
     }
 }

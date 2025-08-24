@@ -1,6 +1,6 @@
-// baselineImageService.js
+// services/baselineImageService.js
 
-const API_BASE_URL = '/api/transformers'; // Adjust this to match your backend API base URL
+const API_BASE_URL = '/api/transformers';
 
 class BaselineImageService {
   
@@ -30,7 +30,6 @@ class BaselineImageService {
       const response = await fetch(`${API_BASE_URL}/${transformerNo}/image`, {
         method: 'POST',
         body: formData,
-        // Don't set Content-Type header - let browser set it with boundary for multipart
       });
 
       console.log("Baseline image upload response status:", response.status);
