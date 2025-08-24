@@ -311,7 +311,20 @@ async getInspectionWeatherCondition(inspectionId) {
   }
 }
 
-  
+async getLatestInspectionPerTransformer() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/latest-per-transformer`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Latest inspections per transformer:', data);
+    return Array.isArray(data) ? data : data.data || [];
+  } catch (error) {
+    console.error('Error fetching latest inspections per transformer:', error);
+    throw error;
+  }
+}  
 
 
 }

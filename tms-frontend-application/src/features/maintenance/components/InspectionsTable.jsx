@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Eye, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../styles/inspections-table.css';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import { formatInspectionDateTime } from '../utils/dataUtils';
 
 const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -69,11 +70,10 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
             <tr>
               <th></th>
               <th></th>
-              <th>Inspection ID</th>
-              <th>Transformer ID</th>
+              <th>Transformer No</th>
+              <th>Inspection No</th>
               <th>Branch</th>
               <th>Date</th>
-              <th>Time</th>
               <th>Inspector</th>
               <th>Status</th>
               <th>Priority</th>
@@ -98,20 +98,17 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                   <td className="row-number">
                     {startIndex + index + 1}
                   </td>
-                  <td className="inspection-id">
-                    {inspection.inspectionId}
-                  </td>
                   <td className="transformer-id">
                     {inspection.transformerNo}
+                  </td>
+                  <td className="inspection-id">
+                    {inspection.inspectionId}
                   </td>
                   <td className="branch">
                     {inspection.branch}
                   </td>
-                  <td className="date">
-                    {inspection.dateOfInspection}
-                  </td>
-                  <td className="time">
-                    {inspection.timeOfInspection}
+                  <td className="inspection-date">
+                    {formatInspectionDateTime(inspection.inspectionTimestamp)}
                   </td>
                   <td className="inspector">
                     {inspection.inspectorName}

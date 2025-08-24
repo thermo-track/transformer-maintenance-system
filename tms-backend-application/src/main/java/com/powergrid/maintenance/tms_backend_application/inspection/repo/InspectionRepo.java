@@ -75,4 +75,12 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
     List<Inspection> findByTransformerNoAndInspectionTimestampBetween(@Param("transformerNo") String transformerNo,
                                                                      @Param("startTimestamp") ZonedDateTime startTimestamp,
                                                                      @Param("endTimestamp") ZonedDateTime endTimestamp);
+
+    @Query("SELECT i FROM Inspection i " +
+       "WHERE i.inspectionTimestamp = (" +
+       "    SELECT MAX(i2.inspectionTimestamp) " +
+       "    FROM Inspection i2 " +
+       "    WHERE i2.transformerNo = i.transformerNo" +
+       ")")
+List<Inspection> findLatestInspectionPerTransformer();
 }
