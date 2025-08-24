@@ -216,7 +216,54 @@ class BaselineImageService {
       return false;
     }
   }
-}
 
+/**
+ * Get the last updated time for transformer images
+ * @param {string} transformerNo - The transformer number
+ * @returns {Promise<Object>} Last updated information
+ */
+async getTransformerLastUpdated(transformerNo) {
+  try {
+    console.log(`Fetching last updated info for transformer ${transformerNo}`);
+    
+    const response = await fetch(`${API_BASE_URL}/${transformerNo}/last-updated`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log("Last updated response status:", response.status);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Transformer not found');
+      }
+      const errorText = await response.text();
+      console.error("Last updated error response:", errorText);
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Last updated response data:", data);
+    
+    // Handle case where no images have been uploaded (returns string message)
+    if (typeof data === 'string') {
+      return {
+        transformerNo,
+        lastImageUpdatedAt: null,
+        lastUpdatedWeatherCondition: null,
+        lastImageUploadedBy: null,
+        message: data
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching transformer last updated info:', error);
+    throw error;
+  }
+}
+}
 // Export singleton instance
 export const baselineImageService = new BaselineImageService();
