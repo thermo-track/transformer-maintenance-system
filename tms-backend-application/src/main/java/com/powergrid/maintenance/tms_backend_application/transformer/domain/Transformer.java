@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
@@ -40,10 +41,42 @@ public class Transformer {
    @Column(name = "updated_at", nullable = false)
    private Instant updatedAt = Instant.now();
 
+    // Location fields
+    @Column(name = "latitude", precision = 10, scale = 8)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 11, scale = 8)
+    private BigDecimal longitude;
+
+    @Column(name = "address", length = 1024)
+    private String address;
+
+    @Column(name = "location_set_at")
+    private Instant locationSetAt;
+
+
+
+
+
+
+
    @PreUpdate
    public void touch() { 
        this.updatedAt = Instant.now(); 
    }
+
+
+    // Helper methods for location
+    public boolean hasLocation() {
+        return latitude != null && longitude != null;
+    }
+
+    public void setLocation(BigDecimal latitude, BigDecimal longitude, String address) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.address = address;
+        this.locationSetAt = Instant.now();
+    }
 
    // Rainy weather image fields
    @Lob

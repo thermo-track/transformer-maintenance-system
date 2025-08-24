@@ -117,6 +117,28 @@ a {
   color: #007bff;
 }
 
+/* Location Button - Special styling for location pin */
+.btn.icon.location {
+  border-radius: 0.375rem;
+  color: #4ade80;
+  font-size: 1.1rem;
+  padding: 0.35rem 0.5rem;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  justify-content: center;
+}
+
+.btn.icon.location:hover {
+  background: #1a3d28;
+  color: #86efac;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.2);
+}
+
+.btn.icon.location:active {
+  transform: translateY(0);
+}
+
 .btnn {
   display: inline-flex; 
   align-items: center; 
@@ -150,6 +172,11 @@ a {
   text-align: left; 
 }
 
+/* Table Action Buttons Container */
+.table td .row {
+  gap: .4rem;
+}
+
 /* Badges */
 .badge { 
   padding: .2rem .5rem; 
@@ -157,6 +184,7 @@ a {
   background: #0c274f; 
   border: 1px solid var(--border); 
   font-size: .8rem; 
+  color: #fcfcfc;
 }
 
 /* Meta Text */
@@ -183,7 +211,7 @@ a {
   box-shadow: 0 10px 20px rgba(0,0,0,.35);
 }
 
-.menu-item {
+.menu-itemL {
   width: 100%; 
   text-align: left; 
   background: transparent; 
@@ -193,11 +221,11 @@ a {
   cursor: pointer;
 }
 
-.menu-item:hover { 
+.menu-itemL:hover { 
   background: #182246; 
 }
 
-.menu-item.danger:hover { 
+.menu-itemL.danger:hover { 
   background: #4a1820; 
 }
 
@@ -328,5 +356,3 @@ a {
   gap: .5rem; 
   align-items: center; 
 }
-
-.badge { padding:.2rem .5rem; border-radius:.4rem; background:#0c274f; border:1px solid var(--border); font-size:.8rem;  color: #fcfcfc;}

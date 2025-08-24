@@ -1,12 +1,15 @@
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Transformer from './features/transformers/pages/Transformer.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
 import InspectionsSTImage from "./features/maintenance/pages/InspectionsSTImage.jsx";
 import BaselineImage from "./features/maintenance/pages/BaseLineImage.jsx";
+import TransformerLocations from "./features/maintenance/pages/TransformerLocation.jsx";
+import TransformerLocationPage from './features/transformers/components/TransformerLocationPage.jsx';
+import TransformerLocationWrapper from './features/transformers/components/TransformerLocationWrapper';
+
 import './App.css';
-import avatar from './assets/pic.jpg'
 
 export default function App() {
   return (
@@ -19,6 +22,8 @@ export default function App() {
         <Route path="*" element={<p>Not found</p>} />
         <Route path="/transformer/:transformerNo/:inspectionId/image" element={<InspectionsSTImage />} />
         <Route path="/transformer/:transformerNo/baseimage" element={<BaselineImage />} />
+        <Route path="/transformers/locations" element={<TransformerLocations />} />
+        <Route path="/transformers/:transformerNo/location" element={<TransformerLocationWrapper />} />
       </Routes>
     </Layout>
   );
