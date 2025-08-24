@@ -34,13 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 public class InspectionService {
 
     @Autowired
-    // InspectionMapper inspectionMapper;
     private InspectionRepo inspectionRepo;
 
     @Autowired
     private InspectionMapper inspectionMapper;
 
-    // Optional but recommended: verify transformer exists by transformerNo
     @Autowired
     private TransformerRepository transformerRepo;
 
@@ -51,86 +49,63 @@ public class InspectionService {
 
     // Max file size (10MB)
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024;
-
-    /**
-     * Create a new inspection
-     */
-    public ResponseEntity<InspectionResponseDTO> createInspection(InspectionCreateRequestDTO requestDTO) {
-        try {
-
-            transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
-                    .orElseThrow(() -> new RuntimeException("Transformer not found"));
-            // Check for duplicate inspection (same transformer and date)
-            if (inspectionRepo.existsByTransformerIdAndDateOfInspection(
-                    requestDTO.getTransformerNo(), requestDTO.getDateOfInspection())) {
-                log.warn("Inspection already exists for transformer {} on date {}", 
-                        requestDTO.getTransformerNo(), requestDTO.getDateOfInspection());
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
-            }
-            
-            // Convert DTO to entity
-            Inspection inspection = inspectionMapper.toEntity(requestDTO);
-            
-            // Save entity
-            Inspection savedInspection = inspectionRepo.save(inspection);
-            
-            // Convert back to response DTO
-            InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(savedInspection);
-            
-            log.info("Successfully created inspection with ID: {}", savedInspection.getInspectionId());
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
-            
-        } catch (Exception e) {
-            log.error("Error creating inspection: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+public ResponseEntity<InspectionResponseDTO> createInspection(InspectionCreateRequestDTO requestDTO) {
+    try {
+        transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
+                .orElseThrow(() -> new RuntimeException("Transformer not found"));
+        
+        // Convert DTO to entity
+        Inspection inspection = inspectionMapper.toEntity(requestDTO);
+        
+        // Save entity
+        Inspection savedInspection = inspectionRepo.save(inspection);
+        
+        // Convert back to response DTO
+        InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(savedInspection);
+        
+        log.info("Successfully created inspection with ID: {}", savedInspection.getInspectionId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        
+    } catch (Exception e) {
+        log.error("Error creating inspection: ", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
+}
 
-    /**
-     * Update an existing inspection
-     */
-    public ResponseEntity<InspectionResponseDTO> updateInspection(String id, InspectionUpdateRequestDTO requestDTO) {
-        try {
-            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
-            
-            if (optionalInspection.isEmpty()) {
-                log.warn("Inspection not found with id: {}", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-            transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
-                    .orElseThrow(() -> new RuntimeException("Transformer not found"));
-            Inspection existingInspection = optionalInspection.get();
-            
-            // Check for duplicate if transformer ID or date changed
-            if (!existingInspection.getTransformerNo().equals(requestDTO.getTransformerNo()) ||
-                !existingInspection.getDateOfInspection().equals(requestDTO.getDateOfInspection())) {
-                
-                if (inspectionRepo.existsByTransformerIdAndDateOfInspection(
-                        requestDTO.getTransformerNo(), requestDTO.getDateOfInspection())) {
-                    log.warn("Inspection already exists for transformer {} on date {}", 
-                            requestDTO.getTransformerNo(), requestDTO.getDateOfInspection());
-                    return ResponseEntity.status(HttpStatus.CONFLICT).build();
-                }
-            }
-            
-            // Update entity from DTO
-            inspectionMapper.updateEntityFromDTO(existingInspection, requestDTO);
-            
-            // Save updated entity
-            Inspection updatedInspection = inspectionRepo.save(existingInspection);
-            
-            // Convert to response DTO
-            InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(updatedInspection);
-            
-            log.info("Successfully updated inspection with ID: {}", id);
-            return ResponseEntity.ok(responseDTO);
-            
-        } catch (Exception e) {
-            log.error("Error updating inspection with id {}: ", id, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+/**
+ * Update an existing inspection
+ */
+public ResponseEntity<InspectionResponseDTO> updateInspection(String id, InspectionUpdateRequestDTO requestDTO) {
+    try {
+        Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+        
+        if (optionalInspection.isEmpty()) {
+            log.warn("Inspection not found with id: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+        
+        transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
+                .orElseThrow(() -> new RuntimeException("Transformer not found"));
+        
+        Inspection existingInspection = optionalInspection.get();
+        
+        // Update entity from DTO
+        inspectionMapper.updateEntityFromDTO(existingInspection, requestDTO);
+        
+        // Save updated entity
+        Inspection updatedInspection = inspectionRepo.save(existingInspection);
+        
+        // Convert to response DTO
+        InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(updatedInspection);
+        
+        log.info("Successfully updated inspection with ID: {}", id);
+        return ResponseEntity.ok(responseDTO);
+        
+    } catch (Exception e) {
+        log.error("Error updating inspection with id {}: ", id, e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
-
+}
     /**
      * Delete an inspection
      */
@@ -210,10 +185,11 @@ public class InspectionService {
     /**
      * Get inspections by date range
      */
+// Updated Service Method
     @Transactional(readOnly = true)
     public ResponseEntity<List<InspectionResponseDTO>> getInspectionsByDateRange(LocalDate startDate, LocalDate endDate) {
         try {
-            List<Inspection> inspections = inspectionRepo.findByDateOfInspectionBetween(startDate, endDate);
+            List<Inspection> inspections = inspectionRepo.findByInspectionTimestampDateBetween(startDate, endDate);
             List<InspectionResponseDTO> responseDTOs = inspectionMapper.toResponseDTOList(inspections);
             
             return ResponseEntity.ok(responseDTOs);
@@ -223,6 +199,7 @@ public class InspectionService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     @Transactional(readOnly = true)
     
     public ResponseEntity<List<InspectionResponseDTO>> getInspectionsByTransformerId(String transformerId) {

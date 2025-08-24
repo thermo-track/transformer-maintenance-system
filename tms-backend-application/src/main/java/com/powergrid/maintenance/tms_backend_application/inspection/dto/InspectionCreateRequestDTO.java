@@ -1,7 +1,7 @@
+// InspectionCreateRequestDTO
 package com.powergrid.maintenance.tms_backend_application.inspection.dto;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -19,11 +19,7 @@ public class InspectionCreateRequestDTO {
     @Pattern(regexp = "^[A-Za-z0-9-_]+$", message = "Transformer No can only contain alphanumeric characters, hyphens, and underscores")
     private String transformerNo;
 
-    @NotNull(message = "Date of inspection is required")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate dateOfInspection;
-
-    @NotNull(message = "Inspection time is required")
-    @JsonFormat(pattern = "HH:mm")
-    private LocalTime timeOfInspection;
+    @NotNull(message = "Inspection timestamp is required")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    private ZonedDateTime inspectionTimestamp;
 }

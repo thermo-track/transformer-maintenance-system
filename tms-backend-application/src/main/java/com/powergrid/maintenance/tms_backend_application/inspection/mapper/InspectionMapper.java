@@ -13,7 +13,8 @@ import com.powergrid.maintenance.tms_backend_application.inspection.dto.Inspecti
 
 @Component
 public class InspectionMapper {
-        /**
+    
+    /**
      * Convert CreateRequestDTO to Entity
      */
     public Inspection toEntity(InspectionCreateRequestDTO dto) {
@@ -24,8 +25,7 @@ public class InspectionMapper {
         Inspection inspection = new Inspection();
         inspection.setBranch(dto.getBranch());
         inspection.setTransformerNo(dto.getTransformerNo());
-        inspection.setDateOfInspection(dto.getDateOfInspection());
-        inspection.setTimeOfInspection(dto.getTimeOfInspection());
+        inspection.setInspectionTimestamp(dto.getInspectionTimestamp());
 
         return inspection;
     }
@@ -40,8 +40,7 @@ public class InspectionMapper {
         
         inspection.setBranch(dto.getBranch());
         inspection.setTransformerNo(dto.getTransformerNo());
-        inspection.setDateOfInspection(dto.getDateOfInspection());
-        inspection.setTimeOfInspection(dto.getTimeOfInspection());
+        inspection.setInspectionTimestamp(dto.getInspectionTimestamp());
     }
     
     /**
@@ -56,8 +55,7 @@ public class InspectionMapper {
         dto.setInspectionId(inspection.getInspectionId());
         dto.setBranch(inspection.getBranch());
         dto.setTransformerNo(inspection.getTransformerNo());
-        dto.setDateOfInspection(inspection.getDateOfInspection());
-        dto.setTimeOfInspection(inspection.getTimeOfInspection());
+        dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
         
         return dto;
     }
@@ -75,6 +73,9 @@ public class InspectionMapper {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Convert Entity to ImageUploadResponseDTO
+     */
     public ImageUploadResponseDTO toImageUploadResponseDTO(Inspection inspection) {
         if (inspection == null) {
             return null;
@@ -84,11 +85,10 @@ public class InspectionMapper {
         responseDTO.setInspectionId(inspection.getInspectionId());
         responseDTO.setImageName(inspection.getImageName());
         responseDTO.setImageType(inspection.getImageType());
-        responseDTO.setEnvironmentalCondition(inspection.getEnvironmentalCondition()); // Add this line
+        responseDTO.setEnvironmentalCondition(inspection.getEnvironmentalCondition());
         responseDTO.setImageSize(inspection.getImageData() != null ? inspection.getImageData().length : 0);
         responseDTO.setMessage("Image uploaded successfully");
         
         return responseDTO;
     }
-    
 }

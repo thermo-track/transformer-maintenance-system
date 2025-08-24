@@ -99,3 +99,9 @@
   display: flex;
   gap: 20px; /* adjust as needed */
 }
+
+.ant-picker-time-panel-column > li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner {
+  background: #0469eb !important;
+  color: #fff; /* optional for better contrast */
+}
+

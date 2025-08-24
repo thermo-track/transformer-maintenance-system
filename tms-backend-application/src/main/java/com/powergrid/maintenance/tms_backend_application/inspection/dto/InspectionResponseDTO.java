@@ -1,7 +1,7 @@
+// InspectionResponseDTO
 package com.powergrid.maintenance.tms_backend_application.inspection.dto;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -13,9 +13,6 @@ public class InspectionResponseDTO {
     private String branch;
     private String transformerNo;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate dateOfInspection;
-
-    @JsonFormat(pattern = "HH:mm")
-    private LocalTime timeOfInspection;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    private ZonedDateTime inspectionTimestamp;
 }
