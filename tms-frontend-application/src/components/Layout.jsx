@@ -45,7 +45,7 @@ const Layout = ({ children }) => {
           </button>
 
           {/* Main Title */}
-          <h1 className="app-title">Transformer Maintenance</h1>
+          <h1 className="app-title">POWER GRID</h1>
         </div>
 
         {/* User Corner on the right */}
