@@ -5,6 +5,7 @@ import com.powergrid.maintenance.tms_backend_application.transformer.repo.Transf
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerImageInfoDTO;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerLastUpdatedDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.mapper.TransformerImageMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -182,5 +183,15 @@ public class TransformerImageService {
         if (!condition.equals("SUNNY") && !condition.equals("CLOUDY") && !condition.equals("RAINY")) {
             throw new IllegalArgumentException("Weather condition must be one of: SUNNY, CLOUDY, RAINY");
         }
+    }
+
+    public TransformerLastUpdatedDTO getTransformerLastUpdatedTime(String transformerNo) {
+        Optional<Transformer> transformerOpt = transformerRepository.findByTransformerNo(transformerNo);
+        
+        if (transformerOpt.isEmpty()) {
+            throw new RuntimeException("Transformer not found with number: " + transformerNo);
+        }
+        
+        return TransformerImageMapper.toLastUpdatedDTO(transformerOpt.get());
     }
 }

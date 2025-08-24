@@ -1,13 +1,5 @@
 import { useState, useEffect } from "react";
 
-/**
- * Props:
- * - initialBy        : "transformerNo" | "poleNo"
- * - initialQuery     : string
- * - initialRange     : "all" | "7d" | "30d" | "90d"
- * - onSearch({ by, query, range })
- * - onReset()
- */
 export default function SearchBar({
   initialBy = "transformerNo",
   initialQuery = "",

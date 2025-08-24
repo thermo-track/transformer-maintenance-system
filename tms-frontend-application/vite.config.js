@@ -7,13 +7,10 @@ export default defineConfig({
     port: 5173,
     open: true,
     proxy: {
-      // anything starting with /api will be proxied to Spring Boot
       '/api': {
-        target: 'http://localhost:8080', // your Spring Boot server
+        target: 'http://localhost:8080', 
         changeOrigin: true,
         secure: false,
-        // if your backend has a context path, e.g. /tms, add:
-        // rewrite: (path) => path.replace(/^\/api/, '/tms/api')
       },
     },
   },

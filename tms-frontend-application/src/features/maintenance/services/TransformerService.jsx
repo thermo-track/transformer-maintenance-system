@@ -1,5 +1,6 @@
-// src/services/TransformerService.js
-const API_BASE_URL = "/api/transformers"; // adjust if your backend prefix is different
+// services/TransformerService.js
+
+const API_BASE_URL = "/api/transformers"; 
 
 export const transformerService = {
   async getTransformerByNumber(transformerNo) {
@@ -13,7 +14,6 @@ export const transformerService = {
         method: "GET",
         headers: {
           'Content-Type': 'application/json',
-          // Add any other headers your API might need
         }
       });
 

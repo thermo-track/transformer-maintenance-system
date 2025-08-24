@@ -3,6 +3,7 @@ package com.powergrid.maintenance.tms_backend_application.transformer.controller
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerImageInfoDTO;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerLastUpdatedDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.service.TransformerImageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,6 +94,26 @@ public class TransformerImageController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error deleting image: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{transformerNo}/last-updated")
+    public ResponseEntity<?> getTransformerLastUpdatedTime(@PathVariable String transformerNo) {
+        try {
+            TransformerLastUpdatedDTO lastUpdatedInfo = transformerImageService.getTransformerLastUpdatedTime(transformerNo);
+            
+            if (lastUpdatedInfo.getLastImageUpdatedAt() == null) {
+                return ResponseEntity.ok()
+                    .body("No images have been uploaded for transformer: " + transformerNo);
+            }
+            
+            return ResponseEntity.ok(lastUpdatedInfo);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving last updated time: " + e.getMessage());
         }
     }
 }

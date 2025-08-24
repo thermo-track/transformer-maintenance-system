@@ -110,8 +110,6 @@ public class TransformerService {
       t.getLocationDetails()
     );
   }
-
-  // ---- NEW: transformer number list helpers ----
   public List<String> getAllTransformerNos() {
     return repo.findAllTransformerNos();
   }
