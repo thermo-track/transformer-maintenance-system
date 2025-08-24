@@ -91,6 +91,8 @@ export default function Transformer() {
 
   const content = data?.content ?? [];
 
+  
+
   return (
     <div>
       <SegmentedNav />
@@ -153,6 +155,14 @@ export default function Transformer() {
                     View
                   </Link>
 
+                  <Link
+                    className="btn icon location"
+                    to={`/transformers/${row.transformerNo}/location`}
+                    title="View Location"
+                  >
+                    📍
+                  </Link>
+
                   <div className="menu">
                     <button
                       className="btn icon"
@@ -165,13 +175,13 @@ export default function Transformer() {
                     {menuOpenId === row.id && (
                       <div className="menu-popover" role="menu">
                         <button
-                          className="menu-item"
+                          className="menu-itemL"
                           onClick={() => handleEditClick(row)}
                         >
                           Edit
                         </button>
                         <button
-                          className="menu-item danger"
+                          className="menu-itemL danger"
                           onClick={() => { setMenuOpenId(null); setConfirmId(row.id); }}
                         >
                           Delete

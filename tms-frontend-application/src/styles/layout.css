@@ -1,7 +1,6 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-/* CSS Variables for consistent theming */
 :root {
   --primary-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
   --secondary-gradient: linear-gradient(135deg, #60a5fa, #34d399, #fbbf24);
@@ -108,6 +107,10 @@ body {
   transition: var(--transition);
 }
 
+.btn.icon.locations {
+    background: #0b1020;
+    border: 0px;
+}
 
 .logo-icon {
   width: 45px;
