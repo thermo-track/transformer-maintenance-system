@@ -2,7 +2,9 @@ package com.powergrid.maintenance.tms_backend_application.inspection.controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -208,6 +210,27 @@ public class InspectionController {
         boolean hasImage = imageData != null && imageData.length > 0;
         return ResponseEntity.ok(hasImage);
     }
+    @GetMapping("/{inspectionId}/weather-condition")
+    public ResponseEntity<Map<String, String>> getInspectionWeatherCondition(@PathVariable String inspectionId) {
+        try {
+            String weatherCondition = inspectionService.getWeatherCondition(inspectionId);
+            
+            if (weatherCondition != null) {
+                Map<String, String> response = new HashMap<>();
+                response.put("weatherCondition", weatherCondition);
+                response.put("inspectionId", inspectionId);
+                
+                return ResponseEntity.ok(response);
+            }
+            
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error fetching weather condition for inspection: " + inspectionId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
     
 
 }

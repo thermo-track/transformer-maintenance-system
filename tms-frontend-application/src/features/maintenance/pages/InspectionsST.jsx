@@ -99,7 +99,7 @@ function InspectionsST() {
         status: getRandomStatus(),
         priority: getRandomPriority(),
         findings: getRandomFindings(),
-        nextInspectionDate: getNextInspectionDate(inspection.dateOfInspection),
+        nextInspectionDate: getNextInspectionDate(inspection), // Pass whole inspection object
         location: getRandomLocation(),
         weather: getRandomWeather(),
         duration: getRandomDuration(),
@@ -140,11 +140,78 @@ function InspectionsST() {
     ];
     return xs[Math.floor(Math.random() * xs.length)];
   };
-  const getNextInspectionDate = (currentDate) => {
-    const date = new Date(currentDate);
-    date.setMonth(date.getMonth() + 6);
-    return date.toISOString().split("T")[0];
+
+  // FIXED: Next inspection date calculation
+  const getNextInspectionDate = (inspection) => {
+    try {
+      let inspectionDate;
+      
+      console.log('🔍 Calculating next inspection date for:', inspection);
+      
+      // Handle the new timestamp field first
+      if (inspection.inspectionTimestamp) {
+        inspectionDate = new Date(inspection.inspectionTimestamp);
+        console.log('📅 Using inspectionTimestamp:', inspection.inspectionTimestamp);
+      }
+      // Handle legacy separate date/time fields
+      else if (inspection.dateOfInspection) {
+        // If we have time, combine them; otherwise just use the date
+        if (inspection.timeOfInspection) {
+          const dateTimeString = `${inspection.dateOfInspection}T${inspection.timeOfInspection}:00`;
+          inspectionDate = new Date(dateTimeString);
+          console.log('📅 Using combined dateOfInspection + timeOfInspection:', dateTimeString);
+        } else {
+          inspectionDate = new Date(inspection.dateOfInspection);
+          console.log('📅 Using dateOfInspection only:', inspection.dateOfInspection);
+        }
+      }
+      // Handle legacy inspectedDateTime field
+      else if (inspection.inspectedDateTime) {
+        inspectionDate = new Date(inspection.inspectedDateTime);
+        console.log('📅 Using inspectedDateTime:', inspection.inspectedDateTime);
+      }
+      else {
+        console.warn('⚠️ No valid date field found in inspection:', inspection);
+        return 'No date available';
+      }
+      
+      // Validate the date
+      if (!inspectionDate || isNaN(inspectionDate.getTime())) {
+        console.warn('❌ Invalid date created from inspection:', {
+          inspection,
+          parsedDate: inspectionDate
+        });
+        return 'Invalid date';
+      }
+      
+      console.log('✅ Parsed inspection date:', inspectionDate.toString());
+      
+      // Add 6 months to the inspection date
+      const nextDate = new Date(inspectionDate);
+      nextDate.setMonth(nextDate.getMonth() + 6);
+      
+      // Validate the calculated next date
+      if (isNaN(nextDate.getTime())) {
+        console.warn('❌ Invalid next inspection date calculated:', nextDate);
+        return 'Calculation error';
+      }
+      
+      console.log('🎯 Calculated next inspection date:', nextDate.toString());
+      
+      // Return formatted date string using Sri Lankan timezone
+      return nextDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+        timeZone: 'Asia/Colombo'
+      });
+      
+    } catch (error) {
+      console.error('💥 Error calculating next inspection date:', error, inspection);
+      return 'Error calculating';
+    }
   };
+
   const getRandomLocation = () => {
     const xs = [
       "Main Distribution Center",
@@ -164,24 +231,26 @@ function InspectionsST() {
     const xs = ["2.5 hrs", "3 hrs", "4 hrs", "1.5 hrs", "5 hrs"];
     return xs[Math.floor(Math.random() * xs.length)];
   };
+
   const getRandomMaintenanceDateTime = () => {
     const dates = [
-      "2024-03-15T09:30:00",
-      "2024-04-22T14:15:00",
-      "2024-05-10T11:00:00",
-      "2024-06-18T16:45:00",
-      "2024-07-25T08:20:00",
-      "2024-08-12T13:30:00",
-      "Not scheduled",
+      "2024-03-15",
+      "2024-04-22",
+      "2024-05-10", 
+      "2024-06-18",
+      "2024-07-25",
+      "2024-08-12",
+      "2024-09-05",
+      "2024-10-20",
+      "2024-11-15",
+      "2024-12-10",
+      null, 
     ];
-    const d = dates[Math.floor(Math.random() * dates.length)];
-    if (d === "Not scheduled") return "Not scheduled";
-    const dt = new Date(d);
-    return dt.toLocaleDateString("en-US", {
-      year: "numeric", month: "short", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", hour12: true,
-    });
+    
+    const randomDate = dates[Math.floor(Math.random() * dates.length)];
+    return randomDate;
   };
+
   const combineDateTime = (date, time) => {
     if (!date || !time) return "";
     const dt = new Date(`${date}T${time}`);

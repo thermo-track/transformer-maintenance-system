@@ -280,6 +280,36 @@ async uploadInspectionImage(inspectionId, imageFile, environmentalCondition) {
       throw error;
     }
   }
+  /**
+ * Get weather condition for a specific inspection
+ * @param {string} inspectionId - The inspection ID
+ * @returns {Promise<string>} Weather condition
+ */
+async getInspectionWeatherCondition(inspectionId) {
+  try {
+    console.log(`Fetching weather condition for inspection: ${inspectionId}`);
+    
+    const response = await fetch(`${API_BASE_URL}/${inspectionId}/weather-condition`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Weather condition response:', data);
+    
+    return data.weatherCondition || data.condition || 'sunny'; // Handle different response formats
+  } catch (error) {
+    console.error('Error fetching weather condition:', error);
+    throw error;
+  }
+}
+
   
 
 

@@ -1,36 +1,142 @@
 // components/InspectionModal.js
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { TimePicker } from 'antd';
+import dayjs from 'dayjs';
 import '../styles/modal.css';
 
 const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit, onClose }) => {
   const isEdit = !!inspection;
   const isPerTransformerPage = !!transformerNo;
+  const timeFormat = 'HH:mm';
 
   const [formData, setFormData] = useState({
     branch: '',
     dateOfInspection: '',
     timeOfInspection: '',
-    transformerNo: transformerNo || '' // keep in state so submit is consistent
+    transformerNo: transformerNo || '' 
   });
 
   const [errors, setErrors] = useState({});
   const [transformerOptions, setTransformerOptions] = useState([]);
   const [loadingTransformers, setLoadingTransformers] = useState(false);
 
+  // Helper function to convert backend timestamp to separate date and time
+  const parseInspectionTimestamp = (timestamp) => {
+    if (!timestamp) return { date: '', time: '' };
+    
+    try {
+      console.log('🔍 Original timestamp from backend:', timestamp);
+      
+      // If the timestamp has timezone info (like +05:30), use it directly
+      // If it's UTC (ends with Z), convert to local timezone
+      let date;
+      
+      if (timestamp.includes('+') || timestamp.includes('-')) {
+        // Timestamp already has timezone info - parse directly
+        date = new Date(timestamp);
+        console.log('📍 Timestamp with timezone info detected');
+      } else if (timestamp.endsWith('Z')) {
+        // UTC timestamp - need to convert to local timezone
+        date = new Date(timestamp);
+        console.log('🌍 UTC timestamp detected, converting to local');
+      } else {
+        // No timezone info - assume it's already in local timezone
+        date = new Date(timestamp);
+        console.log('⚠️ No timezone info - assuming local');
+      }
+      
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid timestamp:', timestamp);
+        return { date: '', time: '' };
+      }
+      
+      console.log('🕐 Parsed Date object:', date.toString());
+      console.log('🌍 UTC time:', date.toISOString());
+      console.log('📍 Local time:', date.toLocaleString());
+      
+      // Extract local date and time components
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      const localDate = `${year}-${month}-${day}`;
+      const localTime = `${hours}:${minutes}`;
+      
+      console.log('✅ Final local values for form:', { localDate, localTime });
+      console.log('📅 Timezone offset (minutes):', date.getTimezoneOffset());
+      
+      return { date: localDate, time: localTime };
+    } catch (error) {
+      console.error('Error parsing timestamp:', error);
+      return { date: '', time: '' };
+    }
+  };
+
+  // Helper function to convert separate date and time to UTC timestamp
+  const createInspectionTimestamp = (date, time) => {
+    if (!date || !time) return null;
+    
+    try {
+      // Combine date and time in local timezone
+      const dateTimeString = `${date}T${time}:00`;
+      const localDateTime = new Date(dateTimeString);
+      
+      if (isNaN(localDateTime.getTime())) {
+        console.warn('Invalid date/time combination:', dateTimeString);
+        return null;
+      }
+      
+      // Get timezone offset in minutes and convert to ISO format
+      const timezoneOffset = localDateTime.getTimezoneOffset();
+      const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60);
+      const offsetMinutes = Math.abs(timezoneOffset) % 60;
+      const offsetSign = timezoneOffset <= 0 ? '+' : '-';
+      const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+      
+      // Create ISO string with proper timezone offset
+      const year = localDateTime.getFullYear();
+      const month = String(localDateTime.getMonth() + 1).padStart(2, '0');
+      const day = String(localDateTime.getDate()).padStart(2, '0');
+      const hours = String(localDateTime.getHours()).padStart(2, '0');
+      const minutes = String(localDateTime.getMinutes()).padStart(2, '0');
+      const seconds = String(localDateTime.getSeconds()).padStart(2, '0');
+      
+      const utcTimestamp = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000${offsetString}`;
+      
+      console.log('🌍 Created timestamp:', dateTimeString, '→', utcTimestamp);
+      console.log('🕐 Local DateTime:', localDateTime.toString());
+      console.log('⏰ Timezone offset:', timezoneOffset, 'minutes');
+      
+      return utcTimestamp;
+    } catch (error) {
+      console.error('Error creating timestamp:', error);
+      return null;
+    }
+  };
+
   // Hydrate form
   useEffect(() => {
     if (inspection) {
+      // Parse timestamp from backend into separate date and time
+      const { date, time } = parseInspectionTimestamp(
+        inspection.inspectionTimestamp || 
+        (inspection.dateOfInspection && inspection.timeOfInspection ? 
+          `${inspection.dateOfInspection}T${inspection.timeOfInspection}:00.000Z` : null)
+      );
+      
       setFormData({
         branch: inspection.branch || '',
-        dateOfInspection: inspection.dateOfInspection || '',
-        timeOfInspection: inspection.timeOfInspection || '',
+        dateOfInspection: date,
+        timeOfInspection: time,
         transformerNo: inspection.transformerNo || ''
       });
     } else {
       setFormData({
         branch: '',
-        transformerNo: isPerTransformerPage ? transformerNo : '', // Pre-fill if on per-transformer page
+        transformerNo: isPerTransformerPage ? transformerNo : '',
         dateOfInspection: '',
         timeOfInspection: '',
       });
@@ -85,65 +191,57 @@ const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit,
     if (!formData.dateOfInspection) newErrors.dateOfInspection = 'Date of inspection is required';
     if (!formData.timeOfInspection) newErrors.timeOfInspection = 'Time of inspection is required';
 
-// Updated validation logic for the validateForm function
-// Replace the existing date validation section with this:
-
-// Date and Time validation - combine and convert to UTC
-if (formData.dateOfInspection && formData.timeOfInspection) {
-  // Combine date and time strings
-  const dateTimeString = `${formData.dateOfInspection}T${formData.timeOfInspection}`;
-  console.log("🔗 Combined DateTime String:", dateTimeString);
-  
-  // Create Date object (this will be in user's local timezone)
-  const selectedDateTime = new Date(dateTimeString);
-  console.log("📅 Selected DateTime (Local):", selectedDateTime.toString());
-  console.log("🌍 Selected DateTime (ISO/UTC):", selectedDateTime.toISOString());
-  
-  // Get current time
-  const now = new Date();
-  console.log("🕒 Current Time (Local):", now.toString());
-  console.log("🌍 Current Time (ISO/UTC):", now.toISOString());
-  
-  // Convert both to UTC timestamps for comparison
-  const selectedUtcTimestamp = selectedDateTime.getTime();
-  const currentUtcTimestamp = now.getTime();
-  
-  console.log("⏰ Selected UTC Timestamp:", selectedUtcTimestamp);
-  console.log("⏰ Current UTC Timestamp:", currentUtcTimestamp);
-  console.log("📊 Difference (ms):", selectedUtcTimestamp - currentUtcTimestamp);
-  console.log("📊 Difference (minutes):", Math.round((selectedUtcTimestamp - currentUtcTimestamp) / (1000 * 60)));
-  
-  if (selectedUtcTimestamp > currentUtcTimestamp) {
-    console.log("❌ Validation Failed: Selected datetime is in the future!");
-    newErrors.dateOfInspection = "Inspection date and time cannot be in the future";
-    // You might also want to show error on time field
-    // newErrors.timeOfInspection = "Inspection date and time cannot be in the future";
-  } else {
-    console.log("✅ Validation Passed: DateTime is in the past or now");
-  }
-} else if (formData.dateOfInspection && !formData.timeOfInspection) {
-  // If only date is provided, we can still do a basic check
-  // but it's less precise since we don't know the exact time
-  console.log("⚠️ Only date provided, doing basic date-only validation");
-  
-  const selectedDate = new Date(formData.dateOfInspection);
-  const today = new Date();
-  
-  const selectedDateStr = selectedDate.toISOString().split("T")[0];
-  const todayStr = today.toISOString().split("T")[0];
-  
-  console.log("📅 Selected Date (YYYY-MM-DD):", selectedDateStr);
-  console.log("📅 Today (YYYY-MM-DD):", todayStr);
-  
-  if (selectedDateStr > todayStr) {
-    console.log("❌ Date-only validation failed: Selected date is in the future!");
-    newErrors.dateOfInspection = "Inspection date cannot be in the future";
-  } else {
-    console.log("✅ Date-only validation passed");
-  }
-}
-
-
+    // Date and Time validation - combine and convert to UTC
+    if (formData.dateOfInspection && formData.timeOfInspection) {
+      // Combine date and time strings
+      const dateTimeString = `${formData.dateOfInspection}T${formData.timeOfInspection}`;
+      console.log("🔗 Combined DateTime String:", dateTimeString);
+      
+      // Create Date object (this will be in user's local timezone)
+      const selectedDateTime = new Date(dateTimeString);
+      console.log("📅 Selected DateTime (Local):", selectedDateTime.toString());
+      console.log("🌍 Selected DateTime (ISO/UTC):", selectedDateTime.toISOString());
+      
+      // Get current time
+      const now = new Date();
+      console.log("🕒 Current Time (Local):", now.toString());
+      console.log("🌍 Current Time (ISO/UTC):", now.toISOString());
+      
+      // Convert both to UTC timestamps for comparison
+      const selectedUtcTimestamp = selectedDateTime.getTime();
+      const currentUtcTimestamp = now.getTime();
+      
+      console.log("⏰ Selected UTC Timestamp:", selectedUtcTimestamp);
+      console.log("⏰ Current UTC Timestamp:", currentUtcTimestamp);
+      console.log("📊 Difference (ms):", selectedUtcTimestamp - currentUtcTimestamp);
+      console.log("📊 Difference (minutes):", Math.round((selectedUtcTimestamp - currentUtcTimestamp) / (1000 * 60)));
+      
+      if (selectedUtcTimestamp > currentUtcTimestamp) {
+        console.log("❌ Validation Failed: Selected datetime is in the future!");
+        newErrors.dateOfInspection = "Inspection date and time cannot be in the future";
+      } else {
+        console.log("✅ Validation Passed: DateTime is in the past or now");
+      }
+    } else if (formData.dateOfInspection && !formData.timeOfInspection) {
+      // If only date is provided, we can still do a basic check
+      console.log("⚠️ Only date provided, doing basic date-only validation");
+      
+      const selectedDate = new Date(formData.dateOfInspection);
+      const today = new Date();
+      
+      const selectedDateStr = selectedDate.toISOString().split("T")[0];
+      const todayStr = today.toISOString().split("T")[0];
+      
+      console.log("📅 Selected Date (YYYY-MM-DD):", selectedDateStr);
+      console.log("📅 Today (YYYY-MM-DD):", todayStr);
+      
+      if (selectedDateStr > todayStr) {
+        console.log("❌ Date-only validation failed: Selected date is in the future!");
+        newErrors.dateOfInspection = "Inspection date cannot be in the future";
+      } else {
+        console.log("✅ Date-only validation passed");
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -151,11 +249,24 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
 
   const handleSubmit = () => {
     if (!validateForm()) return;
-    // Always submit transformerNo from frozen state/prop
+    
+    // Convert separate date and time to UTC timestamp for backend
+    const inspectionTimestamp = createInspectionTimestamp(
+      formData.dateOfInspection, 
+      formData.timeOfInspection
+    );
+    
+    if (!inspectionTimestamp) {
+      console.error('Failed to create inspection timestamp');
+      return;
+    }
+    
+    console.log('🚀 Submitting with timestamp:', inspectionTimestamp);
+    
+    // Submit with the new timestamp format expected by backend
     onSubmit({
       branch: formData.branch.trim(),
-      dateOfInspection: formData.dateOfInspection,
-      timeOfInspection: formData.timeOfInspection,
+      inspectionTimestamp: inspectionTimestamp, // Send as single timestamp
       transformerNo: transformerNo || formData.transformerNo
     });
   };
@@ -165,6 +276,15 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
     if (name === 'transformerNo') return; // frozen; ignore
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  // Handle time picker change
+  const handleTimeChange = (time) => {
+    const timeString = time ? time.format(timeFormat) : '';
+    setFormData(prev => ({ ...prev, timeOfInspection: timeString }));
+    if (errors.timeOfInspection) {
+      setErrors(prev => ({ ...prev, timeOfInspection: '' }));
+    }
   };
 
   const handleOverlayClick = (e) => {
@@ -185,7 +305,7 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
           <div className="form-grid">
 
             {/* Frozen Transformer No */}
-             <div className="form-group">
+            <div className="form-group">
               <label className="form-label">
                 Transformer ID {isPerTransformerPage && <span className="text-muted"></span>}
               </label>
@@ -226,7 +346,6 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
               )}
             </div>
 
-
             {/* Branch */}
             <div className="form-group">
               <label className="form-label">Branch</label>
@@ -258,15 +377,20 @@ if (formData.dateOfInspection && formData.timeOfInspection) {
               {errors.dateOfInspection && <span className="error-message">{errors.dateOfInspection}</span>}
             </div>
 
-            {/* Time */}
+            {/* Time - Updated with Ant Design TimePicker */}
             <div className="form-group">
               <label className="form-label">Time of Inspection</label>
-              <input
-                type="time"
-                name="timeOfInspection"
-                value={formData.timeOfInspection}
-                onChange={handleChange}
+              <TimePicker
+                value={formData.timeOfInspection ? dayjs(formData.timeOfInspection, timeFormat) : null}
+                format={timeFormat}
+                onChange={handleTimeChange}
+                placeholder="Select time"
                 className={`form-input ${errors.timeOfInspection ? 'error' : ''}`}
+                style={{ width: '100%' }}
+                allowClear
+                use12Hours={false}
+                inputReadOnly={false}
+                showNow={true}
               />
               {errors.timeOfInspection && <span className="error-message">{errors.timeOfInspection}</span>}
             </div>
