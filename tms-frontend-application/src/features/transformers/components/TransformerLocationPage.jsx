@@ -407,9 +407,9 @@ const TransformerLocationPage = ({
 
   if (isLoadingTransformer) {
     return (
-      <div className="transformer-locations-container">
-        <div className="loading-container">
-          <Loader2 className="animate-spin" size={32} />
+      <div className="tl-transformer-locations-container">
+        <div className="tl-loading-container">
+          <Loader2 className="tl-animate-spin" size={32} />
           <p>Loading transformer data...</p>
         </div>
       </div>
@@ -418,10 +418,10 @@ const TransformerLocationPage = ({
 
   if (!transformer) {
     return (
-      <div className="transformer-locations-container">
-        <div className="error-container">
+      <div className="tl-transformer-locations-container">
+        <div className="tl-error-container">
           <p>Transformer not found</p>
-          <button onClick={handleBack} className="btn-primary">
+          <button onClick={handleBack} className="tl-btn-primary">
             Back to Transformers
           </button>
         </div>
@@ -430,13 +430,13 @@ const TransformerLocationPage = ({
   }
 
   return (
-    <div className="transformer-locations-container">
-      <div className="sidebar">
-        <div className="header">
-          <div className="header-actions">
+    <div className="tl-transformer-locations-container">
+      <div className="tl-sidebar">
+        <div className="tl-header">
+          <div className="tl-header-actions">
             <button 
               onClick={handleBack} 
-              className="back-button"
+              className="tl-back-button"
             >
               <ArrowLeft size={20} />
               Back
@@ -444,7 +444,7 @@ const TransformerLocationPage = ({
             {editMode && onBackToView && (
               <button 
                 onClick={onBackToView}
-                className="cancel-edit-button"
+                className="tl-cancel-edit-button"
                 title="Cancel editing"
               >
                 <X size={18} />
@@ -457,30 +457,30 @@ const TransformerLocationPage = ({
         </div>
 
         {/* Transformer Info */}
-        <div className="transformer-info-card">
+        <div className="tl-transformer-info-card">
           <h3>📋 Transformer Details</h3>
-          <div className="info-row">
-            <span className="info-label">Number:</span>
-            <span className="info-value">{transformer.transformerNo}</span>
+          <div className="tl-info-row">
+            <span className="tl-info-label">Number:</span>
+            <span className="tl-info-value">{transformer.transformerNo}</span>
           </div>
-          <div className="info-row">
-            <span className="info-label">Pole:</span>
-            <span className="info-value">{transformer.poleNo}</span>
+          <div className="tl-info-row">
+            <span className="tl-info-label">Pole:</span>
+            <span className="tl-info-value">{transformer.poleNo}</span>
           </div>
-          <div className="info-row">
-            <span className="info-label">Region:</span>
-            <span className="info-value">{transformer.region}</span>
+          <div className="tl-info-row">
+            <span className="tl-info-label">Region:</span>
+            <span className="tl-info-value">{transformer.region}</span>
           </div>
-          <div className="info-row">
-            <span className="info-label">Type:</span>
-            <span className="info-value">{transformer.type}</span>
+          <div className="tl-info-row">
+            <span className="tl-info-label">Type:</span>
+            <span className="tl-info-value">{transformer.type}</span>
           </div>
         </div>
         
-        <div className="search-section">
+        <div className="tl-search-section">
           <input
             type="text"
-            className="search-input"
+            className="tl-search-input"
             placeholder="🔍 Search area (e.g., Colombo, Negombo)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -489,17 +489,17 @@ const TransformerLocationPage = ({
           <button 
             onClick={searchLocation} 
             disabled={isLoading}
-            className="search-btn"
+            className="tl-search-btn"
           >
             {isLoading ? 'Searching...' : 'Find Area'}
           </button>
         </div>
 
-        <button className="btn-secondary" onClick={getCurrentLocation}>
+        <button className="tl-btn-secondary" onClick={getCurrentLocation}>
           📱 Find My Area
         </button>
         
-        <div className="instructions">
+        <div className="tl-instructions">
           <h3>📍 How to use:</h3>
           <p>• Search for the general area where transformer is located</p>
           <p>• Navigate and zoom to find the exact spot</p>
@@ -507,29 +507,29 @@ const TransformerLocationPage = ({
           <p>• {editMode ? 'Update' : 'Save'} the location</p>
         </div>
         
-        <div className="location-info">
+        <div className="tl-location-info">
           {selectedLocation && (
-            <div className="info-card">
+            <div className="tl-info-card">
               <h4>📍 {editMode ? 'New' : 'Selected'} Location</h4>
-              <div className="info-row">
-                <span className="info-label">Address:</span>
-                <span className="info-value">{selectedAddress}</span>
+              <div className="tl-info-row">
+                <span className="tl-info-label">Address:</span>
+                <span className="tl-info-value">{selectedAddress}</span>
               </div>
-              <div className="info-row">
-                <span className="info-label">Coordinates:</span>
-                <span className="info-value">
+              <div className="tl-info-row">
+                <span className="tl-info-label">Coordinates:</span>
+                <span className="tl-info-value">
                   {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
                 </span>
               </div>
               
               <button
-                className="btn-primary save-btn"
+                className="tl-btn-primary tl-save-btn"
                 onClick={saveLocation}
                 disabled={isSaving}
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="animate-spin" size={16} />
+                    <Loader2 className="tl-animate-spin" size={16} />
                     {editMode ? 'Updating...' : 'Saving...'}
                   </>
                 ) : (
@@ -543,15 +543,15 @@ const TransformerLocationPage = ({
           )}
           
           {transformer.latitude && transformer.longitude && !selectedLocation && (
-            <div className="info-card existing-location">
+            <div className="tl-info-card tl-existing-location">
               <h4>✅ Current Location</h4>
-              <div className="info-row">
-                <span className="info-label">Address:</span>
-                <span className="info-value">{transformer.address || 'Not available'}</span>
+              <div className="tl-info-row">
+                <span className="tl-info-label">Address:</span>
+                <span className="tl-info-value">{transformer.address || 'Not available'}</span>
               </div>
-              <div className="info-row">
-                <span className="info-label">Coordinates:</span>
-                <span className="info-value">
+              <div className="tl-info-row">
+                <span className="tl-info-label">Coordinates:</span>
+                <span className="tl-info-value">
                   {parseFloat(transformer.latitude).toFixed(6)}, {parseFloat(transformer.longitude).toFixed(6)}
                 </span>
               </div>
@@ -563,9 +563,9 @@ const TransformerLocationPage = ({
         </div>
       </div>
       
-      <div className="map-container">
-        <div ref={mapRef} className="map"></div>
-        <div className="map-overlay">
+      <div className="tl-map-container">
+        <div ref={mapRef} className="tl-map"></div>
+        <div className="tl-map-overlay">
           <h4>🎯 Click to {editMode ? 'Update' : 'Set'} Location</h4>
           <p>Click exactly where the transformer is located</p>
         </div>

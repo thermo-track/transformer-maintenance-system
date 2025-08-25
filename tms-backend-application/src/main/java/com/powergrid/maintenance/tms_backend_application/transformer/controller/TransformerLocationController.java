@@ -2,8 +2,11 @@ package com.powergrid.maintenance.tms_backend_application.transformer.controller
 
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.UpdateLocationRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerLocationResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerMapLocationDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.service.TransformerLocationService;
 import jakarta.validation.Valid;
+
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -71,6 +74,26 @@ public class TransformerLocationController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error deleting location: " + e.getMessage());
+        }
+    }
+    @GetMapping("/locations/map")
+    public ResponseEntity<?> getAllTransformersForMap() {
+        try {
+            List<TransformerMapLocationDTO> transformersWithLocation = 
+                    transformerLocationService.getAllTransformersWithLocation();
+            
+            if (transformersWithLocation.isEmpty()) {
+                return ResponseEntity.ok()
+                        .body("No transformers found with location data");
+            }
+            
+            return ResponseEntity.ok(transformersWithLocation);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving transformers for map: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error retrieving transformers for map: " + e.getMessage());
         }
     }
 }
