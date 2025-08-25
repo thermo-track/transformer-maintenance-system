@@ -239,6 +239,17 @@ public class InspectionController {
         }
     }
 
+    @Operation(summary = "Get latest inspection for each transformer", 
+           description = "Retrieves the most recent inspection record for each transformer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest inspections retrieved successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/latest-per-transformer")
+    public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransformer() {
+        log.info("Retrieving latest inspection for each transformer");
+        return inspectionService.getLatestInspectionPerTransformer();
+    }
 
     
 

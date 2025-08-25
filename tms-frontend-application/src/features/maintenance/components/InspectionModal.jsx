@@ -273,7 +273,7 @@ const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit,
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'transformerNo') return; // frozen; ignore
+    if (name === 'transformerNo' && isPerTransformerPage) return; // frozen; ignore
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
