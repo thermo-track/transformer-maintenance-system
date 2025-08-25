@@ -37,33 +37,35 @@ const InspectionsPage = () => {
   }, []);
 
   const fetchInspections = async () => {
-    try {
-      setLoading(true);
-      const data = await inspectionService.getAllInspections();
-      
-      // Add dummy data for fields not in backend
-      const enrichedData = data.map(inspection => ({
-        ...inspection,
-        // Dummy data for additional fields
-        inspectorName: getRandomInspector(),
-        status: getRandomStatus(),
-        priority: getRandomPriority(),
-        findings: getRandomFindings(),
-        nextInspectionDate: getNextInspectionDate(inspection.dateOfInspection),
-        location: getRandomLocation(),
-        weather: getRandomWeather(),
-        duration: getRandomDuration()
-      }));
-      
-      setInspections(enrichedData);
-    } catch (error) {
-      console.error('Error fetching inspections:', error);
-      // Fallback to mock data if API fails
-      setInspections(getMockData());
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    
+    const data = await inspectionService.getLatestInspectionPerTransformer();
+    
+    // Add dummy data for fields not in backend
+    const enrichedData = data.map(inspection => ({
+      ...inspection,
+      // Add dummy data for additional fields
+      inspectorName: getRandomInspector(),
+      status: getRandomStatus(),
+      priority: getRandomPriority(),
+      findings: getRandomFindings(),
+      location: getRandomLocation(),
+      weather: getRandomWeather(),
+      duration: getRandomDuration()
+    }));
+    
+    console.log(`Loaded latest inspections for ${enrichedData.length} transformers`);
+    setInspections(enrichedData);
+    
+  } catch (error) {
+    console.error('Error fetching latest inspections:', error);
+    // Fallback to mock data if API fails
+    setInspections(getMockData());
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Helper functions for dummy data
   const getRandomInspector = () => {
@@ -91,12 +93,6 @@ const InspectionsPage = () => {
       'Electrical connections secure'
     ];
     return findings[Math.floor(Math.random() * findings.length)];
-  };
-
-  const getNextInspectionDate = (currentDate) => {
-    const date = new Date(currentDate);
-    date.setMonth(date.getMonth() + 6); // 6 months later
-    return date.toISOString().split('T')[0];
   };
 
   const getRandomLocation = () => {
@@ -213,11 +209,18 @@ const InspectionsPage = () => {
     
     const matchesBranch = filters.selectedBranch === '' || inspection.branch === filters.selectedBranch;
     
-    const matchesDateRange = (!filters.startDate || inspection.dateOfInspection >= filters.startDate) &&
-      (!filters.endDate || inspection.dateOfInspection <= filters.endDate);
-    
-    return matchesSearch && matchesBranch && matchesDateRange;
-  });
+    let matchesDateRange = true;
+      if (filters.startDate || filters.endDate) {
+        if (inspection.inspectionTimestamp) {
+          // Extract date from timestamp for comparison
+          const inspectionDate = new Date(inspection.inspectionTimestamp).toISOString().split('T')[0];
+          matchesDateRange = (!filters.startDate || inspectionDate >= filters.startDate) &&
+            (!filters.endDate || inspectionDate <= filters.endDate);
+        }
+      }
+      
+      return matchesSearch && matchesBranch && matchesDateRange;
+    });
 
   const totalPages = Math.ceil(filteredInspections.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;

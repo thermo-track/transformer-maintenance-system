@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -306,6 +308,24 @@ public ResponseEntity<InspectionResponseDTO> updateInspection(String id, Inspect
     } catch (Exception e) {
         log.error("Error fetching weather condition for inspection: " + inspectionId, e);
         throw new RuntimeException("Failed to fetch weather condition", e);
+    }
+}
+
+public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransformer() {
+    try {
+        List<Inspection> latestInspections = inspectionRepo.findLatestInspectionPerTransformer();
+        
+        List<InspectionResponseDTO> responseDTOs = latestInspections.stream()
+                .map(inspectionMapper::toResponseDTO)
+                .sorted((a, b) -> b.getInspectionTimestamp().compareTo(a.getInspectionTimestamp()))
+                .collect(Collectors.toList());
+        
+        log.info("Retrieved {} latest inspections for transformers", responseDTOs.size());
+        return ResponseEntity.ok(responseDTOs);
+        
+    } catch (Exception e) {
+        log.error("Error retrieving latest inspections per transformer", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }
 }
