@@ -1,6 +1,5 @@
 package com.powergrid.maintenance.tms_backend_application.inspection.service;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,21 +14,19 @@ import org.springframework.stereotype.Service;
 import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
 
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.enums.EnvironmentalCondition;
+//import com.powergrid.maintenance.tms_backend_application.inspection.enums.EnvironmentalCondition;
 import com.powergrid.maintenance.tms_backend_application.inspection.enums.InspectionStatus;
 import com.powergrid.maintenance.tms_backend_application.inspection.mapper.InspectionMapper;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -47,13 +44,6 @@ public class InspectionService {
     @Autowired
     private TransformerRepository transformerRepo;
 
-        // Allowed image types
-    private static final List<String> ALLOWED_IMAGE_TYPES = List.of(
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"
-    );
-
-    // Max file size (10MB)
-    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024;
 public ResponseEntity<InspectionResponseDTO> createInspection(InspectionCreateRequestDTO requestDTO) {
     try {
         transformerRepo.findByTransformerNo(requestDTO.getTransformerNo())
@@ -232,71 +222,8 @@ public ResponseEntity<InspectionResponseDTO> updateInspection(String id, Inspect
         }
     }
 
-    // Image related methods
-    public ImageUploadResponseDTO uploadImage(String inspectionId, MultipartFile file, ImageUploadDTO imageUploadDTO) throws IOException {
-        // Validate file
-        validateImageFile(file);
-        
-        // Validate environmental condition
-        EnvironmentalCondition.fromString(imageUploadDTO.getEnvironmentalCondition());
-        
-        Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
-        if (optionalInspection.isEmpty()) {
-            throw new RuntimeException("Inspection not found with ID: " + inspectionId);
-        }
-        
-        Inspection inspection = optionalInspection.get();
-        
-        // Set image data
-        inspection.setImageData(file.getBytes());
-        inspection.setImageName(file.getOriginalFilename());
-        inspection.setImageType(file.getContentType());
-        inspection.setEnvironmentalCondition(imageUploadDTO.getEnvironmentalCondition().toUpperCase());
-        
-        Inspection updatedInspection = inspectionRepo.save(inspection);
-        return inspectionMapper.toImageUploadResponseDTO(updatedInspection);
-    }
 
 
-    private void validateImageFile(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new RuntimeException("Please select a file to upload");
-        }
-        
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new RuntimeException("File size should not exceed 5MB");
-        }
-        
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
-            throw new RuntimeException("Only image files (JPEG, PNG, GIF, BMP) are allowed");
-        }
-    }
-        public byte[] getImage(String inspectionId) {
-        return inspectionRepo.findById(inspectionId)
-                .map(Inspection::getImageData)
-                .orElse(null);
-    }
-    
-    public String getImageType(String inspectionId) {
-        return inspectionRepo.findById(inspectionId)
-                .map(Inspection::getImageType)
-                .orElse(null);
-    }
-    
-    public boolean deleteImage(String inspectionId) {
-        Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
-        if (optionalInspection.isPresent()) {
-            Inspection inspection = optionalInspection.get();
-            inspection.setImageData(null);
-            inspection.setImageName(null);
-            inspection.setImageType(null);
-            inspection.setEnvironmentalCondition(null);
-            inspectionRepo.save(inspection);
-            return true;
-        }
-        return false;
-    }
     public String getWeatherCondition(String inspectionId) {
     try {
         // Assuming you have a repository method to fetch by inspection ID
@@ -363,5 +290,64 @@ public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(String
         return ResponseEntity.internalServerError().build();
     }
 }
+
+// Service methods that should be added to InspectionService.java
+
+/**
+ * Save image metadata after Cloudinary upload
+ */
+public CloudImageUploadResponseDTO saveImageMetadata(String inspectionId, CloudImageUploadDTO dto) {
+    Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
+    if (optionalInspection.isEmpty()) {
+        throw new RuntimeException("Inspection not found with ID: " + inspectionId);
+    }
+
+    Inspection inspection = optionalInspection.get();
+
+    // Map DTO to entity (all fields updated at once)
+    inspectionMapper.updateInspectionWithDTO(inspection, dto);
+
+    Inspection updatedInspection = inspectionRepo.save(inspection);
+    return inspectionMapper.toCloudImageUploadResponseDTO(updatedInspection);
 }
+
+/**
+ * Delete image metadata
+ */
+public boolean deleteImageMetadata(String inspectionId) {
+    Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
+    if (optionalInspection.isPresent()) {
+        Inspection inspection = optionalInspection.get();
+
+        // Clear all Cloudinary fields at once
+        CloudImageUploadDTO empty = new CloudImageUploadDTO();
+        inspectionMapper.updateInspectionWithDTO(inspection, empty);
+
+        inspectionRepo.save(inspection);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Check if inspection has cloud image specifically
+ */
+public boolean hasCloudImage(String inspectionId) {
+    return inspectionRepo.findById(inspectionId)
+            .map(Inspection::hasCloudImage)
+            .orElse(false);
+}
+
+/**
+ * Get cloud image URL for inspection
+ */
+public String getCloudImageUrl(String inspectionId) {
+    return inspectionRepo.findById(inspectionId)
+            .map(Inspection::getCloudImageUrl)
+            .orElse(null);
+}
+
+}
+
+
 
