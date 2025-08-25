@@ -3,24 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { Camera } from 'lucide-react';
 import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/page-header-st.css';
+import { formatInspectedDateTime } from '../utils/dataUtils';
 
-const PageHeaderST = ({
+const PageHeaderIns = ({
   transformerNo,
-  transformerLocation,
-  transformerRegion,
   transformerPoleno,
-  transformerType
+  inspectionId,
+  inspectionTimestamp,
+  inspectionBranch
 }) => {
   const navigate = useNavigate();
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const capacity = ['102.76', '78.77', '96.99', '123.33', '107.20'];
-  const randomtransformerCapacity = capacity[Math.floor(Math.random() * capacity.length)];
-
-  const feeders = ['2', '3', '4', '5', '6'];
-  const randomtransformerFeeders = feeders[Math.floor(Math.random() * feeders.length)];
+  const inspectors = ['John Silva', 'Priya Perera', 'Nuwan Fernando', 'Ayesha Kumari', 'Ravi Jayasuriya'];
+  const randomInspector = inspectors[Math.floor(Math.random() * inspectors.length)];
 
   useEffect(() => {
     const fetchLastUpdatedInfo = async () => {
@@ -88,34 +86,36 @@ const PageHeaderST = ({
           >
             &lt;
           </button>
-          <h2 className="transformer-title">{transformerNo}</h2>
+          <h2 className="transformer-title">{inspectionId}</h2>
           </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <span className="transformer-landmark">{transformerRegion}</span>
-            <span className="transformer-location">📍 {transformerLocation}</span>
+          <div>
+            <p>{formatInspectedDateTime({ inspectionTimestamp })}</p>
           </div>
 
           {/* Badges */}
           <div className="badges-container">
+            <span className="badge">
+              {transformerNo}
+              <span className="badge-label">Transformer No</span>
+            </span>
+
             <span className="badge">
               {transformerPoleno}
               <span className="badge-label">Pole No</span>
             </span>
 
             <span className="badge">
-              {transformerType}
-              <span className="badge-label">Type</span>
+              {inspectionBranch}
+              <span className="badge-label">Branch</span>
             </span>
 
             <span className="badge">
-              {randomtransformerCapacity}
-              <span className="badge-label">Capacity</span>
+              {randomInspector}
+              <span className="badge-label">Inpected By</span>
             </span>
 
-            <span className="badge">
-              {randomtransformerFeeders}
-              <span className="badge-label">No. of Feeders</span>
-            </span>
+
+
           </div>
         </div>
 
@@ -141,4 +141,4 @@ const PageHeaderST = ({
   );
 };
 
-export default PageHeaderST;
+export default PageHeaderIns;

@@ -15,4 +15,9 @@ public class InspectionResponseDTO {
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime inspectionTimestamp;
+
+    private String poleNo;
+    private String region;
+    private String type;
+    private String locationDetails;
 }

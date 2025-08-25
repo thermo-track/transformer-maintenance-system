@@ -5,7 +5,7 @@ import '../styles/inspections.css';
 import InspectionModal from '../components/InspectionModal';
 import ThermalImageComponent from '../components/ThermalImageComponent';
 import { inspectionService } from '../services/InspectionService';
-import PageHeaderST from '../components/PageHeaderST';
+import PageHeaderIns from "../components/PageHeaderIns";
 import { transformerService } from '../services/TransformerService';
 import { baselineImageService } from '../services/BaselineImageService';
 
@@ -324,7 +324,7 @@ function InspectionsSTImage() {
   if (loading) {
     return (
       <div className="inspections-page">
-        <PageHeaderST 
+        <PageHeaderIns 
           onNewInspection={() => setShowCreateModal(true)}
           transformerNo={transformerNo}
         />
@@ -338,14 +338,15 @@ function InspectionsSTImage() {
 
   return (
     <div className="inspections-page">
-        <PageHeaderST
+        <PageHeaderIns
         onNewInspection={() => setShowCreateModal(true)}
         transformerNo={transformer?.transformerNo}
-        transformerLocation={transformer?.locationDetails}
-        transformerRegion={transformer?.region}
         transformerPoleno={transformer?.poleNo}
-        transformerType={transformer?.type}
+        inspectionId={currentInspection?.inspectionId}
+        inspectionTimestamp={currentInspection?.inspectionTimestamp}
+        inspectionBranch={currentInspection?.branch}
       />
+
 
       {showCreateModal && (
         <InspectionModal
@@ -361,8 +362,7 @@ function InspectionsSTImage() {
       <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">
-            Thermal Image Analysis - Transformer {transformerNo} - Inspection {inspectionId}
-          </h2>
+            Thermal Image Analysis </h2>
           <p className="page-subtitle">
             Upload and analyze thermal images to detect potential issues and anomalies in transformer components
           </p>

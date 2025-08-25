@@ -779,12 +779,12 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete }) =
           {/* Upload Interface */}
           <div className="thermal-header">
             <h2 className="thermal-title">Upload Thermal Image</h2>
-            {weatherCondition && !isLoadingWeather && (
+            {/* {weatherCondition && !isLoadingWeather && (
               <p className="weather-info">
                 Current weather condition: <strong>{weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1)}</strong>
                 <span className="weather-source"> (from database)</span>
               </p>
-            )}
+            )} */}
           </div>
 
           {!isUploading && (
@@ -836,7 +836,7 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete }) =
                 <label htmlFor="weather-select" className="weather-label">
                   Weather Condition
                   {!isLoadingWeather && (
-                    <span className="weather-label-note"> (loaded from database)</span>
+                    <span className="weather-label-note"></span>
                   )}
                 </label>
                 <select
