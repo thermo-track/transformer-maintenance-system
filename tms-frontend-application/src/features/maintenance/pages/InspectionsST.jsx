@@ -96,7 +96,6 @@ function InspectionsST() {
           ),
         maintenanceDateTime: getRandomMaintenanceDateTime(),
         inspectorName: getRandomInspector(),
-        status: getRandomStatus(),
         priority: getRandomPriority(),
         findings: getRandomFindings(),
         nextInspectionDate: getNextInspectionDate(inspection), // Pass whole inspection object
@@ -173,8 +172,6 @@ function InspectionsST() {
       let inspectionDate;
       
       console.log('🔍 Calculating next inspection date for:', inspection);
-      
-      // Handle the new timestamp field first
       if (inspection.inspectionTimestamp) {
         inspectionDate = new Date(inspection.inspectionTimestamp);
         console.log('📅 Using inspectionTimestamp:', inspection.inspectionTimestamp);
@@ -201,7 +198,6 @@ function InspectionsST() {
         return 'No date available';
       }
       
-      // Validate the date
       if (!inspectionDate || isNaN(inspectionDate.getTime())) {
         console.warn('❌ Invalid date created from inspection:', {
           inspection,
@@ -287,7 +283,7 @@ function InspectionsST() {
   // create/edit/delete
   const handleCreate = async (formData) => {
     try {
-      const payload = { ...formData, transformerNo };
+      const payload = { ...formData, transformerNo, status: 'PENDING' };
       await inspectionService.createInspection(payload);
       fetchInspectionsByTransformer(transformerNo);
       setShowCreateModal(false);
@@ -318,7 +314,7 @@ function InspectionsST() {
       alert("Error deleting inspection. Please try again.");
     }
   };
-
+  console.log('Current inspections state:', inspections);
   // filters/pagination
   const filteredInspections = inspections.filter((inspection) => {
     const term = (filters.searchTerm || "").toLowerCase();
@@ -396,7 +392,7 @@ function InspectionsST() {
             setShowEditModal(true);
           }}
           onDelete={handleDelete}
-          onStatusUpdate={handleStatusUpdate} // NEW: Pass the status update handler
+          onStatusUpdate={handleStatusUpdate} 
           startIndex={startIndex}
         />
       )}

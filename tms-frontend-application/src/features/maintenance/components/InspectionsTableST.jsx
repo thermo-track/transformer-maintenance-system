@@ -184,7 +184,6 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, sta
                     <StatusDropdown 
                       inspection={{
                         ...inspection,
-                        // Ensure we handle null/undefined status properly
                         status: inspection.status || null
                       }}
                       onStatusUpdate={handleStatusUpdate}

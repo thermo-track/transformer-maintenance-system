@@ -331,13 +331,18 @@ public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransfo
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }
-
 @Transactional
 public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(String id, InspectionStatusUpdateRequestDTO requestDTO) {
     log.info("Updating inspection status for ID: {} to status: {}", id, requestDTO.getStatus());
-    
     try {
-        // Find the inspection by ID
+        InspectionStatus newStatus;
+        try {
+            newStatus = InspectionStatus.fromValue(requestDTO.getStatus());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid inspection status provided: {}", requestDTO.getStatus());
+            return ResponseEntity.badRequest().build();
+        }
+        
         Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
         
         if (optionalInspection.isEmpty()) {
@@ -346,17 +351,11 @@ public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(String
         }
         
         Inspection inspection = optionalInspection.get();
-        
-        // Update status using mapper
         inspectionMapper.updateStatusFromDTO(inspection, requestDTO);
-        
-        // Save the updated inspection
         Inspection updatedInspection = inspectionRepo.save(inspection);
-        
-        // Map to focused status response DTO
         InspectionStatusResponseDTO responseDTO = inspectionMapper.toStatusResponseDTO(updatedInspection);
         
-        log.info("Successfully updated inspection status for ID: {} to: {}", id, requestDTO.getStatus());
+        log.info("Successfully updated inspection status for ID: {} to: {}", id, newStatus.getValue());
         return ResponseEntity.ok(responseDTO);
         
     } catch (Exception e) {
