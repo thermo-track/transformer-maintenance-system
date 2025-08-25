@@ -6,7 +6,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue; 
 import jakarta.persistence.Id; 
 import jakarta.persistence.JoinColumn; 
-import jakarta.persistence.Lob; 
 import jakarta.persistence.ManyToOne; 
 import jakarta.persistence.Table; 
 import jakarta.persistence.ForeignKey; 
@@ -34,21 +33,31 @@ public class Inspection {
     @Column(name = "transformer_no", nullable = false, length = 64) 
     private String transformerNo; 
  
-    @Column(name = "inspection_timestamp", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE") 
+    @Column(name = "inspection_timestamp", nullable = false) 
     private ZonedDateTime inspectionTimestamp; 
- 
-    @Lob 
-    @Column(name = "image_data") 
-    private byte[] imageData; 
-     
-    @Column(name = "image_name") 
-    private String imageName; 
-     
-    @Column(name = "image_type") 
-    private String imageType; 
+
+    @Column(name = "status", nullable = false) 
+    private String status; 
  
     @Column(name = "environmental_condition") 
     private String environmentalCondition; 
+
+        // --- Cloudinary image metadata ---
+    @Column(name = "cloud_image_url")
+    private String cloudImageUrl;
+
+    @Column(name = "cloudinary_public_id")
+    private String cloudinaryPublicId;
+
+    @Column(name = "cloud_image_name")
+    private String cloudImageName;
+
+    @Column(name = "cloud_image_type")
+    private String cloudImageType;
+
+
+    @Column(name = "cloud_uploaded_at")
+    private ZonedDateTime cloudUploadedAt;
  
     @ManyToOne(fetch = FetchType.LAZY, optional = false) 
     @JoinColumn( 
@@ -57,16 +66,12 @@ public class Inspection {
         insertable = false, updatable = false, 
         foreignKey = @ForeignKey(name = "fk_inspections_transformer_no") 
     ) 
-    private Transformer transformer; 
- 
- 
-/*     @Column(name = "date_of_maintenance") 
-    private LocalDate dateOfMaintenance; 
- 
-    @Column(name = "time_of_maintenance") 
-    private LocalTime timeOfMaintenance; 
- 
-    @Column(name= "status") 
-    private String status; */ 
+    private Transformer transformer;  
+        /**
+     * Check if inspection has cloud image
+     */
+    public boolean hasCloudImage() {
+        return cloudImageUrl != null && !cloudImageUrl.isEmpty();
+    }
  
 }

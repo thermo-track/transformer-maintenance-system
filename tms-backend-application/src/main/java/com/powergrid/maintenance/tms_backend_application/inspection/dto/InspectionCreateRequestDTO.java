@@ -22,4 +22,5 @@ public class InspectionCreateRequestDTO {
     @NotNull(message = "Inspection timestamp is required")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime inspectionTimestamp;
+    private String status;
 }

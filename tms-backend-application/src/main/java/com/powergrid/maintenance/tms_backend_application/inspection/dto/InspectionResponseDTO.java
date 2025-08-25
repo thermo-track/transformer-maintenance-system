@@ -12,6 +12,7 @@ public class InspectionResponseDTO {
     private String inspectionId;
     private String branch;
     private String transformerNo;
+    private String status;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime inspectionTimestamp;

@@ -159,93 +159,7 @@ async createInspection(inspectionData) {
       throw error;
     }
   }
-// Image-related methods
-async uploadInspectionImage(inspectionId, imageFile, environmentalCondition) {
-  try {
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    
-    // Create a Blob with the correct content type for JSON
-    const jsonBlob = new Blob([JSON.stringify({
-      environmentalCondition: environmentalCondition
-    })], { type: 'application/json' });
-    
-    formData.append('data', jsonBlob);
 
-    console.log("Uploading image for inspection ID:", inspectionId);
-    
-    const response = await fetch(`${API_BASE_URL}/${inspectionId}/image`, {
-      method: 'POST',
-      body: formData,
-      // Don't set Content-Type header - let browser set it with boundary for multipart
-    });
-
-    console.log("Image upload response status:", response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Image upload error response:", errorText);
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    console.log("Image upload response data:", responseData);
-    return responseData;
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    throw error;
-  }
-}
-
-  async getInspectionImage(inspectionId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${inspectionId}/image`, {
-        method: 'GET',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.blob();
-    } catch (error) {
-      console.error('Error fetching image:', error);
-      throw error;
-    }
-  }
-
-  async deleteInspectionImage(inspectionId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${inspectionId}/image`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error deleting image:', error);
-      throw error;
-    }
-  }
-  async checkIfInspectionHasImage(inspectionId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${inspectionId}/has-image`, {
-        method: 'GET',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error checking image:', error);
-      return false;
-    }
-  }
 
   async getEnvironmentalConditions() {
     try {
@@ -325,6 +239,87 @@ async getLatestInspectionPerTransformer() {
     throw error;
   }
 }  
+
+/**
+ * Update inspection status
+ * @param {string} inspectionId - The inspection ID
+ * @param {string} status - New status (IN_PROGRESS, COMPLETED, PENDING, SCHEDULED)
+ * @returns {Promise<Object>} Updated inspection data
+ */
+async updateInspectionStatus(inspectionId, status) {
+  try {
+    console.log(`Updating inspection ${inspectionId} status to: ${status}`);
+    
+    const response = await fetch(`${API_BASE_URL}/${inspectionId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: status })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error("Status update error response:", errorData);
+      throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log("Status update response:", responseData);
+    return responseData;
+  } catch (error) {
+    console.error('Error updating inspection status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get current status of an inspection
+ * @param {string} inspectionId - The inspection ID
+ * @returns {Promise<Object>} Inspection status data
+ */
+async getInspectionStatus(inspectionId) {
+  try {
+    console.log(`Fetching status for inspection: ${inspectionId}`);
+    
+    const response = await fetch(`${API_BASE_URL}/${inspectionId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Inspection data response:', data);
+    
+    return {
+      inspectionId: data.inspectionId,
+      transformerNo: data.transformerNo,
+      status: data.status || null
+    };
+  } catch (error) {
+    console.error('Error fetching inspection status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all available status options
+ * @returns {Array} Array of status options
+ */
+getStatusOptions() {
+  return [
+    { value: 'IN_PROGRESS', label: 'In Progress' },
+    { value: 'COMPLETED', label: 'Completed' },
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'SCHEDULED', label: 'Scheduled' }
+  ];
+}
+
 
 
 }
