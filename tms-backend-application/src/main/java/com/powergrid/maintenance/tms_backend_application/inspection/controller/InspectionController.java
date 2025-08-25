@@ -80,6 +80,15 @@ public class InspectionController {
         return inspectionService.updateInspection(id, requestDTO);
     }
 
+    @PutMapping("/{id}/status")
+    public ResponseEntity<InspectionResponseDTO> updateInspectionStatus(
+            @Parameter(description = "Inspection ID (9-digit format)", example = "000000001")
+            @PathVariable String id,
+            @Valid @RequestBody InspectionStatusUpdateRequestDTO requestDTO) {
+        log.info("Updating inspection status with ID: {}", id);
+        return inspectionService.updateInspectionStatus(id, requestDTO);
+    }
+
     @Operation(summary = "Delete an inspection", description = "Deletes an inspection by ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Inspection deleted successfully"),

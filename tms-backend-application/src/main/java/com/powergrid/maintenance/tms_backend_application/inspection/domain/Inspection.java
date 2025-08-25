@@ -36,6 +36,9 @@ public class Inspection {
  
     @Column(name = "inspection_timestamp", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE") 
     private ZonedDateTime inspectionTimestamp; 
+
+    @Column(name = "status") 
+    private String status; 
  
     @Lob 
     @Column(name = "image_data") 
