@@ -3,16 +3,24 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Eye, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../styles/inspections-table.css';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import StatusDropdown from './StatusDropdown';
 import { formatInspectedDateTime } from '../utils/dataUtils';
 import { formatMaintenanceDate } from '../utils/dataUtils';
+import { inspectionService } from '../services/InspectionService';
 
-const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
+const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);      
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [currentInspections, setCurrentInspections] = useState(inspections);
+  const [updatingStatuses, setUpdatingStatuses] = useState(new Set());
   const { transformerNo } = useParams();
   const navigate = useNavigate();
 
+  // Update inspections when prop changes
+  React.useEffect(() => {
+    setCurrentInspections(inspections);
+  }, [inspections]);
 
   const toggleRowExpansion = (inspectionId) => {
     const newExpanded = new Set(expandedRows);
@@ -25,17 +33,22 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
   };
 
   const getStatusClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'completed': return 'status-completed';
-      case 'in progress': return 'status-progress';
-      case 'pending': return 'status-pending';
-      case 'scheduled': return 'status-scheduled';
+    if (!status) return 'status-none';
+    
+    switch (status.toUpperCase().replace('_', ' ')) {
+      case 'COMPLETED': return 'status-completed';
+      case 'IN PROGRESS': 
+      case 'IN_PROGRESS': return 'status-progress';
+      case 'PENDING': return 'status-pending';
+      case 'SCHEDULED': return 'status-scheduled';
       default: return 'status-default';
     }
   };
 
   const getPriorityClass = (priority) => {
-    switch (priority?.toLowerCase()) {
+    if (!priority) return 'priority-default';
+    
+    switch (priority.toLowerCase()) {
       case 'high': return 'priority-high';
       case 'medium': return 'priority-medium';
       case 'low': return 'priority-low';
@@ -43,7 +56,60 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
     }
   };
 
-  // dialog handlers
+  // Enhanced status update handler with error handling and optimistic updates
+  const handleStatusUpdate = async (inspectionId, newStatus) => {
+    console.log(`Table: Updating status for inspection ${inspectionId} to ${newStatus}`);
+    
+    // Add to updating set
+    setUpdatingStatuses(prev => new Set(prev).add(inspectionId));
+    
+    // Store original inspection for rollback
+    const originalInspection = currentInspections.find(insp => insp.inspectionId === inspectionId);
+    
+    try {
+      // Optimistic update - Update local state immediately
+      setCurrentInspections(prev => 
+        prev.map(inspection => 
+          inspection.inspectionId === inspectionId 
+            ? { ...inspection, status: newStatus }
+            : inspection
+        )
+      );
+
+      // Call parent callback first (for any parent-level updates)
+      if (onStatusUpdate) {
+        await onStatusUpdate(inspectionId, newStatus);
+      }
+
+      console.log(`Status updated successfully for inspection ${inspectionId}`);
+      
+    } catch (error) {
+      console.error('Error updating inspection status:', error);
+      
+      // Rollback on error - restore original status
+      if (originalInspection) {
+        setCurrentInspections(prev => 
+          prev.map(inspection => 
+            inspection.inspectionId === inspectionId 
+              ? { ...inspection, status: originalInspection.status }
+              : inspection
+          )
+        );
+      }
+      
+      // You might want to show an error toast here
+      console.error('Failed to update status, rolled back to original state');
+    } finally {
+      // Remove from updating set
+      setUpdatingStatuses(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(inspectionId);
+        return newSet;
+      });
+    }
+  };
+
+  // Delete dialog handlers
   const askDelete = (id) => {
     setPendingDeleteId(id);
     setConfirmOpen(true);
@@ -88,7 +154,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
             </tr>
           </thead>
           <tbody>
-            {inspections.map((inspection, index) => (
+            {currentInspections.map((inspection, index) => (
               <React.Fragment key={inspection.inspectionId}>
                 <tr className="table-row">
                   <td>
@@ -114,14 +180,24 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                   <td className="maintenance-date">
                     {formatMaintenanceDate(inspection.maintenanceDateTime)}
                   </td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(inspection.status)}`}>
-                      {inspection.status}
-                    </span>
+                  <td className="status-cell">
+                    <StatusDropdown 
+                      inspection={{
+                        ...inspection,
+                        // Ensure we handle null/undefined status properly
+                        status: inspection.status || null
+                      }}
+                      onStatusUpdate={handleStatusUpdate}
+                    />
+                    {updatingStatuses.has(inspection.inspectionId) && (
+                      <div className="status-updating-indicator">
+                        <div className="mini-spinner"></div>
+                      </div>
+                    )}
                   </td>
                   <td>
                     <span className={`priority-badge ${getPriorityClass(inspection.priority)}`}>
-                      {inspection.priority}
+                      {inspection.priority || 'N/A'}
                     </span>
                   </td>
                   <td>
@@ -156,19 +232,25 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
                         <div className="details-grid">
                           <div className="detail-item">
                             <span className="detail-label">Weather:</span>
-                            <span className="detail-value">{inspection.weather}</span>
+                            <span className="detail-value">{inspection.weather || 'N/A'}</span>
                           </div>
                           <div className="detail-item">
                             <span className="detail-label">Duration:</span>
-                            <span className="detail-value">{inspection.duration}</span>
+                            <span className="detail-value">{inspection.duration || 'N/A'}</span>
                           </div>
                           <div className="detail-item">
                             <span className="detail-label">Next Inspection:</span>
-                            <span className="detail-value">{inspection.nextInspectionDate}</span>
+                            <span className="detail-value">{inspection.nextInspectionDate || 'N/A'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Current Status:</span>
+                            <span className={`detail-value status-indicator ${getStatusClass(inspection.status)}`}>
+                              {inspection.status || 'No Status Set'}
+                            </span>
                           </div>
                           <div className="detail-item full-width">
                             <span className="detail-label">Findings:</span>
-                            <span className="detail-value">{inspection.findings}</span>
+                            <span className="detail-value">{inspection.findings || 'N/A'}</span>
                           </div>
                         </div>
                       </div>
@@ -180,7 +262,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, startIndex }) => {
           </tbody>
         </table>
 
-        {inspections.length === 0 && (
+        {currentInspections.length === 0 && (
           <div className="empty-state">
             <p>No inspections found matching your criteria.</p>
           </div>

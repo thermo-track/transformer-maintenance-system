@@ -1,0 +1,246 @@
+/* Status Dropdown Styles with sd- prefix */
+.sd-status-dropdown-container {
+  position: relative;
+  display: inline-block;
+  min-width: 120px;
+}
+
+.sd-status-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-height: 32px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+
+.sd-status-dropdown-trigger:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sd-status-dropdown-trigger:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.sd-status-dropdown-trigger.sd-updating {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.sd-status-dropdown-trigger.sd-error {
+  border-color: #dc3545;
+  animation: sd-shake 0.5s ease-in-out;
+}
+
+@keyframes sd-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.sd-status-text {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sd-status-chevron {
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sd-status-chevron.sd-rotated {
+  transform: rotate(180deg);
+}
+
+.sd-status-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: sd-spin 1s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes sd-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.sd-status-error-icon {
+  margin-left: 8px;
+  color: #dc3545;
+}
+
+/* Status Colors */
+.sd-status-completed {
+  background-color: #28a745;
+  color: white;
+}
+
+.sd-status-progress {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.sd-status-pending {
+  background-color: #6c757d;
+  color: white;
+}
+
+.sd-status-scheduled {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.sd-status-default {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+/* Dropdown Menu - Dark Blue Background with Black Text */
+.sd-status-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #1a237e; /* Dark blue background */
+  border: 1px solid #1a237e;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  overflow: hidden;
+  animation: sd-fadeInDown 0.2s ease-out;
+}
+
+@keyframes sd-fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sd-status-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+  color: #000000; /* Black text for all options */
+  background-color: transparent;
+}
+
+.sd-status-option:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* Slight white overlay on hover */
+  border-left-color: transparent;
+}
+
+.sd-status-option.sd-selected {
+  background-color: rgba(255, 255, 255, 0.1); /* Slight white overlay for selected */
+  border-left-color: transparent;
+}
+
+.sd-status-option-text {
+  flex: 1;
+  text-align: left;
+  color: #ffffff; /* White text */
+}
+
+.sd-check-icon {
+  color: #000000; /* Black check icon */
+  margin-left: 8px;
+}
+
+/* Remove all status option colors - use black text only */
+.sd-status-option.sd-status-completed,
+.sd-status-option.sd-status-progress,
+.sd-status-option.sd-status-pending,
+.sd-status-option.sd-status-scheduled,
+.sd-status-option.sd-status-default {
+  color: #000000; /* Black text for all statuses */
+}
+
+/* Error Message */
+.sd-status-error-message {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #dc3545;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  z-index: 1001;
+  animation: sd-fadeIn 0.2s ease-out;
+}
+
+@keyframes sd-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sd-status-dropdown-container {
+    min-width: 100px;
+  }
+  
+  .sd-status-dropdown-trigger {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    min-height: 28px;
+  }
+  
+  .sd-status-option {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .sd-status-dropdown-trigger,
+  .sd-status-chevron,
+  .sd-status-option,
+  .sd-status-dropdown-menu {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .sd-status-dropdown-trigger {
+    border: 2px solid;
+  }
+  
+  .sd-status-dropdown-menu {
+    border: 2px solid;
+  }
+}

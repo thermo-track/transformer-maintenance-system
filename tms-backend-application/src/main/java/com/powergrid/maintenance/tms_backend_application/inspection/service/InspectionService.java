@@ -19,8 +19,11 @@ import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUpl
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.enums.EnvironmentalCondition;
+import com.powergrid.maintenance.tms_backend_application.inspection.enums.InspectionStatus;
 import com.powergrid.maintenance.tms_backend_application.inspection.mapper.InspectionMapper;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 
@@ -326,6 +329,39 @@ public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransfo
     } catch (Exception e) {
         log.error("Error retrieving latest inspections per transformer", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+}
+
+@Transactional
+public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(String id, InspectionStatusUpdateRequestDTO requestDTO) {
+    log.info("Updating inspection status for ID: {} to status: {}", id, requestDTO.getStatus());
+    
+    try {
+        // Find the inspection by ID
+        Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+        
+        if (optionalInspection.isEmpty()) {
+            log.warn("Inspection not found with ID: {}", id);
+            return ResponseEntity.notFound().build();
+        }
+        
+        Inspection inspection = optionalInspection.get();
+        
+        // Update status using mapper
+        inspectionMapper.updateStatusFromDTO(inspection, requestDTO);
+        
+        // Save the updated inspection
+        Inspection updatedInspection = inspectionRepo.save(inspection);
+        
+        // Map to focused status response DTO
+        InspectionStatusResponseDTO responseDTO = inspectionMapper.toStatusResponseDTO(updatedInspection);
+        
+        log.info("Successfully updated inspection status for ID: {} to: {}", id, requestDTO.getStatus());
+        return ResponseEntity.ok(responseDTO);
+        
+    } catch (Exception e) {
+        log.error("Error updating inspection status for ID: {}", id, e);
+        return ResponseEntity.internalServerError().build();
     }
 }
 }

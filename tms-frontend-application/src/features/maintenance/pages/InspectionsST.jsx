@@ -116,6 +116,32 @@ function InspectionsST() {
     }
   };
 
+  // NEW: Handle status updates from the table component
+  const handleStatusUpdate = async (inspectionId, newStatus) => {
+    console.log(`Parent: Handling status update for inspection ${inspectionId} to ${newStatus}`);
+    
+    try {
+      // Call the inspection service to update status on the backend
+      await inspectionService.updateInspectionStatus(inspectionId, newStatus);
+      
+      // Update the local state to reflect the change
+      setInspections(prevInspections => 
+        prevInspections.map(inspection => 
+          inspection.inspectionId === inspectionId 
+            ? { ...inspection, status: newStatus }
+            : inspection
+        )
+      );
+      
+      console.log(`Successfully updated status for inspection ${inspectionId} to ${newStatus}`);
+      
+    } catch (error) {
+      console.error('Error updating inspection status in parent:', error);
+      // Let the error bubble up to the table component for handling
+      throw error;
+    }
+  };
+
   // helpers (unchanged)
   const getRandomInspector = () => {
     const xs = ["John Silva","Mary Fernando","David Perera","Sarah Wickramasinghe","Mike Rajapaksa"];
@@ -370,6 +396,7 @@ function InspectionsST() {
             setShowEditModal(true);
           }}
           onDelete={handleDelete}
+          onStatusUpdate={handleStatusUpdate} // NEW: Pass the status update handler
           startIndex={startIndex}
         />
       )}
