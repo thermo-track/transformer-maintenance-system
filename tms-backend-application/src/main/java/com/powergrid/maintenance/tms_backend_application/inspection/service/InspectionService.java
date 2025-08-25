@@ -19,8 +19,11 @@ import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUpl
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.enums.EnvironmentalCondition;
+import com.powergrid.maintenance.tms_backend_application.inspection.enums.InspectionStatus;
 import com.powergrid.maintenance.tms_backend_application.inspection.mapper.InspectionMapper;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 
@@ -326,6 +329,38 @@ public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransfo
     } catch (Exception e) {
         log.error("Error retrieving latest inspections per transformer", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+}
+@Transactional
+public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(String id, InspectionStatusUpdateRequestDTO requestDTO) {
+    log.info("Updating inspection status for ID: {} to status: {}", id, requestDTO.getStatus());
+    try {
+        InspectionStatus newStatus;
+        try {
+            newStatus = InspectionStatus.fromValue(requestDTO.getStatus());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid inspection status provided: {}", requestDTO.getStatus());
+            return ResponseEntity.badRequest().build();
+        }
+        
+        Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+        
+        if (optionalInspection.isEmpty()) {
+            log.warn("Inspection not found with ID: {}", id);
+            return ResponseEntity.notFound().build();
+        }
+        
+        Inspection inspection = optionalInspection.get();
+        inspectionMapper.updateStatusFromDTO(inspection, requestDTO);
+        Inspection updatedInspection = inspectionRepo.save(inspection);
+        InspectionStatusResponseDTO responseDTO = inspectionMapper.toStatusResponseDTO(updatedInspection);
+        
+        log.info("Successfully updated inspection status for ID: {} to: {}", id, newStatus.getValue());
+        return ResponseEntity.ok(responseDTO);
+        
+    } catch (Exception e) {
+        log.error("Error updating inspection status for ID: {}", id, e);
+        return ResponseEntity.internalServerError().build();
     }
 }
 }

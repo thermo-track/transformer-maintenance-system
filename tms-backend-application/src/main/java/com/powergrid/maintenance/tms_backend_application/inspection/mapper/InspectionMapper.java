@@ -9,6 +9,8 @@ import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspe
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 
 @Component
@@ -26,6 +28,7 @@ public class InspectionMapper {
         inspection.setBranch(dto.getBranch());
         inspection.setTransformerNo(dto.getTransformerNo());
         inspection.setInspectionTimestamp(dto.getInspectionTimestamp());
+        inspection.setStatus(dto.getStatus());  
 
         return inspection;
     }
@@ -56,7 +59,8 @@ public class InspectionMapper {
         dto.setBranch(inspection.getBranch());
         dto.setTransformerNo(inspection.getTransformerNo());
         dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
-        
+        dto.setStatus(inspection.getStatus());
+
         return dto;
     }
     
@@ -91,4 +95,31 @@ public class InspectionMapper {
         
         return responseDTO;
     }
+        /**
+     * Update entity status from StatusUpdateRequestDTO
+     */
+    public void updateStatusFromDTO(Inspection inspection, InspectionStatusUpdateRequestDTO dto) {
+        if (dto == null || inspection == null) {
+            return;
+        }
+        
+        inspection.setStatus(dto.getStatus());
+    }
+    
+    /**
+     * Convert Entity to InspectionStatusResponseDTO (for status update responses)
+     */
+    public InspectionStatusResponseDTO toStatusResponseDTO(Inspection inspection) {
+        if (inspection == null) {
+            return null;
+        }
+        
+        InspectionStatusResponseDTO dto = new InspectionStatusResponseDTO();
+        dto.setInspectionId(inspection.getInspectionId());
+        dto.setTransformerNo(inspection.getTransformerNo());
+        dto.setStatus(inspection.getStatus());
+        
+        return dto;
+    }
+
 }

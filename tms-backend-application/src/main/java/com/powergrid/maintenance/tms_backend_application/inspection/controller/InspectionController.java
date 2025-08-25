@@ -29,6 +29,8 @@ import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUpl
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.service.InspectionService;
 
@@ -78,6 +80,15 @@ public class InspectionController {
             @Valid @RequestBody InspectionUpdateRequestDTO requestDTO) {
         log.info("Updating inspection with ID: {}", id);
         return inspectionService.updateInspection(id, requestDTO);
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(
+            @Parameter(description = "Inspection ID (9-digit format)", example = "000000001")
+            @PathVariable String id,
+            @Valid @RequestBody InspectionStatusUpdateRequestDTO requestDTO) {
+        log.info("Updating inspection status with ID: {}", id);
+        return inspectionService.updateInspectionStatus(id, requestDTO);
     }
 
     @Operation(summary = "Delete an inspection", description = "Deletes an inspection by ID")
@@ -214,7 +225,6 @@ public class InspectionController {
     public ResponseEntity<Map<String, String>> getInspectionWeatherCondition(@PathVariable String inspectionId) {
         try {
             String weatherCondition = inspectionService.getWeatherCondition(inspectionId);
-            
             if (weatherCondition != null) {
                 Map<String, String> response = new HashMap<>();
                 response.put("weatherCondition", weatherCondition);
