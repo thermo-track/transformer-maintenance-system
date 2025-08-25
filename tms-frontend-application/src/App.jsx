@@ -25,7 +25,6 @@ export default function App() {
         <Route path="/transformer/:transformerNo/baseimage" element={<BaselineImage />} />
         <Route path="/transformers/locations" element={<TransformerLocations />} />
         <Route path="/transformers/:transformerNo/location" element={<TransformerLocationWrapper />} />
-        {/* Use the wrapper component that includes the service */}
         <Route path="/transformers/map" element={<TransformersMapWrapper />} />
       </Routes>
     </Layout>

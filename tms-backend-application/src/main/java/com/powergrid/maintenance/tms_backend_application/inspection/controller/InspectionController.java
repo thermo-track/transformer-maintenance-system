@@ -1,6 +1,5 @@
 package com.powergrid.maintenance.tms_backend_application.inspection.controller;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -9,8 +8,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,18 +18,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.service.InspectionService;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadResponseDTO;
 
 import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
@@ -174,53 +169,7 @@ public class InspectionController {
         return inspectionService.getInspectionsByTransformerId(transformerId);
     }
 
-    // Image related endpoints
-    @PostMapping(value = "/{inspectionId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadImage(
-            @PathVariable String inspectionId,
-            @RequestPart("image") MultipartFile file,
-            @RequestPart("data") @Valid ImageUploadDTO imageUploadDTO) {
-        try {
-            ImageUploadResponseDTO response = inspectionService.uploadImage(inspectionId, file, imageUploadDTO);
-            return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error uploading image: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-    
-    @GetMapping("/{inspectionId}/image")
-    public ResponseEntity<byte[]> getImage(@PathVariable String inspectionId) {
-        byte[] imageData = inspectionService.getImage(inspectionId);
-        String imageType = inspectionService.getImageType(inspectionId);
-        
-        if (imageData != null && imageType != null) {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType(imageType));
-            headers.setContentLength(imageData.length);
-            
-            return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
-        }
-        
-        return ResponseEntity.notFound().build();
-    }
-    @DeleteMapping("/{inspectionId}/image")
-    public ResponseEntity<Void> deleteImage(@PathVariable String inspectionId) {
-        if (inspectionService.deleteImage(inspectionId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-    @GetMapping("/{inspectionId}/has-image")
-    public ResponseEntity<Boolean> checkIfInspectionHasImage(@PathVariable String inspectionId) {
-        byte[] imageData = inspectionService.getImage(inspectionId);
-        boolean hasImage = imageData != null && imageData.length > 0;
-        return ResponseEntity.ok(hasImage);
-    }
+
     @GetMapping("/{inspectionId}/weather-condition")
     public ResponseEntity<Map<String, String>> getInspectionWeatherCondition(@PathVariable String inspectionId) {
         try {
@@ -252,6 +201,76 @@ public class InspectionController {
         return inspectionService.getLatestInspectionPerTransformer();
     }
 
+
+/**
+ * Save image metadata after Cloudinary upload
+ */
+@PostMapping("/{inspectionId}/image-metadata")
+public ResponseEntity<CloudImageUploadResponseDTO> saveImageMetadata(
+        @PathVariable String inspectionId,
+        @RequestBody @Valid CloudImageUploadDTO cloudImageUploadDTO) {
+    try {
+        CloudImageUploadResponseDTO response = inspectionService.saveImageMetadata(inspectionId, cloudImageUploadDTO);
+        return ResponseEntity.ok(response);
+    } catch (RuntimeException e) {
+        // Return 404 if inspection not found
+        return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+        // Return 400 for other validation errors
+        return ResponseEntity.badRequest().build();
+    }
+}
+/**
+ * Delete image metadata
+ */
+@DeleteMapping("/{inspectionId}/image-metadata")
+public ResponseEntity<Void> deleteImageMetadata(@PathVariable String inspectionId) {
+    try {
+        boolean deleted = inspectionService.deleteImageMetadata(inspectionId);
+        if (deleted) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+}
+
+
+/**
+ * Check if inspection has cloud image specifically
+ */
+@GetMapping("/{inspectionId}/has-cloud-image")
+public ResponseEntity<Map<String, Boolean>> hasCloudImage(@PathVariable String inspectionId) {
+    try {
+        boolean hasCloudImage = inspectionService.hasCloudImage(inspectionId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("hasCloudImage", hasCloudImage);
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+}
+
+/**
+ * Get cloud image URL
+ */
+@GetMapping("/{inspectionId}/cloud-image-url")
+public ResponseEntity<Map<String, String>> getCloudImageUrl(@PathVariable String inspectionId) {
+    try {
+        String cloudImageUrl = inspectionService.getCloudImageUrl(inspectionId);
+        if (cloudImageUrl != null) {
+            Map<String, String> response = new HashMap<>();
+            response.put("cloudImageUrl", cloudImageUrl);
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+}
     
 
 }
