@@ -4,12 +4,14 @@ import com.powergrid.maintenance.tms_backend_application.transformer.domain.Tran
 import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.UpdateLocationRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerLocationResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerMapLocationDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.mapper.TransformerLocationMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -94,6 +96,15 @@ public class TransformerLocationService {
         
         if (longitude.compareTo(BigDecimal.valueOf(-180)) < 0 || longitude.compareTo(BigDecimal.valueOf(180)) > 0) {
             throw new IllegalArgumentException("Longitude must be between -180 and 180");
+        }
+    }
+    @Transactional(readOnly = true)
+    public List<TransformerMapLocationDTO> getAllTransformersWithLocation() {
+        try {
+            List<Transformer> transformersWithLocation = transformerRepository.findAllTransformersWithLocation();
+            return TransformerLocationMapper.toTransformerMapLocationDTOList(transformersWithLocation);
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving transformers with location: " + e.getMessage(), e);
         }
     }
 } 

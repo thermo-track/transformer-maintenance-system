@@ -448,17 +448,17 @@ const TransformerLocations = () => {
   };
 
   return (
-    <div className="transformer-locations-container">
-      <div className="sidebar">
-        <div className="header">
+    <div className="tl-transformer-locations-container">
+      <div className="tl-sidebar">
+        <div className="tl-header">
           <h1>⚡ Transformer Location</h1>
           <p>Search area, then click to place 📍</p>
         </div>
         
-        <div className="search-section">
+        <div className="tl-search-section">
           <input
             type="text"
-            className="search-input"
+            className="tl-search-input"
             placeholder="🔍 Search area (e.g., Colombo, Negombo)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -467,13 +467,13 @@ const TransformerLocations = () => {
           <button 
             onClick={searchLocation} 
             disabled={isLoading}
-            className="search-btn"
+            className="tl-search-btn"
           >
             {isLoading ? 'Searching...' : 'Find Area'}
           </button>
         </div>
         
-        <div className="instructions">
+        <div className="tl-instructions">
           <h3>📍 How to use:</h3>
           <p>• Search for the general area where transformer is located</p>
           <p>• Navigate and zoom to find the exact spot</p>
@@ -481,35 +481,35 @@ const TransformerLocations = () => {
           <p>• Fill in transformer details and save</p>
         </div>
         
-        <div className="location-info">
+        <div className="tl-location-info">
           {selectedLocation && (
-            <div className="info-card">
+            <div className="tl-info-card">
               <h4>📍 Selected Location</h4>
-              <div className="info-row">
-                <span className="info-label">Address:</span>
-                <span className="info-value">{selectedAddress}</span>
+              <div className="tl-info-row">
+                <span className="tl-info-label">Address:</span>
+                <span className="tl-info-value">{selectedAddress}</span>
               </div>
-              <div className="info-row">
-                <span className="info-label">Coordinates:</span>
-                <span className="info-value">
+              <div className="tl-info-row">
+                <span className="tl-info-label">Coordinates:</span>
+                <span className="tl-info-value">
                   {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
                 </span>
               </div>
-              <button className="btn-secondary" onClick={getCurrentLocation}>
+              <button className="tl-btn-secondary" onClick={getCurrentLocation}>
                 📱 Find My Area
               </button>
             </div>
           )}
           
           {selectedLocation && (
-            <div className="transformer-form">
+            <div className="tl-transformer-form">
               <h4>⚡ Transformer Details</h4>
               
-              <div className="form-group">
-                <label className="form-label">Transformer Number *</label>
+              <div className="tl-form-group">
+                <label className="tl-form-label">Transformer Number *</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="tl-form-input"
                   placeholder="T001"
                   value={formData.transformerNo}
                   onChange={(e) => handleFormChange('transformerNo', e.target.value)}
@@ -517,11 +517,11 @@ const TransformerLocations = () => {
                 />
               </div>
               
-              <div className="form-group">
-                <label className="form-label">Pole Number *</label>
+              <div className="tl-form-group">
+                <label className="tl-form-label">Pole Number *</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="tl-form-input"
                   placeholder="P12345"
                   value={formData.poleNo}
                   onChange={(e) => handleFormChange('poleNo', e.target.value)}
@@ -529,10 +529,10 @@ const TransformerLocations = () => {
                 />
               </div>
               
-              <div className="form-group">
-                <label className="form-label">Region *</label>
+              <div className="tl-form-group">
+                <label className="tl-form-label">Region *</label>
                 <select
-                  className="form-select"
+                  className="tl-form-select"
                   value={formData.region}
                   onChange={(e) => handleFormChange('region', e.target.value)}
                   required
@@ -546,10 +546,10 @@ const TransformerLocations = () => {
                 </select>
               </div>
               
-              <div className="form-group">
-                <label className="form-label">Type *</label>
+              <div className="tl-form-group">
+                <label className="tl-form-label">Type *</label>
                 <select
-                  className="form-select"
+                  className="tl-form-select"
                   value={formData.type}
                   onChange={(e) => handleFormChange('type', e.target.value)}
                   required
@@ -561,11 +561,11 @@ const TransformerLocations = () => {
                 </select>
               </div>
               
-              <div className="form-group">
-                <label className="form-label">Location Details</label>
+              <div className="tl-form-group">
+                <label className="tl-form-label">Location Details</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="tl-form-input"
                   placeholder="Near bus stop, opposite bank..."
                   value={formData.locationDetails}
                   onChange={(e) => handleFormChange('locationDetails', e.target.value)}
@@ -573,7 +573,7 @@ const TransformerLocations = () => {
               </div>
               
               <button
-                className="btn-primary"
+                className="tl-btn-primary"
                 onClick={saveTransformer}
                 disabled={!isFormValid()}
               >
@@ -582,13 +582,13 @@ const TransformerLocations = () => {
             </div>
           )}
           
-          <div className="existing-transformers">
+          <div className="tl-existing-transformers">
             <h4>📋 Existing Transformers ({transformers.length})</h4>
-            <div className="transformer-list">
+            <div className="tl-transformer-list">
               {transformers.map((transformer) => (
                 <div
                   key={transformer.id}
-                  className="transformer-marker"
+                  className="tl-transformer-marker"
                   onClick={() => flyToTransformer(transformer)}
                 >
                   {transformer.transformerNo} ({transformer.region})
@@ -599,9 +599,9 @@ const TransformerLocations = () => {
         </div>
       </div>
       
-      <div className="map-container">
-        <div ref={mapRef} className="map"></div>
-        <div className="map-overlay">
+      <div className="tl-map-container">
+        <div ref={mapRef} className="tl-map"></div>
+        <div className="tl-map-overlay">
           <h4>🎯 Click to Place 📍</h4>
           <p>Search for area, then click exact transformer location</p>
         </div>

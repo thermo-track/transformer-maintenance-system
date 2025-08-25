@@ -1,4 +1,4 @@
-// services/LocationService.js
+// services/LocationService.js - FIXED VERSION
 
 const API_BASE_URL = "/api/transformers";
 
@@ -352,5 +352,54 @@ export const transformerService = {
       });
       throw error;
     }
+  },
+
+  /**
+   * Get all transformers with location data for map display - FIXED
+   */
+  async getAllTransformersForMap() {
+    try {
+      console.log('🗺️ Fetching all transformers with locations for map');
+      
+      const url = `${API_BASE_URL}/locations/map`;
+      console.log('📡 Map API URL:', url);
+      
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('📊 Map response status:', response.status);
+      console.log('📊 Map response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Map API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Map locations fetched successfully:', {
+        count: Array.isArray(data) ? data.length : 0,
+        sample: Array.isArray(data) ? data.slice(0, 2) : data
+      });
+      
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("❌ Error fetching transformers for map:", {
+        message: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 };
+
+// Make transformerService the default export for easier importing
+export default transformerService;

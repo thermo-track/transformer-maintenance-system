@@ -19,4 +19,7 @@ public interface TransformerRepository extends JpaRepository<Transformer, String
     // Transformer numbers filtered by region (branch)
     @Query("select distinct t.transformerNo from Transformer t where t.region = :region order by t.transformerNo asc")
     List<String> findTransformerNosByRegion(String region);
+    
+    @Query("SELECT t FROM Transformer t WHERE t.latitude IS NOT NULL AND t.longitude IS NOT NULL")
+    List<Transformer> findAllTransformersWithLocation();
 }
