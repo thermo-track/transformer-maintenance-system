@@ -62,6 +62,14 @@ public class InspectionMapper {
         dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
         dto.setStatus(inspection.getStatus());
 
+
+        if (inspection.getTransformer() != null) {
+        dto.setPoleNo(inspection.getTransformer().getPoleNo());
+        dto.setRegion(inspection.getTransformer().getRegion());
+        dto.setType(inspection.getTransformer().getType());
+        dto.setLocationDetails(inspection.getTransformer().getLocationDetails());
+    }
+        
         return dto;
     }
     
