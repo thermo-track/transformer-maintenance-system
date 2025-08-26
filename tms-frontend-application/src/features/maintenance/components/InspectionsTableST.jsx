@@ -146,7 +146,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, sta
               <th></th>
               <th></th>
               <th>Inspection No</th>
-              <th>Inspected Date & Time</th>
+              <th>Inspected Date</th>
               <th>Maintenance Date</th>
               <th>Status</th>
               <th>Priority</th>
@@ -158,7 +158,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, sta
               <React.Fragment key={inspection.inspectionId}>
                 <tr className="table-row">
                   <td>
-                    <button
+                    {/* <button
                       className="expand-btn"
                       onClick={() => toggleRowExpansion(inspection.inspectionId)}
                     >
@@ -166,7 +166,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, sta
                         ? <ChevronDown className="icon-sm" />
                         : <ChevronRight className="icon-sm" />
                       }
-                    </button>
+                    </button> */}
                   </td>
                   <td className="row-number">
                     {startIndex + index + 1}
@@ -224,7 +224,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, sta
                   </td>
                 </tr>
 
-                {expandedRows.has(inspection.inspectionId) && (
+                {/* {expandedRows.has(inspection.inspectionId) && (
                   <tr className="expanded-row">
                     <td colSpan="8">
                       <div className="expanded-content">
@@ -255,7 +255,7 @@ const InspectionsTableST = ({ inspections, onEdit, onDelete, onStatusUpdate, sta
                       </div>
                     </td>
                   </tr>
-                )}
+                )} */}
               </React.Fragment>
             ))}
           </tbody>

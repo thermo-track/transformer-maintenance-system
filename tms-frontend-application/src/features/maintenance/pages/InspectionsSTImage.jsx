@@ -5,7 +5,7 @@ import '../styles/inspections.css';
 import InspectionModal from '../components/InspectionModal';
 import ThermalImageComponent from '../components/ThermalImageComponent';
 import { inspectionService } from '../services/InspectionService';
-import PageHeaderST from '../components/PageHeaderST';
+import PageHeaderIns from "../components/PageHeaderIns";
 import { transformerService } from '../services/TransformerService';
 import { cloudinaryService } from '../services/CloudinaryService';
 
@@ -360,7 +360,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
   if (loading) {
     return (
       <div className="inspections-page">
-        <PageHeaderST 
+        <PageHeaderIns 
           onNewInspection={() => setShowCreateModal(true)}
           transformerNo={transformerNo}
         />
@@ -374,14 +374,15 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
 
   return (
     <div className="inspections-page">
-      <PageHeaderST
+        <PageHeaderIns
         onNewInspection={() => setShowCreateModal(true)}
         transformerNo={transformer?.transformerNo}
-        transformerLocation={transformer?.locationDetails}
-        transformerRegion={transformer?.region}
         transformerPoleno={transformer?.poleNo}
-        transformerType={transformer?.type}
+        inspectionId={currentInspection?.inspectionId}
+        inspectionTimestamp={currentInspection?.inspectionTimestamp}
+        inspectionBranch={currentInspection?.branch}
       />
+
 
       {showCreateModal && (
         <InspectionModal
@@ -397,8 +398,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
       <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">
-            Cloud Thermal Image Analysis - Transformer {transformerNo} - Inspection {inspectionId}
-          </h2>
+            Thermal Image Analysis </h2>
           <p className="page-subtitle">
             Upload thermal images to cloud storage and analyze them to detect potential issues and anomalies in transformer components
           </p>

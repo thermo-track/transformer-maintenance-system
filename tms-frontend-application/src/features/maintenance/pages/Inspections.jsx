@@ -46,6 +46,7 @@ const InspectionsPage = () => {
     const enrichedData = data.map(inspection => ({
       ...inspection,
       // Add dummy data for additional fields
+      maintenanceDateTime: getRandomMaintenanceDateTime(),
       inspectorName: getRandomInspector(),
       status: getRandomStatus(),
       priority: getRandomPriority(),
@@ -66,6 +67,25 @@ const InspectionsPage = () => {
     setLoading(false);
   }
 };
+
+  const getRandomMaintenanceDateTime = () => {
+    const dates = [
+      "2024/03/15, 07:26",
+      "2024/04/22, 10:22",
+      "2024/05/10, 10:22", 
+      "2024/06/18, 18:20",
+      "2024/07/25, 15:22",
+      "2024/08/12, 13:22",
+      "2024/09/05, 19:22",
+      "2024/10/20, 22:22",
+      "2024/11/15, 11:22",
+      "2024/12/10, 09:22",
+      null, 
+    ];
+    
+    const randomDate = dates[Math.floor(Math.random() * dates.length)];
+    return randomDate;
+  };
 
   // Helper functions for dummy data
   const getRandomInspector = () => {

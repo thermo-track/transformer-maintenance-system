@@ -26,6 +26,15 @@ const FilterSectionAll = ({ filters, setFilters, branches }) => {
     return <div>Error: Invalid branches data</div>;
   }
 
+  const handleReset = () => {
+    setFilters({
+      searchTerm: '',
+      selectedBranch: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
+
   return (
     <div className="filter-section">
       <div className="filter-grid">
@@ -87,6 +96,15 @@ const FilterSectionAll = ({ filters, setFilters, branches }) => {
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
             />
           </div>
+        </div>
+        <div className="filter-item">
+          <button 
+            type="button" 
+            className="reset-button"
+            onClick={handleReset}
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
     </div>
