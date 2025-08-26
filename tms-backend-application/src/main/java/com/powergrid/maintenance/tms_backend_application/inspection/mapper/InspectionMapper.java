@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadResponseDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageMetadataDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
@@ -160,23 +159,4 @@ public class InspectionMapper {
         return dto;
     }
 
-    /**
-     * Convert Entity to ImageMetadataDTO
-     */
-    public ImageMetadataDTO toImageMetadataDTO(Inspection inspection) {
-        if (inspection == null) {
-            return null;
-        }
-        
-        ImageMetadataDTO dto = new ImageMetadataDTO();
-        dto.setCloudImageUrl(inspection.getCloudImageUrl());
-        dto.setCloudinaryPublicId(inspection.getCloudinaryPublicId());
-        dto.setCloudImageName(inspection.getCloudImageName());
-        dto.setCloudImageType(inspection.getCloudImageType());
-        dto.setEnvironmentalCondition(inspection.getEnvironmentalCondition());
-        // Fixed: directly set ZonedDateTime instead of converting to string
-        dto.setCloudUploadedAt(inspection.getCloudUploadedAt());
-        
-        return dto;
-    }
 }
