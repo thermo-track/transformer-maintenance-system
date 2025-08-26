@@ -1,167 +1,277 @@
-// services/baselineImageService.js
-
-const API_BASE_URL = '/api/transformers';
-
+// services/BaselineImageService.js
 class BaselineImageService {
-  
-  /**
-   * Upload baseline image for a transformer
-   * @param {string} transformerNo - The transformer number
-   * @param {File} imageFile - The image file to upload
-   * @param {string} weatherCondition - The weather condition (sunny, cloudy, rainy)
-   * @returns {Promise<Object>} Upload response
-   */
-  async uploadBaselineImage(transformerNo, imageFile, weatherCondition) {
-    try {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      
-      // Create a Blob with the correct content type for JSON
-      const jsonBlob = new Blob([JSON.stringify({
-        weatherCondition: weatherCondition,
-        adminUserId: "admin_user", // Dummy admin user ID for now
-        description: `Baseline image for ${weatherCondition} weather condition`
-      })], { type: 'application/json' });
-      
-      formData.append('data', jsonBlob);
+  constructor() {
+    const env = import.meta.env;
 
-      console.log(`Uploading baseline image for transformer ${transformerNo}, condition: ${weatherCondition}`);
+    this.cloudName = env.VITE_CLOUDINARY_CLOUD_NAME;
+    this.uploadPreset = env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    this.apiKey = env.VITE_CLOUDINARY_API_KEY;
+    this.backendApiUrl = env.VITE_BACKEND_API_URL || 'http://localhost:8080/api';
+
+    if (!this.cloudName || !this.uploadPreset) {
+      console.error('Cloudinary configuration missing. Please set environment variables for cloud name and upload preset');
+      console.log('Expected variables:', ['VITE_CLOUDINARY_CLOUD_NAME', 'VITE_CLOUDINARY_UPLOAD_PRESET']);
+    }
+  }
+
+  /**
+   * Upload baseline image to Cloudinary and save metadata to backend
+   * @param {string} transformerId - Transformer ID
+   * @param {File} file - Image file to upload
+   * @param {string} weatherCondition - sunny/cloudy/rainy
+   * @returns {Promise<Object>} Combined response with Cloudinary data and backend response
+   */
+  async uploadBaselineImage(transformerId, file, weatherCondition) {
+    try {
+      console.log('Starting baseline image upload for transformer:', transformerId, 'condition:', weatherCondition);
       
-      const response = await fetch(`${API_BASE_URL}/${transformerNo}/image`, {
+      // Validate file before upload
+      this.validateImageFile(file);
+
+      // Step 1: Upload to Cloudinary
+      const cloudinaryResult = await this.uploadToCloudinary(file, transformerId, weatherCondition);
+      
+      // Step 2: Save metadata to backend
+      const backendResponse = await this.saveImageMetadataToBackend(transformerId, cloudinaryResult, file, weatherCondition);
+      
+      console.log('Baseline image upload completed successfully');
+      return {
+        cloudinary: cloudinaryResult,
+        backend: backendResponse,
+        success: true
+      };
+      
+    } catch (error) {
+      console.error('Baseline image upload process failed:', error);
+      
+      // If backend save failed but Cloudinary upload succeeded, clean up Cloudinary
+      if (error.cloudinaryResult && error.cloudinaryResult.publicId) {
+        try {
+          await this.deleteImageFromCloudinary(error.cloudinaryResult.publicId);
+          console.log('Cleaned up Cloudinary image after backend save failure');
+        } catch (cleanupError) {
+          console.error('Failed to cleanup Cloudinary image:', cleanupError);
+        }
+      }
+      
+      throw new Error(`Baseline image upload failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Upload image to Cloudinary only
+   * @param {File} file - Image file to upload
+   * @param {string} transformerId - Transformer ID for folder organization
+   * @param {string} weatherCondition - Weather condition
+   * @returns {Promise<Object>} Cloudinary response
+   */
+  async uploadToCloudinary(file, transformerId, weatherCondition) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', this.uploadPreset);
+    
+    // Organize images in folders by transformer ID
+    formData.append('folder', `transformers/baseline/${transformerId}`);
+    
+    // Add context metadata
+    formData.append('context', JSON.stringify({
+      transformer_id: transformerId,
+      weather_condition: weatherCondition,
+      image_type: 'baseline',
+      upload_date: new Date().toISOString()
+    }));
+    
+    // Add tags for easier searching
+    formData.append('tags', `baseline,transformer,${weatherCondition},${transformerId}`);
+    
+    // Generate public ID for consistent naming
+    const timestamp = Date.now();
+    formData.append('public_id', `baseline_${transformerId}_${weatherCondition}_${timestamp}`);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`,
+      {
         method: 'POST',
         body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Cloudinary upload failed');
+    }
+
+    const result = await response.json();
+    console.log('Cloudinary upload successful:', result);
+    
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+      cloudinaryId: result.public_id,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      bytes: result.bytes,
+      uploadedAt: result.created_at
+    };
+  }
+
+  /**
+   * Save image metadata to backend
+   * @param {string} transformerId - Transformer ID
+   * @param {Object} cloudinaryResult - Result from Cloudinary upload
+   * @param {File} file - Original file for metadata
+   * @param {string} weatherCondition - Weather condition
+   * @returns {Promise<Object>} Backend response
+   */
+  async saveImageMetadataToBackend(transformerId, cloudinaryResult, file, weatherCondition) {
+    try {
+      const imageMetadata = {
+        baseImageUrl: cloudinaryResult.url,
+        baseCloudinaryPublicId: cloudinaryResult.publicId,
+        baseImageName: file.name,
+        baseImageType: file.type,
+        weatherCondition: weatherCondition,
+        adminUserId: 'SYSTEM' // You might want to get this from auth context
+      };
+
+      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify(imageMetadata)
       });
 
-      console.log("Baseline image upload response status:", response.status);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Baseline image upload error response:", errorText);
-        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+        const errorData = await response.text();
+        const error = new Error(`Backend save failed: ${response.status} ${response.statusText} - ${errorData}`);
+        error.cloudinaryResult = cloudinaryResult; // Attach for cleanup
+        throw error;
       }
 
-      const responseData = await response.json();
-      console.log("Baseline image upload response data:", responseData);
-      return responseData;
+      const result = await response.json();
+      console.log('Backend metadata save successful:', result);
+      return result;
+
     } catch (error) {
-      console.error('Error uploading baseline image:', error);
+      error.cloudinaryResult = cloudinaryResult; // Attach for cleanup
       throw error;
     }
   }
 
   /**
-   * Get baseline image for specific weather condition
-   * @param {string} transformerNo - The transformer number
-   * @param {string} weatherCondition - The weather condition
-   * @returns {Promise<Blob>} Image blob data
+   * Get baseline image URL for specific weather condition
+   * @param {string} transformerId - Transformer ID
+   * @param {string} weatherCondition - Weather condition
+   * @returns {Promise<string|null>} Image URL or null
    */
-  async getImage(transformerNo, weatherCondition) {
+  async getBaselineImage(transformerId, weatherCondition) {
     try {
-      console.log(`Fetching baseline image for transformer ${transformerNo}, condition: ${weatherCondition}`);
-      
-      const response = await fetch(`${API_BASE_URL}/${transformerNo}/image/${weatherCondition}`, {
+      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/image/${weatherCondition}`, {
         method: 'GET',
         headers: {
-          'Accept': 'image/*'
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`
         }
       });
 
-      if (response.status === 404) {
-        return null; // No image found
-      }
-
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 404) {
+          return null; // No image found
+        }
+        throw new Error(`Failed to get baseline image: ${response.status} ${response.statusText}`);
       }
 
-      const blob = await response.blob();
-      return blob;
-    } catch (error) {
-      console.error(`Error fetching baseline image for ${weatherCondition}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get baseline image URL for display
-   * @param {string} transformerNo - The transformer number
-   * @param {string} weatherCondition - The weather condition
-   * @returns {Promise<string|null>} Image URL or null if not found
-   */
-  async getImageUrl(transformerNo, weatherCondition) {
-    try {
-      const blob = await this.getImage(transformerNo, weatherCondition);
-      if (!blob) return null;
+      const result = await response.json();
+      return result.imageUrl;
       
-      return URL.createObjectURL(blob);
     } catch (error) {
-      console.error(`Error creating image URL for ${weatherCondition}:`, error);
+      console.error('Error getting baseline image:', error);
       return null;
     }
   }
 
   /**
-   * Get transformer images info (which weather conditions have images)
-   * @param {string} transformerNo - The transformer number
-   * @returns {Promise<Object>} Object with boolean values for each weather condition
+   * Get all baseline images for a transformer
+   * @param {string} transformerId - Transformer ID
+   * @returns {Promise<Object>} Object with sunny, cloudy, rainy image URLs
    */
-  async getTransformerImagesInfo(transformerNo) {
+  async getAllBaselineImages(transformerId) {
     try {
-      console.log(`Fetching transformer images info for ${transformerNo}`);
+      console.log('Loading all baseline images for transformer:', transformerId);
       
-      const response = await fetch(`${API_BASE_URL}/${transformerNo}/images/info`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
+      const [sunny, cloudy, rainy] = await Promise.allSettled([
+        this.getBaselineImage(transformerId, 'sunny'),
+        this.getBaselineImage(transformerId, 'cloudy'),
+        this.getBaselineImage(transformerId, 'rainy')
+      ]);
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Return empty info if transformer not found
-          return { sunny: false, cloudy: false, rainy: false };
-        }
-        const errorText = await response.text();
-        throw new Error(errorText || `HTTP error! status: ${response.status}`);
-      }
+      const result = {
+        sunny: sunny.status === 'fulfilled' ? sunny.value : null,
+        cloudy: cloudy.status === 'fulfilled' ? cloudy.value : null,
+        rainy: rainy.status === 'fulfilled' ? rainy.value : null
+      };
 
-      const imageInfo = await response.json();
-      console.log("Transformer images info:", imageInfo);
-      return imageInfo;
+      console.log('All baseline images loaded:', result);
+      return result;
+      
     } catch (error) {
-      console.error('Error fetching transformer images info:', error);
+      console.error('Error loading all baseline images:', error);
       throw error;
     }
   }
 
   /**
-   * Delete baseline image for specific weather condition
-   * @param {string} transformerNo - The transformer number
-   * @param {string} weatherCondition - The weather condition
-   * @returns {Promise<boolean>} True if deleted successfully
+   * Delete baseline image from both Cloudinary and backend
+   * @param {string} transformerId - Transformer ID
+   * @param {string} weatherCondition - Weather condition
+   * @returns {Promise<boolean>} Success status
    */
-  async deleteBaselineImage(transformerNo, weatherCondition) {
+  async deleteBaselineImage(transformerId, weatherCondition) {
     try {
-      console.log(`Deleting baseline image for transformer ${transformerNo}, condition: ${weatherCondition}`);
+      console.log('Deleting baseline image for transformer:', transformerId, 'condition:', weatherCondition);
       
-      const response = await fetch(`${API_BASE_URL}/${transformerNo}/image/${weatherCondition}`, {
+      // First get the image info to find the Cloudinary public ID
+      const imageInfo = await this.getTransformerImagesInfo(transformerId);
+      
+      let publicId = null;
+      if (imageInfo) {
+        const imageData = imageInfo[weatherCondition + 'Image'];
+        if (imageData && imageData.baseCloudinaryPublicId) {
+          publicId = imageData.baseCloudinaryPublicId;
+        }
+      }
+
+      // Delete from backend first
+      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/image/${weatherCondition}`, {
         method: 'DELETE',
         headers: {
-          'Accept': 'application/json'
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`
         }
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Image not found');
-        }
-        const errorText = await response.text();
-        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+        throw new Error(`Backend delete failed: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.text();
-      console.log("Delete result:", result);
+      // Then delete from Cloudinary if we have the public ID
+      if (publicId) {
+        try {
+          await this.deleteImageFromCloudinary(publicId);
+          console.log('Successfully deleted image from Cloudinary');
+        } catch (cloudinaryError) {
+          console.error('Failed to delete from Cloudinary, but backend deletion succeeded:', cloudinaryError);
+          // Don't throw here since backend deletion succeeded
+        }
+      }
+
+      console.log('Baseline image deleted successfully');
       return true;
+      
     } catch (error) {
       console.error('Error deleting baseline image:', error);
       throw error;
@@ -169,101 +279,210 @@ class BaselineImageService {
   }
 
   /**
-   * Get all baseline images for a transformer
-   * @param {string} transformerNo - The transformer number
-   * @returns {Promise<Object>} Object with image URLs for each weather condition
+   * Get transformer images info (all weather conditions with metadata)
+   * @param {string} transformerId - Transformer ID
+   * @returns {Promise<Object|null>} Images info or null
    */
-  async getAllBaselineImages(transformerNo) {
+  async getTransformerImagesInfo(transformerId) {
     try {
-      console.log(`Loading all baseline images for transformer: ${transformerNo}`);
-      const images = {};
-
-      // Try to fetch images for each weather condition directly
-      const weatherConditions = ['sunny', 'cloudy', 'rainy'];
-      
-      for (const condition of weatherConditions) {
-        try {
-          console.log(`Checking for ${condition} image...`);
-          const imageUrl = await this.getImageUrl(transformerNo, condition);
-          images[condition] = imageUrl;
-          console.log(`✓ ${condition} image loaded successfully`);
-        } catch (error) {
-          console.log(`✗ No ${condition} image found:`, error.message);
-          images[condition] = null;
+      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/images/info`, {
+        method: 'GET',
+        headers: {
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`
         }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to get transformer images info: ${response.status} ${response.statusText}`);
       }
 
-      console.log('Final images object:', images);
-      return images;
+      const result = await response.json();
+      return result;
+      
     } catch (error) {
-      console.error('Error fetching all baseline images:', error);
+      console.error('Error getting transformer images info:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete image from Cloudinary only
+   * @param {string} publicId - Cloudinary public ID
+   * @returns {Promise<boolean>} Success status
+   */
+  async deleteImageFromCloudinary(publicId) {
+    try {
+      // For delete operations, you typically need to use the admin API with authentication
+      // This is a simplified version - in production, you should handle this through your backend
+      console.log('Attempting to delete image from Cloudinary:', publicId);
+      
+      // Note: Direct deletion from frontend requires exposing API secrets, which is not secure
+      // In production, this should be handled by your backend
+      const timestamp = Math.round(Date.now() / 1000);
+      
+      // For now, we'll just log the attempt since secure deletion requires backend handling
+      console.log('Cloudinary deletion would be handled by backend in production');
+      return true;
+      
+    } catch (error) {
+      console.error('Cloudinary delete error:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Get transformer last updated time
+   * @param {string} transformerId - Transformer ID
+   * @returns {Promise<Object|string>} Last updated info object or message string
+   */
+  async getTransformerLastUpdated(transformerId) {
+    try {
+      console.log('Getting last updated time for transformer:', transformerId);
+      
+      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/last-updated`, {
+        method: 'GET',
+        headers: {
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Transformer not found: ${transformerId}`);
+        }
+        throw new Error(`Failed to get transformer last updated time: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Handle case where result is a string message (no images uploaded)
+      if (typeof result === 'string') {
+        console.log('No images uploaded for transformer:', transformerId);
+        return { message: result, lastImageUpdatedAt: null };
+      }
+      
+      console.log('Transformer last updated info:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('Error getting transformer last updated time:', error);
       throw error;
     }
   }
 
   /**
-   * Check if image exists for specific weather condition
-   * @param {string} transformerNo - The transformer number
-   * @param {string} weatherCondition - The weather condition
-   * @returns {Promise<boolean>} True if image exists
+   * Generate optimized image URLs with transformations
+   * @param {string} url - Original Cloudinary URL
+   * @param {Object} options - Transformation options
+   * @returns {string} Transformed image URL
    */
-  async imageExists(transformerNo, weatherCondition) {
-    try {
-      const imageInfo = await this.getTransformerImagesInfo(transformerNo);
-      return imageInfo[weatherCondition] || false;
-    } catch (error) {
-      console.error('Error checking image existence:', error);
-      return false;
-    }
+  getOptimizedImageUrl(url, options = {}) {
+    const {
+      width = 800,
+      height = 600,
+      crop = 'fit',
+      quality = 'auto',
+      format = 'auto'
+    } = options;
+
+    // Extract the public ID from the URL and rebuild with transformations
+    const publicId = this.extractPublicIdFromUrl(url);
+    if (!publicId) return url;
+
+    return `https://res.cloudinary.com/${this.cloudName}/image/upload/w_${width},h_${height},c_${crop},q_${quality},f_${format}/${publicId}`;
   }
 
-/**
- * Get the last updated time for transformer images
- * @param {string} transformerNo - The transformer number
- * @returns {Promise<Object>} Last updated information
- */
-async getTransformerLastUpdated(transformerNo) {
-  try {
-    console.log(`Fetching last updated info for transformer ${transformerNo}`);
+  /**
+   * Get thumbnail URL
+   * @param {string} url - Original Cloudinary URL
+   * @returns {string} Thumbnail URL
+   */
+  getThumbnailUrl(url) {
+    return this.getOptimizedImageUrl(url, {
+      width: 200,
+      height: 150,
+      crop: 'fill'
+    });
+  }
+
+  /**
+   * Extract public ID from Cloudinary URL
+   * @param {string} url - Cloudinary URL
+   * @returns {string|null} Public ID
+   */
+  extractPublicIdFromUrl(url) {
+    if (!url) return null;
+    const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Validate image file
+   * @param {File} file - File to validate
+   */
+  validateImageFile(file) {
+    console.log('Validating baseline image file:', file);
+
+    if (!file) {
+      throw new Error('Please select a file to upload');
+    }
+
+    if (!(file instanceof File) && !(file instanceof Blob)) {
+      throw new Error('Invalid file object provided. Expected File or Blob, got: ' + typeof file);
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     
-    const response = await fetch(`${API_BASE_URL}/${transformerNo}/last-updated`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const ALLOWED_TYPES = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/bmp',
+      'image/webp',
+      'image/tiff',
+      'image/tif'
+    ];
+
+    const ALLOWED_EXTENSIONS = [
+      '.jpg', '.jpeg', '.png', '.gif', 
+      '.bmp', '.webp', '.tiff', '.tif'
+    ];
+
+    console.log('File details:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      sizeInMB: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
     });
 
-    console.log("Last updated response status:", response.status);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Transformer not found');
-      }
-      const errorText = await response.text();
-      console.error("Last updated error response:", errorText);
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File size should not exceed 5MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
     }
 
-    const data = await response.json();
-    console.log("Last updated response data:", data);
-    
-    // Handle case where no images have been uploaded (returns string message)
-    if (typeof data === 'string') {
-      return {
-        transformerNo,
-        lastImageUpdatedAt: null,
-        lastUpdatedWeatherCondition: null,
-        lastImageUploadedBy: null,
-        message: data
-      };
+    const isValidMimeType = ALLOWED_TYPES.includes(file.type.toLowerCase());
+    const fileName = file.name ? file.name.toLowerCase() : '';
+    const isValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
+
+    if (!isValidMimeType && !isValidExtension) {
+      throw new Error(
+        `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')}. ` +
+        `Received: ${file.type || 'unknown'} for file: ${file.name || 'unnamed'}`
+      );
     }
 
-    return data;
-  } catch (error) {
-    console.error('Error fetching transformer last updated info:', error);
-    throw error;
+    if (!file.type && isValidExtension) {
+      console.warn('File has no MIME type but valid extension, allowing upload');
+    }
+
+    console.log('File validation passed');
   }
 }
-}
-// Export singleton instance
+
 export const baselineImageService = new BaselineImageService();

@@ -5,6 +5,7 @@ import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/page-header-st.css';
 
 const PageHeaderST = ({
+  transformerId,
   transformerNo,
   transformerLocation,
   transformerRegion,
@@ -28,7 +29,7 @@ const PageHeaderST = ({
       
       try {
         setLoading(true);
-        const lastUpdatedData = await baselineImageService.getTransformerLastUpdated(transformerNo);
+        const lastUpdatedData = await baselineImageService.getTransformerLastUpdated(transformerId);
         setLastUpdatedInfo(lastUpdatedData);
         setError(null);
       } catch (err) {
@@ -43,7 +44,7 @@ const PageHeaderST = ({
   }, [transformerNo]); // Remove transformerService from dependencies
 
   const handleBaselineImagesClick = () => {
-    navigate(`/transformer/${transformerNo}/baseimage`);
+    navigate(`/transformer/${transformerId}/baseimage`);
   };
 
   const formatLastUpdatedText = () => {

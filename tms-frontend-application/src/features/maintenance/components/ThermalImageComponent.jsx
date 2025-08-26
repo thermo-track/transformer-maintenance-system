@@ -5,7 +5,7 @@ import ThermalImageComparison from './ThermalImageComparison';
 import { inspectionService } from '../services/InspectionService';
 import { cloudinaryService } from '../services/CloudinaryService';
 
-const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete }) => {
+const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, transformerId }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [weatherCondition, setWeatherCondition] = useState('sunny');
   const [isUploading, setIsUploading] = useState(false);
@@ -279,6 +279,7 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete }) =
       {/* Show comparison view if images exist and not uploading */}
       {hasExistingImage && !isUploading && (baselineImage || currentImage) ? (
         <ThermalImageComparison
+          transformerId={transformerId}
           baselineImage={baselineImage}
           currentImage={currentImage}
           inspectionData={inspectionData}
