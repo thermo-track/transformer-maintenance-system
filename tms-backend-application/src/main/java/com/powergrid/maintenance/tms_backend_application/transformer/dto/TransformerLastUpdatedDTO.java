@@ -12,6 +12,6 @@ import java.time.Instant;
 public class TransformerLastUpdatedDTO {
     private String transformerNo;
     private Instant lastImageUpdatedAt;
-    private String lastUpdatedWeatherCondition;
-    private String lastImageUploadedBy;
+    private String lastUpdatedCondition;
+    private String lastUploadedBy;
 }

@@ -31,7 +31,7 @@ class InspectionService {
   }
   async getInspectionsByTransformer(transformerNo) {
     try {
-      console.log("Fetching inspections for transformer ID:", transformerNo);
+      console.log("Fetching inspections for transformer No:", transformerNo);
       const response = await fetch(`${API_BASE_URL}/transformer/${transformerNo}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }

@@ -28,7 +28,7 @@ function InspectionsSTImage() {
   const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
 
   useEffect(() => {
-    console.log("Transformer ID:", transformerNo, "Inspection ID:", inspectionId);
+    console.log("Transformer No:", transformerNo, "Inspection ID:", inspectionId);
     if (transformerNo) {
       fetchInspectionsByTransformer(transformerNo);
     }
@@ -371,12 +371,14 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
       </div>
     );
   }
+  console.log('🛑🛑 transformerId in thermal Image Component:', transformer?.id);
 
   return (
     <div className="inspections-page">
         <PageHeaderIns
         onNewInspection={() => setShowCreateModal(true)}
         transformerNo={transformer?.transformerNo}
+        transformerId={transformer?.id}
         transformerPoleno={transformer?.poleNo}
         inspectionId={currentInspection?.inspectionId}
         inspectionTimestamp={currentInspection?.inspectionTimestamp}
@@ -415,6 +417,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
             ) : (
               <ThermalImageComponent
                 inspectionId={currentInspection.inspectionId}
+                transformerId={transformer?.id}
                 onImageUpload={handleImageUpload}
                 onImageDelete={handleImageDelete}
                 hasExistingImage={hasCloudImage}

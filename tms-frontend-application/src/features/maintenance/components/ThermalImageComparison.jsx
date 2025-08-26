@@ -5,6 +5,7 @@ import '../styles/thermal-image-comparison.css';
 import { baselineImageService } from '../services/BaselineImageService';
 
 const ThermalImageComparison = ({ 
+  transformerId,
   baselineImage, 
   currentImage, 
   inspectionData,
@@ -68,17 +69,16 @@ const ThermalImageComparison = ({
       console.log('  - transformer:', transformerNo);
       console.log('  - weather:', weatherCondition);
       
-      // Use the specific weather condition method
-      const imageBlob = await baselineImageService.getImage(transformerNo, weatherCondition);
+      // Use the correct method from BaselineImageService
+      const imageUrl = await baselineImageService.getBaselineImage(transformerId, weatherCondition);
       
-      if (imageBlob) {
-        // Convert blob to URL for display
-        const imageUrl = URL.createObjectURL(imageBlob);
+      if (imageUrl) {
         setWeatherBasedBaselineImage(imageUrl);
         console.log('✅ Baseline image loaded successfully for weather condition:', weatherCondition);
       } else {
         console.log('❌ No baseline image found for weather condition:', weatherCondition);
         setWeatherBasedBaselineImage(null);
+        setError(`No baseline image available for ${weatherCondition} condition`);
       }
       
     } catch (error) {
@@ -90,9 +90,10 @@ const ThermalImageComparison = ({
     }
   };
 
-  // Cleanup blob URL when component unmounts or image changes
+  // No need to cleanup blob URL since we're getting direct URLs from Cloudinary
   useEffect(() => {
     return () => {
+      // Only cleanup if it's a blob URL (which shouldn't happen with the new service)
       if (weatherBasedBaselineImage && weatherBasedBaselineImage.startsWith('blob:')) {
         URL.revokeObjectURL(weatherBasedBaselineImage);
       }
@@ -146,17 +147,39 @@ const ThermalImageComparison = ({
           <div className="thermal-image-wrapper">
             {isLoading ? (
               <div className="image-placeholder">
+                <div className="loading-spinner"></div>
                 <span>Loading baseline image...</span>
+              </div>
+            ) : error ? (
+              <div className="image-placeholder error">
+                <AlertTriangle size={24} />
+                <span>{error}</span>
+                <button 
+                  onClick={loadWeatherBasedBaselineImage}
+                  className="retry-btn"
+                >
+                  Retry
+                </button>
               </div>
             ) : weatherBasedBaselineImage ? (
               <img 
                 src={weatherBasedBaselineImage} 
                 alt={`Baseline thermal image (${inspectionData?.weatherCondition || 'unknown'} condition)`}
                 className="thermal-image"
+                onError={(e) => {
+                  console.error('Failed to load baseline image:', e);
+                  setError('Failed to display baseline image');
+                }}
               />
             ) : (
               <div className="image-placeholder">
                 <span>No baseline image available for {inspectionData?.weatherCondition || 'current weather'} condition</span>
+                <button 
+                  onClick={onUploadNew}
+                  className="upload-baseline-btn"
+                >
+                  Upload Baseline
+                </button>
               </div>
             )}
             
@@ -273,14 +296,6 @@ const ThermalImageComparison = ({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <div className="error-message">
-          <AlertTriangle size={16} />
-          {error}
         </div>
       )}
 

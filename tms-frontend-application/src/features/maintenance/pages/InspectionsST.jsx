@@ -75,6 +75,8 @@ function InspectionsST() {
       setTLoading(false);
     }
   }, [transformer, transformerNo]);
+  console.log('Current transformer number:', transformerNo);
+  console.log('Current transformer id:', transformer?.id);
 
   // load inspections for this transformer
   useEffect(() => {
@@ -345,6 +347,7 @@ function InspectionsST() {
   return (
     <div className="inspections-page">
       <PageHeaderST
+        transformerId={transformer?.id}
         transformerNo={transformer?.transformerNo}
         transformerLocation={transformer?.locationDetails}
         transformerRegion={transformer?.region}

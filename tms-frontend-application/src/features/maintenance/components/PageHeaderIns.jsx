@@ -6,6 +6,7 @@ import '../styles/page-header-st.css';
 import { formatInspectedDateTime } from '../utils/dataUtils';
 
 const PageHeaderIns = ({
+  transformerId,
   transformerNo,
   transformerPoleno,
   inspectionId,
@@ -20,13 +21,15 @@ const PageHeaderIns = ({
   const inspectors = ['John Silva', 'Priya Perera', 'Nuwan Fernando', 'Ayesha Kumari', 'Ravi Jayasuriya'];
   const randomInspector = inspectors[Math.floor(Math.random() * inspectors.length)];
 
+  console.log('🛑 transformerId in PageHeaderIns:', transformerId);
+
   useEffect(() => {
     const fetchLastUpdatedInfo = async () => {
       if (!transformerNo) return;
       
       try {
         setLoading(true);
-        const lastUpdatedData = await baselineImageService.getTransformerLastUpdated(transformerNo);
+        const lastUpdatedData = await baselineImageService.getTransformerLastUpdated(transformerId);
         setLastUpdatedInfo(lastUpdatedData);
         setError(null);
       } catch (err) {
@@ -38,7 +41,7 @@ const PageHeaderIns = ({
     };
 
     fetchLastUpdatedInfo();
-  }, [transformerNo]); // Remove transformerService from dependencies
+  }, [transformerId]); // Remove transformerService from dependencies
 
   const handleBaselineImagesClick = () => {
     navigate(`/transformer/${transformerNo}/baseimage`);

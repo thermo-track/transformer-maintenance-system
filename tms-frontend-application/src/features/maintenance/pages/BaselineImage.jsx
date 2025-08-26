@@ -6,7 +6,8 @@ import '../styles/baseline-image-page.css';
 import { transformerService } from '../services/TransformerService';
 
 const BaselineImagePage = () => {
-  const { transformerNo } = useParams();
+  // Changed from transformerNo to transformerId
+  const { transformerId } = useParams();
   const navigate = useNavigate();
   
   const [baselineImages, setBaselineImages] = useState({
@@ -27,35 +28,37 @@ const BaselineImagePage = () => {
   ];
 
   useEffect(() => {
-    console.log('🚀 Component mounted with transformerNo:', transformerNo);
+    console.log('Component mounted with transformerId:', transformerId);
     
-    if (transformerNo) {
+    if (transformerId) {
       loadBaselineImages();
       loadTransformerDetails();
     } else {
-      console.warn('⚠️ No transformerNo provided in params');
-      setError('No transformer number provided');
+      console.warn('No transformerId provided in params');
+      setError('No transformer ID provided');
     }
-  }, [transformerNo]);
+  }, [transformerId]);
 
   const loadTransformerDetails = async () => {
     try {
-      console.log('🔄 Starting to load transformer details...');
+      console.log('Starting to load transformer details...');
       setIsLoadingTransformer(true);
-      setError(null); // Clear any previous errors
-      
-      const t = await transformerService.getTransformerByNumber(transformerNo);
-      console.log('✅ Transformer loaded successfully:', t);
+      setError(null);
+      console.log('🙂 Fetching transformer with ID:', transformerId);
+
+      // Changed to use transformerId instead of transformerNo
+      const t = await transformerService.getTransformerById(transformerId);
+      console.log('Transformer loaded successfully:', t);
       
       if (t) {
         setTransformer(t);
       } else {
-        console.warn('⚠️ No transformer found for number:', transformerNo);
-        setError(`No transformer found with number: ${transformerNo}`);
+        console.warn('No transformer found for ID:', transformerId);
+        setError(`No transformer found with ID: ${transformerId}`);
       }
       
     } catch (error) {
-      console.error("❌ Error loading transformer:", error);
+      console.error("Error loading transformer:", error);
       setError("Failed to load transformer details: " + error.message);
     } finally {
       setIsLoadingTransformer(false);
@@ -67,10 +70,10 @@ const BaselineImagePage = () => {
       setIsLoading(true);
       setError(null);
       
-      console.log('Loading baseline images for transformer:', transformerNo);
+      console.log('Loading baseline images for transformer:', transformerId);
       
-      // Use the simpler approach to load all images directly
-      const images = await baselineImageService.getAllBaselineImages(transformerNo);
+      // Using the updated service with transformerId
+      const images = await baselineImageService.getAllBaselineImages(transformerId);
       
       console.log('Loaded images:', images);
       setBaselineImages(images);
@@ -96,10 +99,13 @@ const BaselineImagePage = () => {
       setUploadingCondition(weatherCondition);
       setError(null);
       
-      await baselineImageService.uploadBaselineImage(transformerNo, file, weatherCondition);
+      // Using the updated service with transformerId
+      await baselineImageService.uploadBaselineImage(transformerId, file, weatherCondition);
       
       // Reload images after successful upload
       await loadBaselineImages();
+      
+      console.log(`Successfully uploaded ${weatherCondition} baseline image`);
       
     } catch (error) {
       console.error('Error uploading baseline image:', error);
@@ -126,13 +132,16 @@ const BaselineImagePage = () => {
       setIsLoading(true);
       setError(null);
       
-      await baselineImageService.deleteBaselineImage(transformerNo, weatherCondition);
+      // Using the updated service with transformerId
+      await baselineImageService.deleteBaselineImage(transformerId, weatherCondition);
       
       // Update local state
       setBaselineImages(prev => ({
         ...prev,
         [weatherCondition]: null
       }));
+      
+      console.log(`Successfully deleted ${weatherCondition} baseline image`);
       
     } catch (error) {
       console.error('Error deleting baseline image:', error);
@@ -160,6 +169,11 @@ const BaselineImagePage = () => {
                 src={hasImage} 
                 alt={`${condition.value} baseline`}
                 className="baseline-imageB"
+                onError={(e) => {
+                  console.error(`Failed to load ${condition.value} image:`, hasImage);
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
               <div className="image-overlayB">
                 <div className="image-actionsB">
@@ -181,13 +195,22 @@ const BaselineImagePage = () => {
                   </button>
                 </div>
               </div>
+              {/* Fallback div for failed image loads */}
+              <div className="upload-areaB" style={{display: 'none'}}>
+                <Camera size={48} className="upload-iconB" />
+                <p className="upload-textB">Image failed to load</p>
+                <label htmlFor={`file-input-${condition.value}`} className="upload-buttonB">
+                  <Upload size={16} />
+                  Upload New Image
+                </label>
+              </div>
             </>
           ) : (
             <div className="upload-areaB">
               {isUploading ? (
                 <div className="uploading-stateB">
                   <div className="spinnerB"></div>
-                  <p>Uploading...</p>
+                  <p>Uploading to cloud...</p>
                 </div>
               ) : (
                 <>
@@ -229,8 +252,7 @@ const BaselineImagePage = () => {
       );
     }
 
-    // Debug: log the transformer object structure
-    console.log('🏗️ Rendering transformer info:', transformer);
+    console.log('Rendering transformer info:', transformer);
 
     return (
       <p className="transformer-detailsB">
@@ -257,14 +279,15 @@ const BaselineImagePage = () => {
             <div className="header-infoB">
               <h1 className="page-titleB">Baseline Images</h1>
               <div className="transformer-infoB">
-                <h2 className="transformer-numberB">{transformerNo}</h2>
+                <h2 className="transformer-numberB">
+                  {transformer?.transformerNo || transformerId}
+                </h2>
                 {renderTransformerInfo()}
               </div>
             </div>
           </div>
         </div>
       </div>
-
 
       {/* Error Display */}
       {error && (
@@ -286,9 +309,10 @@ const BaselineImagePage = () => {
         {isLoading && (
           <div className="loading-overlayB">
             <div className="spinnerB"></div>
-            <p>Loading...</p>
+            <p>Processing...</p>
           </div>
         )}
+        
       </div>
     </div>
   );
