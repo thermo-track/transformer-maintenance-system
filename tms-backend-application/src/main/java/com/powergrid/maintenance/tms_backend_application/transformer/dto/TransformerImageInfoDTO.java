@@ -1,4 +1,4 @@
-// TransformerImageInfoDTO.java
+// TransformerImageInfoDTO.java  
 package com.powergrid.maintenance.tms_backend_application.transformer.dto;
 
 import lombok.Data;
@@ -16,9 +16,12 @@ public class TransformerImageInfoDTO {
     public static class ImageInfo {
         private String imageName;
         private String imageType;
-        private long imageSize;
         private boolean hasImage;
         private String uploadedBy;
         private Instant uploadedAt;
+        
+        // Additional fields for cloud storage
+        private String imageUrl;
+        private String cloudinaryPublicId;
     }
 }

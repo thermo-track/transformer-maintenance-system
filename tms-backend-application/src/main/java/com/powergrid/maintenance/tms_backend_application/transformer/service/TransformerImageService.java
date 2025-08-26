@@ -1,7 +1,9 @@
 package com.powergrid.maintenance.tms_backend_application.transformer.service;
 
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
+import com.powergrid.maintenance.tms_backend_application.transformer.domain.TransformerImage;
 import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
+import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerImageRepository;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerImageInfoDTO;
@@ -10,11 +12,8 @@ import com.powergrid.maintenance.tms_backend_application.transformer.mapper.Tran
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.List;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 @Service
@@ -24,174 +23,146 @@ public class TransformerImageService {
     @Autowired
     private TransformerRepository transformerRepository;
     
-    private static final List<String> ALLOWED_IMAGE_TYPES = List.of(
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"
-    );
+    @Autowired
+    private TransformerImageRepository transformerImageRepository;
     
-    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-    
-    public ImageUploadResponseDTO uploadBaseImage(String transformerNo, ImageUploadDTO imageUploadDTO,
-            MultipartFile file) throws IOException {
+    public ImageUploadResponseDTO saveImageFromUrl(String transformerId, ImageUploadDTO imageUploadDTO) {
         
-        validateImageFile(file);
-        String weatherCondition = imageUploadDTO.getWeatherCondition();
-        validateWeatherCondition(weatherCondition);
-        
-        Optional<Transformer> optionalTransformer = transformerRepository.findByTransformerNo(transformerNo);
+        // Validate transformer exists
+        Optional<Transformer> optionalTransformer = transformerRepository.findById(transformerId);
         if (optionalTransformer.isEmpty()) {
-            throw new RuntimeException("Transformer not found with transformer number: " + transformerNo);
+            throw new RuntimeException("Transformer not found with id: " + transformerId);
         }
         
         Transformer transformer = optionalTransformer.get();
         
+        // Parse weather condition
+        TransformerImage.WeatherCondition weatherCondition;
         try {
-            byte[] imageBytes = file.getBytes();
-            Instant uploadTime = Instant.now();
-            
-            // Set image data based on weather condition
-            switch (weatherCondition.toUpperCase()) {
-                case "SUNNY":
-                    transformer.setSunnyImageData(imageBytes);
-                    transformer.setSunnyImageName(file.getOriginalFilename());
-                    transformer.setSunnyImageType(file.getContentType());
-                    transformer.setSunnyImageUploadedBy(imageUploadDTO.getAdminUserId());
-                    transformer.setSunnyImageUploadedAt(uploadTime);
-                    break;
-                case "CLOUDY":
-                    transformer.setCloudyImageData(imageBytes);
-                    transformer.setCloudyImageName(file.getOriginalFilename());
-                    transformer.setCloudyImageType(file.getContentType());
-                    transformer.setCloudyImageUploadedBy(imageUploadDTO.getAdminUserId());
-                    transformer.setCloudyImageUploadedAt(uploadTime);
-                    break;
-                case "RAINY":
-                    transformer.setRainyImageData(imageBytes);
-                    transformer.setRainyImageName(file.getOriginalFilename());
-                    transformer.setRainyImageType(file.getContentType());
-                    transformer.setRainyImageUploadedBy(imageUploadDTO.getAdminUserId());
-                    transformer.setRainyImageUploadedAt(uploadTime);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid weather condition: " + weatherCondition);
-            }
-            
-            Transformer updatedTransformer = transformerRepository.save(transformer);
-            return TransformerImageMapper.toImageUploadResponseDTO(updatedTransformer, weatherCondition, file.getSize());
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Error processing image data: " + e.getMessage(), e);
+            weatherCondition = TransformerImage.WeatherCondition.valueOf(
+                imageUploadDTO.getWeatherCondition().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid weather condition: " + imageUploadDTO.getWeatherCondition());
         }
+        
+        // Check if image already exists for this weather condition
+        Optional<TransformerImage> existingImage = transformerImageRepository
+            .findByTransformerIdAndWeatherCondition(transformerId, weatherCondition);
+        
+        TransformerImage transformerImage;
+        
+        if (existingImage.isPresent()) {
+            // Update existing image
+            transformerImage = existingImage.get();
+            transformerImage.setBaseImageUrl(imageUploadDTO.getBaseImageUrl());
+            transformerImage.setBaseCloudinaryPublicId(imageUploadDTO.getBaseCloudinaryPublicId());
+            transformerImage.setBaseImageName(imageUploadDTO.getBaseImageName());
+            transformerImage.setBaseImageType(imageUploadDTO.getBaseImageType());
+            transformerImage.setUploadedBy(imageUploadDTO.getAdminUserId());
+            transformerImage.setBaseImageUploadedAt(ZonedDateTime.now());
+        } else {
+            // Create new image record
+            transformerImage = new TransformerImage();
+            transformerImage.setTransformerId(transformerId);
+            transformerImage.setWeatherCondition(weatherCondition);
+            transformerImage.setBaseImageUrl(imageUploadDTO.getBaseImageUrl());
+            transformerImage.setBaseCloudinaryPublicId(imageUploadDTO.getBaseCloudinaryPublicId());
+            transformerImage.setBaseImageName(imageUploadDTO.getBaseImageName());
+            transformerImage.setBaseImageType(imageUploadDTO.getBaseImageType());
+            transformerImage.setUploadedBy(imageUploadDTO.getAdminUserId());
+            transformerImage.setBaseImageUploadedAt(ZonedDateTime.now());
+        }
+        
+        TransformerImage savedImage = transformerImageRepository.save(transformerImage);
+        return TransformerImageMapper.toImageUploadResponseDTO(transformer, savedImage);
     }
     
     @Transactional(readOnly = true)
-    public byte[] getImage(String transformerNo, String weatherCondition) {
-        Optional<Transformer> optionalTransformer = transformerRepository.findByTransformerNo(transformerNo);
+    public String getImageUrl(String transformerId, String weatherCondition) {
+        // Validate transformer exists
+        if (!transformerRepository.existsById(transformerId)) {
+            throw new RuntimeException("Transformer not found with id: " + transformerId);
+        }
+        
+        // Parse weather condition
+        TransformerImage.WeatherCondition condition;
+        try {
+            condition = TransformerImage.WeatherCondition.valueOf(weatherCondition.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid weather condition: " + weatherCondition);
+        }
+        
+        Optional<TransformerImage> image = transformerImageRepository
+            .findByTransformerIdAndWeatherCondition(transformerId, condition);
+        
+        return image.map(TransformerImage::getBaseImageUrl).orElse(null);
+    }
+    
+    @Transactional(readOnly = true)
+    public TransformerImageInfoDTO getTransformerImagesInfo(String transformerId) {
+        Optional<Transformer> optionalTransformer = transformerRepository.findById(transformerId);
         if (optionalTransformer.isEmpty()) {
             return null;
         }
         
         Transformer transformer = optionalTransformer.get();
         
-        try {
-            switch (weatherCondition.toUpperCase()) {
-                case "SUNNY":
-                    return transformer.getSunnyImageData();
-                case "CLOUDY":
-                    return transformer.getCloudyImageData();
-                case "RAINY":
-                    return transformer.getRainyImageData();
-                default:
-                    return null;
-            }
-        } catch (Exception e) {
-            // Log the error and return null
-            System.err.println("Error accessing LOB data: " + e.getMessage());
-            return null;
-        }
-    }
-    
-    @Transactional(readOnly = true)
-    public TransformerImageInfoDTO getTransformerImagesInfo(String transformerNo) {
-        Optional<Transformer> optionalTransformer = transformerRepository.findByTransformerNo(transformerNo);
-        if (optionalTransformer.isEmpty()) {
-            return null;
-        }
+        // Get all images for this transformer
+        Optional<TransformerImage> sunnyImage = transformerImageRepository
+            .findByTransformerIdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.SUNNY);
+        Optional<TransformerImage> cloudyImage = transformerImageRepository
+            .findByTransformerIdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.CLOUDY);
+        Optional<TransformerImage> rainyImage = transformerImageRepository
+            .findByTransformerIdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.RAINY);
         
-        return TransformerImageMapper.toTransformerImageInfoDTO(optionalTransformer.get());
+        return TransformerImageMapper.toTransformerImageInfoDTO(
+            transformer, 
+            sunnyImage.orElse(null), 
+            cloudyImage.orElse(null), 
+            rainyImage.orElse(null)
+        );
     }
     
     @Transactional
-    public boolean deleteImage(String transformerNo, String weatherCondition) {
-        Optional<Transformer> optionalTransformer = transformerRepository.findByTransformerNo(transformerNo);
-        if (optionalTransformer.isEmpty()) {
-            return false;
+    public boolean deleteImage(String transformerId, String weatherCondition) {
+        // Validate transformer exists
+        if (!transformerRepository.existsById(transformerId)) {
+            throw new RuntimeException("Transformer not found with id: " + transformerId);
         }
         
-        Transformer transformer = optionalTransformer.get();
-        boolean hasImage = false;
-        
-        switch (weatherCondition.toUpperCase()) {
-            case "SUNNY":
-                hasImage = transformer.getSunnyImageName() != null;
-                transformer.setSunnyImageData(null);
-                transformer.setSunnyImageName(null);
-                transformer.setSunnyImageType(null);
-                break;
-            case "CLOUDY":
-                hasImage = transformer.getCloudyImageName() != null;
-                transformer.setCloudyImageData(null);
-                transformer.setCloudyImageName(null);
-                transformer.setCloudyImageType(null);
-                break;
-            case "RAINY":
-                hasImage = transformer.getRainyImageName() != null;
-                transformer.setRainyImageData(null);
-                transformer.setRainyImageName(null);
-                transformer.setRainyImageType(null);
-                break;
+        // Parse weather condition
+        TransformerImage.WeatherCondition condition;
+        try {
+            condition = TransformerImage.WeatherCondition.valueOf(weatherCondition.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid weather condition: " + weatherCondition);
         }
         
-        if (hasImage) {
-            transformerRepository.save(transformer);
+        Optional<TransformerImage> image = transformerImageRepository
+            .findByTransformerIdAndWeatherCondition(transformerId, condition);
+        
+        if (image.isPresent()) {
+            transformerImageRepository.delete(image.get());
             return true;
         }
         
         return false;
     }
     
-    private void validateImageFile(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new RuntimeException("Please select a file to upload");
-        }
-        
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new RuntimeException("File size should not exceed 50MB");
-        }
-        
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
-            throw new RuntimeException("Only image files (JPEG, PNG, GIF, BMP) are allowed");
-        }
-    }
-    
-    private void validateWeatherCondition(String weatherCondition) {
-        if (weatherCondition == null || weatherCondition.trim().isEmpty()) {
-            throw new IllegalArgumentException("Weather condition is required");
-        }
-        
-        String condition = weatherCondition.toUpperCase();
-        if (!condition.equals("SUNNY") && !condition.equals("CLOUDY") && !condition.equals("RAINY")) {
-            throw new IllegalArgumentException("Weather condition must be one of: SUNNY, CLOUDY, RAINY");
-        }
-    }
-
-    public TransformerLastUpdatedDTO getTransformerLastUpdatedTime(String transformerNo) {
-        Optional<Transformer> transformerOpt = transformerRepository.findByTransformerNo(transformerNo);
+    @Transactional(readOnly = true)
+    public TransformerLastUpdatedDTO getTransformerLastUpdatedTime(String transformerId) {
+        Optional<Transformer> transformerOpt = transformerRepository.findById(transformerId);
         
         if (transformerOpt.isEmpty()) {
-            throw new RuntimeException("Transformer not found with number: " + transformerNo);
+            throw new RuntimeException("Transformer not found with id: " + transformerId);
         }
         
-        return TransformerImageMapper.toLastUpdatedDTO(transformerOpt.get());
+        Transformer transformer = transformerOpt.get();
+        
+        // Get the most recently uploaded image
+        Optional<TransformerImage> latestImage = transformerImageRepository
+            .findFirstByTransformerIdOrderByBaseImageUploadedAtDesc(transformerId);
+        
+        return TransformerImageMapper.toLastUpdatedDTO(transformer, latestImage.orElse(null));
     }
 }

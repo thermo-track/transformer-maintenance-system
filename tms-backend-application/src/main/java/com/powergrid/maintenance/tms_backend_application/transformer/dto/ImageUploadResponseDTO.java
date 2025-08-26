@@ -11,8 +11,11 @@ public class ImageUploadResponseDTO {
     private String imageName;
     private String imageType;
     private String weatherCondition;
-    private long imageSize;
     private String uploadedBy;
     private Instant uploadedAt;
     private String message;
+    
+    // Additional fields for Cloudinary info
+    private String imageUrl;
+    private String cloudinaryPublicId;
 }
