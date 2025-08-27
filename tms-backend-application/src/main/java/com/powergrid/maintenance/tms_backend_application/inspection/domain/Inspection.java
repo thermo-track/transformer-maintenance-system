@@ -42,7 +42,7 @@ public class Inspection {
     @Column(name = "environmental_condition") 
     private String environmentalCondition; 
 
-        // --- Cloudinary image metadata ---
+// --- Cloudinary image metadata ---
     @Column(name = "cloud_image_url")
     private String cloudImageUrl;
 
@@ -67,9 +67,7 @@ public class Inspection {
         foreignKey = @ForeignKey(name = "fk_inspections_transformer_no") 
     ) 
     private Transformer transformer;  
-        /**
-     * Check if inspection has cloud image
-     */
+
     public boolean hasCloudImage() {
         return cloudImageUrl != null && !cloudImageUrl.isEmpty();
     }

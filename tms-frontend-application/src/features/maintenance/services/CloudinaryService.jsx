@@ -149,7 +149,7 @@ class CloudinaryService {
         cloudUploadedAt: new Date().toISOString() // Backend expects ZonedDateTime format
       };
 
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/image-metadata`, {
+      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ class CloudinaryService {
    */
   async deleteImageMetadataFromBackend(inspectionId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/image-metadata`, {
+      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`, {
         method: 'DELETE',
         headers: {
           // Add authorization header if needed
@@ -270,7 +270,7 @@ class CloudinaryService {
    */
   async hasCloudImage(inspectionId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/has-cloud-image`, {
+      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/has-cloud-image`, {
         method: 'GET',
         headers: {
           // Add authorization header if needed
@@ -298,7 +298,7 @@ class CloudinaryService {
    */
   async getCloudImageUrlFromBackend(inspectionId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/cloud-image-url`, {
+      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/cloud-image-url`, {
         method: 'GET',
         headers: {
           // Add authorization header if needed
