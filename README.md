@@ -156,6 +156,18 @@ cd tms-frontend-application
 npm run build
 ```
 
+
+## 🚧 Current Limitations
+
+- Authentication & Authorization: No user accounts, roles, or access control (all operations are unrestricted).
+- AI Thermal Analysis: Automated anomaly detection not yet integrated (images stored only).
+- Data Validation: Limited server-side validation for some numeric and domain-specific fields.
+- Security Hardening: No rate limiting, content security policy, or request size constraints configured.
+- Deployment: No IaC scripts (Terraform/Docker Compose) provided.
+- Bulk Operations: No bulk import/export (CSV/Excel) for transformers or inspections.
+- Mobile: Layout not optimized for narrow devices.
+
+
 ## 📄 License
 
 This project is for **academic and demonstration purposes**.
