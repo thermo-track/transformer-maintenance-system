@@ -4,7 +4,7 @@ A modern web platform for power transformer maintenance, combining AI-powered th
 
 ## 🚀 Overview
 
-**Transformer Maintenance System (TMS)** helps operators and technical officers monitor, inspect, and maintain transformers efficiently. The system uses **AI-powered thermal image analysis** to detect faults, supports manual validation, and maintains a complete history of maintenance actions.
+The **Transformer Maintenance System (TMS)** helps operators and technical officers monitor, inspect, and maintain transformers efficiently. The system uses **AI-powered thermal image analysis** to detect faults, supports manual validation, and maintains a complete history of maintenance actions.
 
 ## 🟢 Phase 1: Transformer & Baseline Image Management
 
@@ -14,18 +14,38 @@ A modern web platform for power transformer maintenance, combining AI-powered th
 
 ## ✨ Implemented Features
 
-- Add, edit, view, list, delete transformers
-- Upload, edit, view, and delete **baseline thermal images** for each transformer
-- Upload, edit, view, and delete **inspection images** for each inspection
-- Responsive **React frontend** for all management tasks
-- **RESTful backend API** for transformer and image management
+### Transformer Management
+- Add, view, edit, list, and delete transformers
+- Store transformer metadata in a relational database (PostgreSQL)
+
+### Thermal Image Upload & Management
+- Upload, edit, view, and delete baseline thermal images for each transformer
+- Upload, edit, view, and delete maintenance/inspection images for periodic checks
+- Each image is tagged with:
+  - Image type (Baseline / Maintenance)
+  - Environmental condition (Sunny, Cloudy, Rainy) – for baseline images
+  - Metadata: upload date/time, uploader (admin user ID or name)
+
+### Inspection Management
+- Create, edit, view, and delete inspections under transformers
+- Associate multiple inspection images with each inspection record
+
+### Map Integration
+- Add transformer locations via interactive map
+- View transformers on the map and get directions in Google Maps
+
+### System Architecture
+- Responsive React frontend for all management tasks
+- RESTful Spring Boot backend API for transformer, inspection, and image management
+- Efficient image storage and retrieval integrated with Cloudinary
+- All transformer and image metadata stored in PostgreSQL
 
 ## ⚡ Setup Instructions
 
 ### 🔑 Prerequisites
 
-- [Node.js](https://nodejs.org/) (for frontend) 
-- [Java 21](https://www.oracle.com/apac/java/technologies/downloads/#java21) (for backend) 
+- [Node.js](https://nodejs.org/) (for frontend)
+- [Java 21](https://www.oracle.com/apac/java/technologies/downloads/#java21) (for backend)
 - [PostgreSQL](https://www.postgresql.org/) (database)
 - [Git](https://git-scm.com/) (for cloning)
 
@@ -64,6 +84,8 @@ cd tms-backend-application
 mvn spring-boot:run
 ```
 
+*Note: Ensure PostgreSQL is running and the database is created before starting the backend.*
+
 ### 4. Frontend Setup
 
 ```bash
@@ -74,33 +96,77 @@ npm run dev
 
 ### 5. Access the Application
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8080/api
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8080/api
 
 ## ☁️ Cloudinary Setup
 
 Cloudinary stores and manages transformer images (baseline + inspection).
 
-**Quick Setup:**
+**Setup Steps:**
 1. Sign up at [cloudinary.com](https://cloudinary.com/)
 2. Copy **Cloud Name** and **API Key** from your dashboard
-3. Create an upload preset: **Settings → Upload → Upload Presets → Add Upload Preset**
-4. Set **Signing Mode** to `Unsigned` and save
-5. Add credentials to your frontend `.env` file
+3. Create an upload preset:
+   - Go to **Settings → Upload → Upload Presets → Add Upload Preset**
+   - Set **Signing Mode** to `Unsigned` and save
+4. Add credentials to your frontend `.env` file
 
 ## 🚢 Deployment
 
-- **Backend**: Deploy as Spring Boot application
-- **Frontend**: Build with `npm run build` and serve static files
-- **Database**: Ensure PostgreSQL is running and accessible
+### Production Deployment
+- **Backend**: Deploy as Spring Boot application (JAR file or Docker container)
+- **Frontend**: Build with `npm run build` and serve static files via web server (Nginx/Apache)
+- **Database**: Ensure PostgreSQL is running and accessible with proper security configurations
+
+### Environment Considerations
+- Update environment variables for production URLs
+- Configure CORS settings appropriately
+- Set up SSL certificates for HTTPS
+- Configure proper database connection pooling
+
+## 🛠️ Technology Stack
+
+- **Frontend**: React, Vite, JavaScript/TypeScript
+- **Backend**: Spring Boot, Java 21
+- **Database**: PostgreSQL
+- **Cloud Storage**: Cloudinary
+- **Build Tools**: Maven (backend), npm (frontend)
+
+## 🔧 Development
+
+### Running in Development Mode
+```bash
+# Backend (runs on port 8080)
+cd tms-backend-application
+mvn spring-boot:run
+
+# Frontend (runs on port 5173)
+cd tms-frontend-application
+npm run dev
+```
+
+### Building for Production
+```bash
+# Backend
+cd tms-backend-application
+mvn clean package
+
+# Frontend
+cd tms-frontend-application
+npm run build
+```
 
 ## 📄 License
 
 This project is for **academic and demonstration purposes**.
 
-## 👤 Authors
+## 👥 Authors
 
-- 210325M - Kuruppu M.P.
-- 210349N - Madhushan I.D.
-- 210371A - Manatunge J.M.
-- 210463H - Perera L.C.S.
+- **210325M** - Kuruppu M.P.
+- **210349N** - Madhushan I.D.
+- **210371A** - Manatunge J.M.
+- **210463H** - Perera L.C.S.
+
+---
+
+*For issues or contributions, please contact the development team.*
