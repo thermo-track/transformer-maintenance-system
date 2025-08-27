@@ -24,11 +24,10 @@ A modern web platform for power transformer maintenance, combining AI-powered th
 
 ### 🔑 Prerequisites
 
-- Node.js (for frontend)
-- Java 21 (for backend)
-- PostgreSQL (database)
-- Git (for cloning)
-- Maven (for building the backend)
+- [Node.js](https://nodejs.org/) (for frontend) 
+- [Java 21](https://www.oracle.com/apac/java/technologies/downloads/#java21) (for backend) 
+- [PostgreSQL](https://www.postgresql.org/) (database)
+- [Git](https://git-scm.com/) (for cloning)
 
 ### 1. Clone the Repository
 
@@ -45,12 +44,6 @@ cd transformer-maintenance-system
 DB_URL=jdbc:postgresql://localhost:<port>/<database_name>
 DB_USERNAME=<postgres_username>
 DB_PASSWORD=<postgres_password>
-
-# Flyway configuration
-FLYWAY_URL=jdbc:postgresql://localhost:<port>/postgres
-FLYWAY_USER=<postgres_username>
-FLYWAY_PASSWORD=<postgres_password>
-FLYWAY_DBNAME=<database_name>
 ```
 
 **Frontend (`.env`)**
