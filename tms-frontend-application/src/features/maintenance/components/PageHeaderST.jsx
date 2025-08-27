@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Camera } from 'lucide-react';
 import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/page-header-st.css';
+import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
 
 const PageHeaderST = ({
   transformerId,
@@ -87,7 +88,7 @@ const PageHeaderST = ({
             onClick={() => navigate(-1)}
             style={{ marginBottom: "1rem" }}
           >
-            &lt;
+            <ArrowLeftIcon />
           </button>
           <h2 className="transformer-title">{transformerNo}</h2>
           </div>

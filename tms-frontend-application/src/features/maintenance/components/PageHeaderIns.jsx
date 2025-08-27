@@ -4,6 +4,7 @@ import { Camera } from 'lucide-react';
 import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/page-header-st.css';
 import { formatInspectedDateTime } from '../utils/dataUtils';
+import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
 
 const PageHeaderIns = ({
   transformerId,
@@ -87,7 +88,7 @@ const PageHeaderIns = ({
             onClick={() => navigate(-1)}
             style={{ marginBottom: "1rem" }}
           >
-            &lt;
+            <ArrowLeftIcon />
           </button>
           <h2 className="transformer-title">{inspectionId}</h2>
           </div>

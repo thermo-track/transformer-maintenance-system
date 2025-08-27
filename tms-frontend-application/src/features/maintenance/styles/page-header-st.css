@@ -25,19 +25,18 @@
 }
 
 .transformer-location {
-  color: #6b7280;
+  color: #cacaca;
   font-size: 1rem;
   font-weight: 500;
   margin-left: 1rem ;
 }
 
 .transformer-landmark {
-  font-size: 0.875rem;
-  color: #dc2626;
+  font-size: 1rem;
+  color: #cacaca;
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 0.15rem;
 }
 
 /* Badges Container */
@@ -54,21 +53,16 @@
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
   text-align: center;
   min-width: 70px;
   border: 1px solid #e5e7eb;
   transition: background-color 0.2s ease;
 }
 
-.badge:hover {
-  background-color: #e5e7eb;
-}
-
 .badge-label {
   display: block;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #bebec0;
   font-weight: 400;
   margin-top: 2px;
   line-height: 1.2;
