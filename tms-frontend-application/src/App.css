@@ -30,7 +30,7 @@ a { color: var(--accent); text-decoration: none; }
 .grid.cols-2 { grid-template-columns: 1fr 1fr; }
 .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .actions { display:flex; gap:.5rem; justify-content:flex-end; }
-.badge { padding:.2rem .5rem; border-radius:.4rem; background:#0c274f; border:1px solid var(--border); font-size:.8rem; }
+.badge { padding:.2rem .5rem; border-radius:.4rem; background:#0c274f; border:1px solid var(--border); font-size:.9rem; }
 .meta { color: var(--muted); font-size: .9rem; }
 .footer { margin-top:2rem; color: var(--muted); font-size:.85rem; }
 .pagination { display:flex; gap:.5rem; align-items:center; }
