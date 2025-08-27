@@ -1,8 +1,10 @@
 // components/InspectionsTable.js
 import React, { useState } from 'react';
+import { Link} from 'react-router-dom';
 import { Eye, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../styles/inspections-table.css';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import { formatInspectionDateTime } from '../utils/dataUtils';
 
 const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -69,14 +71,11 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
             <tr>
               <th></th>
               <th></th>
-              <th>Inspection ID</th>
-              <th>Transformer ID</th>
-              <th>Branch</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Inspector</th>
+              <th>Transformer No</th>
+              <th>Inspection No</th>
+              <th>Inspected Date</th>
+              <th>Maintenance Date</th>
               <th>Status</th>
-              <th>Priority</th>
               <th></th>
             </tr>
           </thead>
@@ -85,7 +84,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
               <React.Fragment key={inspection.inspectionId}>
                 <tr className="table-row">
                   <td>
-                    <button
+                    {/* <button
                       className="expand-btn"
                       onClick={() => toggleRowExpansion(inspection.inspectionId)}
                     >
@@ -93,28 +92,22 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                         <ChevronDown className="icon-sm" /> : 
                         <ChevronRight className="icon-sm" />
                       }
-                    </button>
+                    </button> */}
                   </td>
                   <td className="row-number">
                     {startIndex + index + 1}
                   </td>
-                  <td className="inspection-id">
-                    {inspection.inspectionId}
-                  </td>
                   <td className="transformer-id">
                     {inspection.transformerNo}
                   </td>
-                  <td className="branch">
-                    {inspection.branch}
+                  <td className="inspection-id">
+                    {inspection.inspectionId}
                   </td>
-                  <td className="date">
-                    {inspection.dateOfInspection}
-                  </td>
-                  <td className="time">
-                    {inspection.timeOfInspection}
+                  <td className="inspection-date">
+                    {formatInspectionDateTime(inspection.inspectionTimestamp)}
                   </td>
                   <td className="inspector">
-                    {inspection.inspectorName}
+                    {formatInspectionDateTime(inspection.maintenanceDateTime)}
                   </td>
                   <td>
                     <span className={`status-badge ${getStatusClass(inspection.status)}`}>
@@ -122,32 +115,26 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                     </span>
                   </td>
                   <td>
-                    <span className={`priority-badge ${getPriorityClass(inspection.priority)}`}>
-                      {inspection.priority}
-                    </span>
-                  </td>
-                  <td>
                     <div className="actions">
-                      <button className="action-btn view-btn">
-                        <Eye className="icon-xs" />
-                      </button>
-                      <button 
-                        className="action-btn edit-btn"
-                        onClick={() => onEdit(inspection)}
-                      >
-                        <Edit className="icon-xs" />
-                      </button>
-                      <button 
-                        className="action-btn delete-btn"
-                        onClick={() => askDelete(inspection.inspectionId)}   
-                      >
-                        <Trash2 className="icon-xs" />
-                      </button>
+                      <Link
+                    className="btnn"
+                    to={`/transformer/${inspection.transformerNo}`}
+                    state={{
+                      // keep the uuid too
+                      transformerNo: inspection.transformerNo,
+                      poleNo: inspection.poleNo,
+                      region: inspection.region,
+                      type: inspection.type,
+                      locationDetails: inspection.locationDetails
+                    }}
+                  >
+                    View
+                  </Link>
                     </div>
                   </td>
                 </tr>
                 
-                {expandedRows.has(inspection.inspectionId) && (
+                {/* {expandedRows.has(inspection.inspectionId) && (
                   <tr className="expanded-row">
                     <td colSpan="11">
                       <div className="expanded-content">
@@ -176,7 +163,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                       </div>
                     </td>
                   </tr>
-                )}
+                )} */}
               </React.Fragment>
             ))}
           </tbody>

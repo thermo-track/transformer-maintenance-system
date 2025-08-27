@@ -1,6 +1,8 @@
+// Updated Repository Interface
 package com.powergrid.maintenance.tms_backend_application.inspection.repo;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,7 +15,7 @@ import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspe
 
 @Repository
 public interface InspectionRepo extends JpaRepository<Inspection, String> {
-     /**
+    /**
      * Find inspections by branch
      */
     List<Inspection> findByBranch(String branch);
@@ -24,29 +26,61 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
     List<Inspection> findByTransformerNo(String transformerNo);
     
     /**
-     * Find inspections by date range
+     * Find inspections by date range using timestamp
      */
-    List<Inspection> findByDateOfInspectionBetween(LocalDate startDate, LocalDate endDate);
-    
+    @Query("SELECT i FROM Inspection i WHERE DATE(i.inspectionTimestamp) BETWEEN :startDate AND :endDate")
+    List<Inspection> findByInspectionTimestampDateBetween(@Param("startDate") LocalDate startDate, 
+                                                         @Param("endDate") LocalDate endDate);
     
     /**
-     * Find inspections by branch and date range
+     * Find inspections by branch and date range using timestamp
      */
-    @Query("SELECT i FROM Inspection i WHERE i.branch = :branch AND i.dateOfInspection BETWEEN :startDate AND :endDate")
+    @Query("SELECT i FROM Inspection i WHERE i.branch = :branch AND DATE(i.inspectionTimestamp) BETWEEN :startDate AND :endDate")
     List<Inspection> findByBranchAndDateRange(@Param("branch") String branch, 
                                              @Param("startDate") LocalDate startDate, 
                                              @Param("endDate") LocalDate endDate);
     
     /**
-     * Check if inspection exists by transformer ID and date
+     * Check if inspection exists by transformer No and date (extracted from timestamp)
      */
-    boolean existsByTransformerIdAndDateOfInspection(String transformerNo, LocalDate dateOfInspection);
+    @Query("SELECT COUNT(i) > 0 FROM Inspection i WHERE i.transformerNo = :transformerNo AND DATE(i.inspectionTimestamp) = :inspectionDate")
+    boolean existsByTransformerNoAndInspectionDate(@Param("transformerNo") String transformerNo, 
+                                                  @Param("inspectionDate") LocalDate inspectionDate);
     
     /**
      * Find latest inspection by transformer No
      */
-    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo ORDER BY i.dateOfInspection DESC, i.timeOfInspection DESC LIMIT 1")
+    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo ORDER BY i.inspectionTimestamp DESC LIMIT 1")
     Optional<Inspection> findLatestByTransformerNo(@Param("transformerNo") String transformerNo);
-
     
+    /**
+     * Find inspections by transformer No and date range
+     */
+    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo AND DATE(i.inspectionTimestamp) BETWEEN :startDate AND :endDate")
+    List<Inspection> findByTransformerNoAndDateRange(@Param("transformerNo") String transformerNo,
+                                                    @Param("startDate") LocalDate startDate,
+                                                    @Param("endDate") LocalDate endDate);
+    
+    /**
+     * Find inspections within specific timestamp range
+     */
+    @Query("SELECT i FROM Inspection i WHERE i.inspectionTimestamp BETWEEN :startTimestamp AND :endTimestamp")
+    List<Inspection> findByInspectionTimestampBetween(@Param("startTimestamp") ZonedDateTime startTimestamp,
+                                                     @Param("endTimestamp") ZonedDateTime endTimestamp);
+    
+    /**
+     * Find inspections by transformer No within timestamp range
+     */
+    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo AND i.inspectionTimestamp BETWEEN :startTimestamp AND :endTimestamp")
+    List<Inspection> findByTransformerNoAndInspectionTimestampBetween(@Param("transformerNo") String transformerNo,
+                                                                     @Param("startTimestamp") ZonedDateTime startTimestamp,
+                                                                     @Param("endTimestamp") ZonedDateTime endTimestamp);
+
+    @Query("SELECT i FROM Inspection i " +
+       "WHERE i.inspectionTimestamp = (" +
+       "    SELECT MAX(i2.inspectionTimestamp) " +
+       "    FROM Inspection i2 " +
+       "    WHERE i2.transformerNo = i.transformerNo" +
+       ")")
+List<Inspection> findLatestInspectionPerTransformer();
 }

@@ -1,120 +1,215 @@
-/* In your sidebar.css file */
-.slide-panel {
-  position: fixed;
-  top: 79px;
-  width: 300px;
-  left: -100%;
-  height: 100vh;
-  max-height: 100vh;
-  background-color: #191c27;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-  padding: 40px;
-  padding-top: 10px;
-  padding-left: 30px;
-  padding-bottom: 1000px;
-  transition: left 0.3s ease-in-out;
-  z-index: 1001; /* Higher than overlay (1000) */
-  color: white;
-  flex-direction: column;
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
+  --secondary-gradient: linear-gradient(135deg, #60a5fa, #34d399, #fbbf24);
+  --background-gradient: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #151b26 100%);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 25px rgba(234, 234, 242, 0.4);
+  --border-radius: 12px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.slide-panel.open {
-  left: 0; /* Slides in on top of content */
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* App Layout Structure */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--background-gradient);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* App Layout */
 .app-layout {
   min-height: 100vh;
-  background-color: #1a1d29; /* Match your dark theme */
+  position: relative;
 }
 
-/* Header with User Corner */
-.app-header {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: 999;
-  padding: 10px 20px;
-  background: transparent;
-}
-
-/* Top Header Bar */
+/* Top Header Styles */
 .top-header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
+  height: 70px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  background-color: #33394f; /* Match your dark theme */
-  z-index: 999;
-  border-bottom: 1px solid #2a2d3a;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 0 30px;
+  background: rgba(15, 20, 25, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 1002;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Left side of header (menu + title) */
 .header-left {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
-/* Right side of header (user corner) */
 .header-right {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
-/* App Title */
+
+/* App Title Styling */
 .app-title {
-  color: white;
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  background: var(--secondary-gradient) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  letter-spacing: 2px !important;
+  position: relative !important;
+  margin: 0 !important;
 }
 
-/* Update main content to account for header */
+.app-title::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  border-radius: 2px;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+/* Main Content Area */
 .main-content {
-  padding-top: 80px; /* Space for header bar */
-  padding-left: 50px;
-  padding-right: 50px;
-  min-height: 100vh;
+  margin-top: 70px;
+  padding: 40px 50px;
+  min-height: calc(100vh - 70px);
+  transition: var(--transition);
 }
 
-/* Remove the separate app-header since we're combining everything */
-/* .app-header can be deleted */
+.btn.icon.locations {
+    background: #0b1020;
+    border: 0px;
+}
 
-.submenu-link {
-  color: white;
-  text-decoration: none;
-  font-size: 16px;
-  padding: 8px 12px;
+.logo-icon {
+  width: 45px;
+  height: 45px;
+  background: var(--primary-gradient);
+  border-radius: var(--border-radius);
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
 }
 
-/* Icon stays the same color */
-.submenu-link svg {
-  font-size: 18px;
-  width: 20px;
-  color: white; /* Icon always stays white */
-  transition: none; /* No transition for icon */
+
+/* User Corner Styling */
+.user-corner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 6px 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  border: 1px solid var(--glass-border);
+  transition: var(--transition);
+  margin: 5px;
 }
 
-/* Only text changes on hover */
-.submenu-link span {
-  transition: color 0.2s ease;
+.user-corner:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
-.submenu-link:hover span {
-  color: #04b781; /* Or any color you prefer */
+
+.user-corner {
+  top: 1.5rem;
+  right: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-/* Keep icon white even on hover */
-.submenu-link:hover svg {
-  color: white !important;
+
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 1rem;       /* slightly bigger */
+  font-weight: 600;      /* bold for emphasis */
+  color: #e0dcdc;
+}
+
+.user-email {
+  font-size: 0.85rem;    /* smaller */
+  color: #7c7c7c;
+}
+
+
+.user-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  font-size: 14px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.user-status {
+  font-size: 11px;
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: #34d399;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
 }

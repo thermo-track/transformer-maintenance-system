@@ -3,17 +3,13 @@ package com.powergrid.maintenance.tms_backend_application.transformer.controller
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerImageInfoDTO;
+import com.powergrid.maintenance.tms_backend_application.transformer.dto.TransformerLastUpdatedDTO;
 import com.powergrid.maintenance.tms_backend_application.transformer.service.TransformerImageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/transformers")
@@ -22,54 +18,50 @@ public class TransformerImageController {
     @Autowired
     private TransformerImageService transformerImageService;
 
-    @PostMapping(value = "/{transformerNo}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadImage(
-            @PathVariable String transformerNo,
-            @RequestPart("image") MultipartFile file,
-            @RequestPart("data") @Valid ImageUploadDTO imageUploadDTO) {
+    @PostMapping("/{transformerId}/image")
+    public ResponseEntity<?> uploadImageUrl(
+            @PathVariable String transformerId,
+            @RequestBody @Valid ImageUploadDTO imageUploadDTO) {
         try {
-            ImageUploadResponseDTO response = transformerImageService.uploadBaseImage(
-                transformerNo, imageUploadDTO, file);
+            ImageUploadResponseDTO response = transformerImageService.saveImageFromUrl(
+                transformerId, imageUploadDTO);
             return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error uploading image: " + e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error saving image: " + e.getMessage());
         }
     }
 
-    @GetMapping("/{transformerNo}/image/{weatherCondition}")
-    public ResponseEntity<byte[]> getImage(
-            @PathVariable String transformerNo,
+    @GetMapping("/{transformerId}/image/{weatherCondition}")
+    public ResponseEntity<?> getImageUrl(
+            @PathVariable String transformerId,
             @PathVariable String weatherCondition) {
         try {
-            byte[] imageData = transformerImageService.getImage(transformerNo, weatherCondition);
-            if (imageData == null) {
+            String imageUrl = transformerImageService.getImageUrl(transformerId, weatherCondition);
+            if (imageUrl == null) {
                 return ResponseEntity.notFound().build();
             }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.IMAGE_JPEG); // You might want to store and use the actual content type
-            headers.setContentLength(imageData.length);
-
+            
+            // Return JSON with image URL instead of binary data
             return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(imageData);
+                    .body(new ImageUrlResponse(imageUrl));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving image: " + e.getMessage());
         }
     }
 
-    @GetMapping("/{transformerNo}/images/info")
-    public ResponseEntity<?> getTransformerImagesInfo(@PathVariable String transformerNo) {
+    @GetMapping("/{transformerId}/images/info")
+    public ResponseEntity<?> getTransformerImagesInfo(@PathVariable String transformerId) {
         try {
-            TransformerImageInfoDTO imageInfo = transformerImageService.getTransformerImagesInfo(transformerNo);
+            TransformerImageInfoDTO imageInfo = transformerImageService.getTransformerImagesInfo(transformerId);
             if (imageInfo == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Transformer not found with number: " + transformerNo);
+                        .body("Transformer not found with id: " + transformerId);
             }
             return ResponseEntity.ok(imageInfo);
         } catch (Exception e) {
@@ -78,21 +70,58 @@ public class TransformerImageController {
         }
     }
 
-    @DeleteMapping("/{transformerNo}/image/{weatherCondition}")
+    @DeleteMapping("/{transformerId}/image/{weatherCondition}")
     public ResponseEntity<?> deleteImage(
-            @PathVariable String transformerNo,
+            @PathVariable String transformerId,
             @PathVariable String weatherCondition) {
         try {
-            boolean deleted = transformerImageService.deleteImage(transformerNo, weatherCondition);
+            boolean deleted = transformerImageService.deleteImage(transformerId, weatherCondition);
             if (deleted) {
                 return ResponseEntity.ok("Image deleted successfully for " + weatherCondition.toLowerCase() + " condition");
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Image not found for transformer: " + transformerNo + " and condition: " + weatherCondition);
+                        .body("Image not found for transformer: " + transformerId + " and condition: " + weatherCondition);
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error deleting image: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{transformerId}/last-updated")
+    public ResponseEntity<?> getTransformerLastUpdatedTime(@PathVariable String transformerId) {
+        try {
+            TransformerLastUpdatedDTO lastUpdatedInfo = transformerImageService.getTransformerLastUpdatedTime(transformerId);
+            
+            if (lastUpdatedInfo.getLastImageUpdatedAt() == null) {
+                return ResponseEntity.ok()
+                    .body("No images have been uploaded for transformer: " + transformerId);
+            }
+            
+            return ResponseEntity.ok(lastUpdatedInfo);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving last updated time: " + e.getMessage());
+        }
+    }
+    
+    // Helper class for image URL response
+    public static class ImageUrlResponse {
+        private String imageUrl;
+        
+        public ImageUrlResponse(String imageUrl) {
+            this.imageUrl = imageUrl;
+        }
+        
+        public String getImageUrl() {
+            return imageUrl;
+        }
+        
+        public void setImageUrl(String imageUrl) {
+            this.imageUrl = imageUrl;
         }
     }
 }

@@ -3,7 +3,7 @@
 .inspections-table-container {
   background-color: #1e293b;
   border-radius: 0.5rem;
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 1.5rem;
 }
 
@@ -23,11 +23,13 @@
 
 .table-wrapper {
   overflow-x: auto;
+  overflow: visible;
 }
 
 .inspections-table {
   width: 100%;
   border-collapse: collapse;
+  overflow: visible;
 }
 
 .inspections-table thead {
@@ -47,6 +49,11 @@
 
 .inspections-table tbody {
   background-color: #1e293b;
+}
+
+.inspections-table td,
+.inspections-table tr {
+  overflow: visible;
 }
 
 .table-row {
@@ -172,6 +179,18 @@
 .actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.action-btn.view-btn {
+  width: 33.33%;
+}
+
+.action-btn.edit-btn {
+  width: 33.33%;
+}
+
+.action-btn.delete-btn {
+  width: 33.33%;
 }
 
 .action-btn {

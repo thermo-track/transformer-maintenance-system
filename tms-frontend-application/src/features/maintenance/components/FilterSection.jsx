@@ -10,6 +10,15 @@ const FilterSection = ({ filters, setFilters, statuses }) => { // statuses inste
     }));
   };
 
+  const handleReset = () => {
+    setFilters({
+      searchTerm: '',
+      selectedStatus: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
+
   return (
     <div className="filter-section">
       <div className="filter-grid">
@@ -69,6 +78,16 @@ const FilterSection = ({ filters, setFilters, statuses }) => { // statuses inste
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
             />
           </div>
+        </div>
+        
+        <div className="filter-item">
+          <button 
+            type="button" 
+            className="reset-button"
+            onClick={handleReset}
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
     </div>

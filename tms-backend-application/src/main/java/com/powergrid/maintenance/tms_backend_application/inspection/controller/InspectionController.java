@@ -1,14 +1,13 @@
 package com.powergrid.maintenance.tms_backend_application.inspection.controller;
 
-import java.io.IOException;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,14 +18,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageUploadResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.service.InspectionService;
 
@@ -78,6 +75,15 @@ public class InspectionController {
         return inspectionService.updateInspection(id, requestDTO);
     }
 
+    @PutMapping("/{id}/status")
+    public ResponseEntity<InspectionStatusResponseDTO> updateInspectionStatus(
+            @Parameter(description = "Inspection ID (9-digit format)", example = "000000001")
+            @PathVariable String id,
+            @Valid @RequestBody InspectionStatusUpdateRequestDTO requestDTO) {
+        log.info("Updating inspection status with ID: {}", id);
+        return inspectionService.updateInspectionStatus(id, requestDTO);
+    }
+
     @Operation(summary = "Delete an inspection", description = "Deletes an inspection by ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Inspection deleted successfully"),
@@ -100,7 +106,7 @@ public class InspectionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<InspectionResponseDTO> getInspectionById(
-            @Parameter(description = "Inspection ID (9-digit format)", example = "000000001")
+            @Parameter(description = "Inspection ID (9-digit format)")
             @PathVariable String id) {
         log.info("Retrieving inspection with ID: {}", id);
         return inspectionService.getInspectionById(id);
@@ -145,7 +151,6 @@ public class InspectionController {
         log.info("Retrieving inspections for date range: {} to {}", startDate, endDate);
         return inspectionService.getInspectionsByDateRange(startDate, endDate);
     }
-    // Add this method to your existing InspectionController.java
 
     @Operation(summary = "Get inspections by transformer ID", description = "Retrieves all inspection records for a specific transformer")
     @ApiResponses(value = {
@@ -161,52 +166,36 @@ public class InspectionController {
         return inspectionService.getInspectionsByTransformerId(transformerId);
     }
 
-    // Image related endpoints
-    @PostMapping(value = "/{inspectionId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadImage(
-            @PathVariable String inspectionId,
-            @RequestPart("image") MultipartFile file,
-            @RequestPart("data") @Valid ImageUploadDTO imageUploadDTO) {
+
+    @GetMapping("/{inspectionId}/weather-condition")
+    public ResponseEntity<Map<String, String>> getInspectionWeatherCondition(@PathVariable String inspectionId) {
         try {
-            ImageUploadResponseDTO response = inspectionService.uploadImage(inspectionId, file, imageUploadDTO);
-            return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error uploading image: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-    
-    @GetMapping("/{inspectionId}/image")
-    public ResponseEntity<byte[]> getImage(@PathVariable String inspectionId) {
-        byte[] imageData = inspectionService.getImage(inspectionId);
-        String imageType = inspectionService.getImageType(inspectionId);
-        
-        if (imageData != null && imageType != null) {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType(imageType));
-            headers.setContentLength(imageData.length);
+            String weatherCondition = inspectionService.getWeatherCondition(inspectionId);
+            if (weatherCondition != null) {
+                Map<String, String> response = new HashMap<>();
+                response.put("weatherCondition", weatherCondition);
+                response.put("inspectionId", inspectionId);
+                
+                return ResponseEntity.ok(response);
+            }
             
-            return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error fetching weather condition for inspection: " + inspectionId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        return ResponseEntity.notFound().build();
     }
-    @DeleteMapping("/{inspectionId}/image")
-    public ResponseEntity<Void> deleteImage(@PathVariable String inspectionId) {
-        if (inspectionService.deleteImage(inspectionId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-    @GetMapping("/{inspectionId}/has-image")
-    public ResponseEntity<Boolean> checkIfInspectionHasImage(@PathVariable String inspectionId) {
-        byte[] imageData = inspectionService.getImage(inspectionId);
-        boolean hasImage = imageData != null && imageData.length > 0;
-        return ResponseEntity.ok(hasImage);
+
+    @Operation(summary = "Get latest inspection for each transformer", 
+           description = "Retrieves the most recent inspection record for each transformer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest inspections retrieved successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/latest-per-transformer")
+    public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransformer() {
+        log.info("Retrieving latest inspection for each transformer");
+        return inspectionService.getLatestInspectionPerTransformer();
     }
     
 

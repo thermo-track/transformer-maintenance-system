@@ -1,43 +1,46 @@
-import { NavLink } from 'react-router-dom';
-import '../styles/layout.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faBolt } from '@fortawesome/free-solid-svg-icons';
+import { NavLink } from "react-router-dom";
+import "../styles/layout.css";
+import "../styles/sidebar.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import menuData from "../data/menuData";
 
 const Sidebar = ({ isOpen, onClose }) => {
   return (
     <>
-
       {isOpen && (
-        <div 
+        <div
           className="sidebar-overlay"
           onClick={onClose}
           style={{
-            position: 'fixed',
+            position: "fixed",
             top: 0,
             left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            zIndex: 1000 
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 1000,
           }}
         />
       )}
 
-      <nav className={slide-panel ${isOpen ? 'open' : ''}}>
+      <nav className={`slide-panel ${isOpen ? "open" : ""}`}>
         <div className="menu-content">
-          <ul className="menu-list" style={{ listStyleType: 'none' }}>
-            <li className="menu-item2">
-              <NavLink to="/transformers" className="submenu-link" onClick={onClose}>
-                <FontAwesomeIcon icon={faBolt} />
-                <span>Transformers</span>
-              </NavLink>
-            </li>
-            <li className="menu-item2">
-              <NavLink to="/inspections" className="submenu-link" onClick={onClose}>
-                <FontAwesomeIcon icon={faSearch} />
-                <span>Inspections</span>
-              </NavLink>
-            </li>
+          <ul className="menu-list" style={{ listStyleType: "none" }}>
+            {menuData.map((menu, index) => (
+              <li key={index} className="menu-item">
+                <span className="menu-label">{menu.label}</span>
+                <ul className="submenu-list" style={{ listStyleType: "none", paddingLeft: "15px" }}>
+                  {menu.subMenu.map((item, subIndex) => (
+                    <li className="menu-item2" key={subIndex}>
+                      <NavLink to={item.path} className="submenu-link" onClick={onClose}>
+                        <FontAwesomeIcon icon={item.icon} />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
           </ul>
         </div>
       </nav>

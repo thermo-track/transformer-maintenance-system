@@ -5,32 +5,39 @@ import '../styles/inspections.css';
 import InspectionModal from '../components/InspectionModal';
 import ThermalImageComponent from '../components/ThermalImageComponent';
 import { inspectionService } from '../services/InspectionService';
-import PageHeaderST from '../components/PageHeaderST';
+import PageHeaderIns from "../components/PageHeaderIns";
+import { transformerService } from '../services/TransformerService';
+import { cloudinaryService } from '../services/CloudinaryService';
 
 function InspectionsSTImage() {
-  const { transformerId, inspectionId } = useParams(); // Get both parameters
+  const { transformerNo, inspectionId } = useParams();
   const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentInspection, setCurrentInspection] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const [selectedInspectionId, setSelectedInspectionId] = useState(inspectionId); // Track selected inspection
-  const [imageCheckLoading, setImageCheckLoading] = useState(false); // New state for image check loading
+  const [selectedInspectionId, setSelectedInspectionId] = useState(inspectionId);
+  const [imageCheckLoading, setImageCheckLoading] = useState(false);
+  const [transformer, setTransformer] = useState(null);
+  const [isLoadingTransformer, setIsLoadingTransformer] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasCloudImage, setHasCloudImage] = useState(false);
+  const [cloudImageUrl, setCloudImageUrl] = useState(null);
 
   const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
 
   useEffect(() => {
-    console.log("Transformer ID:", transformerId, "Inspection ID:", inspectionId);
-    if (transformerId) {
-      fetchInspectionsByTransformer(transformerId);
+    console.log("Transformer No:", transformerNo, "Inspection ID:", inspectionId);
+    if (transformerNo) {
+      fetchInspectionsByTransformer(transformerNo);
     }
     
     // Set the selected inspection ID from URL
     if (inspectionId) {
       setSelectedInspectionId(inspectionId);
     }
-  }, [transformerId, inspectionId]);
+  }, [transformerNo, inspectionId]);
 
   // Check if inspection was passed via navigation state
   useEffect(() => {
@@ -40,29 +47,36 @@ function InspectionsSTImage() {
     }
   }, [location.state]);
 
-  // New useEffect to check for existing images when currentInspection changes
+  // Check for existing cloud images when currentInspection changes
   useEffect(() => {
     if (currentInspection) {
-      checkExistingImage(currentInspection.inspectionId);
+      checkExistingCloudImage(currentInspection.inspectionId);
     }
   }, [currentInspection]);
 
-  // New function to check if inspection has existing image
-  const checkExistingImage = async (inspectionId) => {
+  // Function to check if inspection has existing cloud image
+  const checkExistingCloudImage = async (inspectionId) => {
     try {
       setImageCheckLoading(true);
-      const hasImage = await inspectionService.checkIfInspectionHasImage(inspectionId);
+      console.log('Checking for existing cloud image for inspection:', inspectionId);
+      
+      const hasImage = await cloudinaryService.hasCloudImage(inspectionId);
+      setHasCloudImage(hasImage);
       
       if (hasImage) {
-        // If image exists, you might want to set a flag or update the UI accordingly
-        // This could trigger the ThermalImageComponent to show the existing image
-        console.log('Inspection has existing image:', inspectionId);
-        // You can set additional state here if needed for the UI
+        console.log('Cloud image exists for inspection:', inspectionId);
+        // Fetch the cloud image URL
+        const imageUrl = await cloudinaryService.getCloudImageUrlFromBackend(inspectionId);
+        setCloudImageUrl(imageUrl);
+        console.log('Cloud image URL:', imageUrl);
       } else {
-        console.log('No existing image for inspection:', inspectionId);
+        console.log('No cloud image found for inspection:', inspectionId);
+        setCloudImageUrl(null);
       }
     } catch (error) {
-      console.error('Error checking existing image:', error);
+      console.error('Error checking cloud image:', error);
+      setHasCloudImage(false);
+      setCloudImageUrl(null);
     } finally {
       setImageCheckLoading(false);
     }
@@ -72,8 +86,8 @@ function InspectionsSTImage() {
   const getMockData = () => {
     return [
       {
-        inspectionId: `mock_${Date.now()}`, // Changed from 'id' to 'inspectionId'
-        transformerId: transformerId,
+        inspectionId: `mock_${Date.now()}`,
+        transformerNo: transformerNo,
         date: new Date().toISOString(),
         status: 'pending',
         branch: 'COLOMBO',
@@ -83,14 +97,48 @@ function InspectionsSTImage() {
     ];
   };
 
+  useEffect(() => {
+    console.log('🚀 Component mounted with transformerNo:', transformerNo);
+    
+    if (transformerNo) {
+      loadTransformerDetails();
+    } else {
+      console.warn('⚠️ No transformerNo provided in params');
+      setError('No transformer number provided');
+    }
+  }, [transformerNo]);
+
+  const loadTransformerDetails = async () => {
+    try {
+      console.log('🔄 Starting to load transformer details...');
+      setIsLoadingTransformer(true);
+      setError(null);
+      
+      const t = await transformerService.getTransformerByNumber(transformerNo);
+      console.log('✅ Transformer loaded successfully:', t);
+      
+      if (t) {
+        setTransformer(t);
+      } else {
+        console.warn('⚠️ No transformer found for number:', transformerNo);
+        setError(`No transformer found with number: ${transformerNo}`);
+      }
+      
+    } catch (error) {
+      console.error("❌ Error loading transformer:", error);
+      setError("Failed to load transformer details: " + error.message);
+    } finally {
+      setIsLoadingTransformer(false);
+    }
+  };
+
   // Modified fetchInspectionsByTransformer method
-  const fetchInspectionsByTransformer = async (transformerId) => {
+  const fetchInspectionsByTransformer = async (transformerNo) => {
     try {
       setLoading(true);
-      // Call the service method with transformer ID
-      const data = await inspectionService.getInspectionsByTransformer(transformerId);
+      const data = await inspectionService.getInspectionsByTransformer(transformerNo);
       
-      console.log('Raw data from backend:', data); // Debug log
+      console.log('Raw data from backend:', data);
       
       // Process and enrich the data
       const enrichedData = data.map(inspection => ({
@@ -130,7 +178,7 @@ function InspectionsSTImage() {
       // Fallback to filtered mock data if API fails
       const mockData = getMockData();
       const filteredMockData = mockData.filter(inspection =>
-        inspection.transformerId === transformerId
+        inspection.transformerNo === transformerNo
       );
       setInspections(filteredMockData);
       
@@ -150,7 +198,7 @@ function InspectionsSTImage() {
       // Create the inspection with transformer ID
       const newInspection = await inspectionService.createInspection({
         ...inspectionData,
-        transformerId: transformerId,
+        transformerNo: transformerNo,
         type: 'thermal_inspection'
       });
       
@@ -160,12 +208,12 @@ function InspectionsSTImage() {
       setCurrentInspection(newInspection);
       
       // Refresh inspections list
-      await fetchInspectionsByTransformer(transformerId);
+      await fetchInspectionsByTransformer(transformerNo);
       
       setShowCreateModal(false);
       setUploadStatus({ 
         type: 'success', 
-        message: 'Inspection created successfully. You can now upload thermal images.' 
+        message: 'Inspection created successfully. You can now upload thermal images to the cloud.' 
       });
       
       // Clear success message after 3 seconds
@@ -181,64 +229,120 @@ function InspectionsSTImage() {
     }
   };
 
-  const handleImageUpload = async (imageData) => {
-    try {
-      if (!currentInspection) {
-        setUploadStatus({ 
-          type: 'error', 
-          message: 'No inspection selected. Please create or select an inspection first.' 
-        });
-        return;
-      }
+// Add this updated handleImageUpload function to your InspectionsSTImage.jsx
 
-      console.log('Image uploaded for inspection:', currentInspection.inspectionId, imageData);
-      setUploadStatus({ 
-        type: 'success', 
-        message: 'Thermal image uploaded and analysis completed successfully!' 
-      });
-      
-      // Refresh inspection data if needed
-      await fetchInspectionsByTransformer(transformerId);
-      
-      // Check the image status again to update the UI properly
-      await checkExistingImage(currentInspection.inspectionId);
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setUploadStatus(null), 3000);
-    } catch (error) {
-      console.error('Error handling image upload:', error);
+const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') => {
+  try {
+    if (!currentInspection) {
       setUploadStatus({ 
         type: 'error', 
-        message: 'Failed to upload image. Please try again.' 
+        message: 'No inspection selected. Please create or select an inspection first.' 
       });
-      setTimeout(() => setUploadStatus(null), 5000);
+      return;
     }
-  };
+
+    // Debug the incoming file input
+    console.log('🚀 handleImageUpload called with:', {
+      fileInput: fileInput,
+      inputType: typeof fileInput,
+      constructor: fileInput?.constructor?.name,
+      environmentalCondition: environmentalCondition,
+      inspectionId: currentInspection.inspectionId
+    });
+
+    // Additional validation
+    if (!fileInput) {
+      setUploadStatus({ 
+        type: 'error', 
+        message: 'No file provided for upload' 
+      });
+      return;
+    }
+
+    console.log('Starting cloud upload for inspection:', currentInspection.inspectionId);
+    setUploadStatus({ 
+      type: 'loading', 
+      message: 'Converting and uploading thermal image to cloud storage...' 
+    });
+
+    // Upload image to Cloudinary and save metadata to backend
+    // The CloudinaryService will now handle the file conversion automatically
+    const result = await cloudinaryService.uploadInspectionImageCloud(
+      fileInput,  // Pass the original input (blob URLs, File, etc.)
+      currentInspection.inspectionId, 
+      environmentalCondition
+    );
+
+    console.log('Cloud upload successful:', result);
+    
+    // Update local state
+    setHasCloudImage(true);
+    setCloudImageUrl(result.cloudinary.url);
+    
+    setUploadStatus({ 
+      type: 'success', 
+      message: 'Thermal image uploaded to cloud and analysis completed successfully!' 
+    });
+    
+    // Refresh inspection data
+    await fetchInspectionsByTransformer(transformerNo);
+    
+    // Check cloud image status again to ensure UI is updated
+    await checkExistingCloudImage(currentInspection.inspectionId);
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => setUploadStatus(null), 3000);
+  } catch (error) {
+    console.error('❌ Error uploading image to cloud:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      fileInput: fileInput
+    });
+    setUploadStatus({ 
+      type: 'error', 
+      message: `Failed to upload image to cloud: ${error.message}` 
+    });
+    setTimeout(() => setUploadStatus(null), 5000);
+  }
+};
 
   const handleImageDelete = async () => {
     try {
       if (!currentInspection) return;
       
-      await inspectionService.deleteInspectionImage(currentInspection.inspectionId);
-      console.log('Image deleted for inspection:', currentInspection.inspectionId);
+      console.log('Deleting cloud image for inspection:', currentInspection.inspectionId);
+      setUploadStatus({ 
+        type: 'loading', 
+        message: 'Deleting image from cloud storage...' 
+      });
+      
+      // Delete from both Cloudinary and backend
+      await cloudinaryService.deleteInspectionImage(currentInspection.inspectionId);
+      
+      console.log('Cloud image deleted for inspection:', currentInspection.inspectionId);
+      
+      // Update local state
+      setHasCloudImage(false);
+      setCloudImageUrl(null);
       
       setUploadStatus({ 
         type: 'success', 
-        message: 'Thermal image deleted successfully.' 
+        message: 'Thermal image deleted from cloud successfully.' 
       });
       
       // Refresh inspection data
-      await fetchInspectionsByTransformer(transformerId);
+      await fetchInspectionsByTransformer(transformerNo);
       
-      // Check the image status again to update the UI properly
-      await checkExistingImage(currentInspection.inspectionId);
+      // Check cloud image status again
+      await checkExistingCloudImage(currentInspection.inspectionId);
       
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error('Error deleting cloud image:', error);
       setUploadStatus({ 
         type: 'error', 
-        message: 'Failed to delete image. Please try again.' 
+        message: 'Failed to delete image from cloud. Please try again.' 
       });
       setTimeout(() => setUploadStatus(null), 5000);
     }
@@ -256,31 +360,38 @@ function InspectionsSTImage() {
   if (loading) {
     return (
       <div className="inspections-page">
-        <PageHeaderST 
+        <PageHeaderIns 
           onNewInspection={() => setShowCreateModal(true)}
-          transformerId={transformerId}
+          transformerNo={transformerNo}
         />
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading inspections for Transformer {transformerId}...</p>
+          <p>Loading inspections for Transformer {transformerNo}...</p>
         </div>
       </div>
     );
   }
+  console.log('🛑🛑 transformerId in thermal Image Component:', transformer?.id);
 
   return (
     <div className="inspections-page">
-      <PageHeaderST 
+        <PageHeaderIns
         onNewInspection={() => setShowCreateModal(true)}
-        transformerId={transformerId}
+        transformerNo={transformer?.transformerNo}
+        transformerId={transformer?.id}
+        transformerPoleno={transformer?.poleNo}
+        inspectionId={currentInspection?.inspectionId}
+        inspectionTimestamp={currentInspection?.inspectionTimestamp}
+        inspectionBranch={currentInspection?.branch}
       />
+
 
       {showCreateModal && (
         <InspectionModal
           title="Create New Inspection"
           inspection={null}
           branches={branches}
-          transformerId={transformerId}
+          transformerNo={transformerNo}
           onSubmit={handleCreate}
           onClose={() => setShowCreateModal(false)}
         />
@@ -289,25 +400,11 @@ function InspectionsSTImage() {
       <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">
-            Thermal Image Analysis - Transformer {transformerId}
-          </h2>
+            Thermal Image Analysis </h2>
           <p className="page-subtitle">
-            Upload and analyze thermal images to detect potential issues and anomalies in transformer components
+            Upload thermal images to cloud storage and analyze them to detect potential issues and anomalies in transformer components
           </p>
         </div>
-
-        {/* Status Messages */}
-        {uploadStatus && (
-          <div className={`status-message status-${uploadStatus.type}`}>
-            <div className="status-content">
-              {uploadStatus.type === 'loading' && <div className="status-spinner"></div>}
-              {uploadStatus.type === 'success' && <span className="status-icon">✓</span>}
-              {uploadStatus.type === 'error' && <span className="status-icon">✗</span>}
-              {uploadStatus.type === 'info' && <span className="status-icon">ℹ</span>}
-              <span>{uploadStatus.message}</span>
-            </div>
-          </div>
-        )}
 
         {/* Thermal Image Component */}
         {currentInspection ? (
@@ -315,13 +412,16 @@ function InspectionsSTImage() {
             {imageCheckLoading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
-                <p>Checking for existing thermal images...</p>
+                <p>Checking cloud storage for existing thermal images...</p>
               </div>
             ) : (
               <ThermalImageComponent
                 inspectionId={currentInspection.inspectionId}
+                transformerId={transformer?.id}
                 onImageUpload={handleImageUpload}
                 onImageDelete={handleImageDelete}
+                hasExistingImage={hasCloudImage}
+                existingImageUrl={cloudImageUrl}
                 key={currentInspection.inspectionId} // Force re-render when inspection changes
               />
             )}
@@ -329,9 +429,9 @@ function InspectionsSTImage() {
         ) : (
           <div className="thermal-section-placeholder">
             <div className="placeholder-content">
-              <div className="placeholder-icon">🔥</div>
-              <h3>Thermal Image Analysis</h3>
-              <p>Select or create an inspection above to begin thermal image analysis.</p>
+              <div className="placeholder-icon">☁️🔥</div>
+              <h3>Cloud Thermal Image Analysis</h3>
+              <p>Select or create an inspection above to begin cloud-based thermal image analysis.</p>
               <p>Available inspections: {inspections.length}</p>
               {inspections.length > 0 && (
                 <div>
@@ -346,7 +446,8 @@ function InspectionsSTImage() {
                         backgroundColor: '#007bff', 
                         color: 'white', 
                         border: 'none', 
-                        borderRadius: '3px' 
+                        borderRadius: '3px',
+                        cursor: 'pointer'
                       }}
                     >
                       Select {insp.inspectionId}

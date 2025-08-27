@@ -6,7 +6,8 @@ import '../styles/baseline-image-page.css';
 import { transformerService } from '../services/TransformerService';
 
 const BaselineImagePage = () => {
-  const { transformerNo } = useParams();
+  // Changed from transformerNo to transformerId
+  const { transformerId } = useParams();
   const navigate = useNavigate();
   
   const [baselineImages, setBaselineImages] = useState({
@@ -27,35 +28,37 @@ const BaselineImagePage = () => {
   ];
 
   useEffect(() => {
-    console.log('🚀 Component mounted with transformerNo:', transformerNo);
+    console.log('Component mounted with transformerId:', transformerId);
     
-    if (transformerNo) {
+    if (transformerId) {
       loadBaselineImages();
       loadTransformerDetails();
     } else {
-      console.warn('⚠️ No transformerNo provided in params');
-      setError('No transformer number provided');
+      console.warn('No transformerId provided in params');
+      setError('No transformer ID provided');
     }
-  }, [transformerNo]);
+  }, [transformerId]);
 
   const loadTransformerDetails = async () => {
     try {
-      console.log('🔄 Starting to load transformer details...');
+      console.log('Starting to load transformer details...');
       setIsLoadingTransformer(true);
-      setError(null); // Clear any previous errors
-      
-      const t = await transformerService.getTransformerByNumber(transformerNo);
-      console.log('✅ Transformer loaded successfully:', t);
+      setError(null);
+      console.log('🙂 Fetching transformer with ID:', transformerId);
+
+      // Changed to use transformerId instead of transformerNo
+      const t = await transformerService.getTransformerById(transformerId);
+      console.log('Transformer loaded successfully:', t);
       
       if (t) {
         setTransformer(t);
       } else {
-        console.warn('⚠️ No transformer found for number:', transformerNo);
-        setError(`No transformer found with number: ${transformerNo}`);
+        console.warn('No transformer found for ID:', transformerId);
+        setError(`No transformer found with ID: ${transformerId}`);
       }
       
     } catch (error) {
-      console.error("❌ Error loading transformer:", error);
+      console.error("Error loading transformer:", error);
       setError("Failed to load transformer details: " + error.message);
     } finally {
       setIsLoadingTransformer(false);
@@ -67,10 +70,10 @@ const BaselineImagePage = () => {
       setIsLoading(true);
       setError(null);
       
-      console.log('Loading baseline images for transformer:', transformerNo);
+      console.log('Loading baseline images for transformer:', transformerId);
       
-      // Use the simpler approach to load all images directly
-      const images = await baselineImageService.getAllBaselineImages(transformerNo);
+      // Using the updated service with transformerId
+      const images = await baselineImageService.getAllBaselineImages(transformerId);
       
       console.log('Loaded images:', images);
       setBaselineImages(images);
@@ -96,10 +99,13 @@ const BaselineImagePage = () => {
       setUploadingCondition(weatherCondition);
       setError(null);
       
-      await baselineImageService.uploadBaselineImage(transformerNo, file, weatherCondition);
+      // Using the updated service with transformerId
+      await baselineImageService.uploadBaselineImage(transformerId, file, weatherCondition);
       
       // Reload images after successful upload
       await loadBaselineImages();
+      
+      console.log(`Successfully uploaded ${weatherCondition} baseline image`);
       
     } catch (error) {
       console.error('Error uploading baseline image:', error);
@@ -126,13 +132,16 @@ const BaselineImagePage = () => {
       setIsLoading(true);
       setError(null);
       
-      await baselineImageService.deleteBaselineImage(transformerNo, weatherCondition);
+      // Using the updated service with transformerId
+      await baselineImageService.deleteBaselineImage(transformerId, weatherCondition);
       
       // Update local state
       setBaselineImages(prev => ({
         ...prev,
         [weatherCondition]: null
       }));
+      
+      console.log(`Successfully deleted ${weatherCondition} baseline image`);
       
     } catch (error) {
       console.error('Error deleting baseline image:', error);
@@ -147,25 +156,30 @@ const BaselineImagePage = () => {
     const isUploading = uploadingCondition === condition.value;
 
     return (
-      <div key={condition.value} className="weather-box" style={{borderColor: condition.color}}>
-        <div className="weather-header" style={{backgroundColor: condition.color + '20'}}>
-          <span className="weather-icon">{condition.icon}</span>
-          <h3 className="weather-title">{condition.label}</h3>
+      <div key={condition.value} className="weather-boxB" style={{borderColor: condition.color}}>
+        <div className="weather-headerB" style={{backgroundColor: condition.color + '20'}}>
+          <span className="weather-iconB">{condition.icon}</span>
+          <h3 className="weather-titleB">{condition.label}</h3>
         </div>
 
-        <div className="image-container">
+        <div className="image-containerB">
           {hasImage ? (
             <>
               <img 
                 src={hasImage} 
                 alt={`${condition.value} baseline`}
-                className="baseline-image"
+                className="baseline-imageB"
+                onError={(e) => {
+                  console.error(`Failed to load ${condition.value} image:`, hasImage);
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-              <div className="image-overlay">
-                <div className="image-actions">
+              <div className="image-overlayB">
+                <div className="image-actionsB">
                   <button 
                     onClick={() => handleUpdateImage(condition.value)}
-                    className="action-btn update-btn"
+                    className="action-btnB update-btnB"
                     disabled={isLoading || isUploading}
                     title="Update Image"
                   >
@@ -173,7 +187,7 @@ const BaselineImagePage = () => {
                   </button>
                   <button 
                     onClick={() => handleDeleteImage(condition.value)}
-                    className="action-btn delete-btn"
+                    className="action-btnB delete-btnB"
                     disabled={isLoading || isUploading}
                     title="Delete Image"
                   >
@@ -181,19 +195,28 @@ const BaselineImagePage = () => {
                   </button>
                 </div>
               </div>
+              {/* Fallback div for failed image loads */}
+              <div className="upload-areaB" style={{display: 'none'}}>
+                <Camera size={48} className="upload-iconB" />
+                <p className="upload-textB">Image failed to load</p>
+                <label htmlFor={`file-input-${condition.value}`} className="upload-buttonB">
+                  <Upload size={16} />
+                  Upload New Image
+                </label>
+              </div>
             </>
           ) : (
-            <div className="upload-area">
+            <div className="upload-areaB">
               {isUploading ? (
-                <div className="uploading-state">
-                  <div className="spinner"></div>
-                  <p>Uploading...</p>
+                <div className="uploading-stateB">
+                  <div className="spinnerB"></div>
+                  <p>Uploading to cloud...</p>
                 </div>
               ) : (
                 <>
-                  <Camera size={48} className="upload-icon" />
-                  <p className="upload-text">No baseline image</p>
-                  <label htmlFor={`file-input-${condition.value}`} className="upload-button">
+                  <Camera size={48} className="upload-iconB" />
+                  <p className="upload-textB">No baseline image</p>
+                  <label htmlFor={`file-input-${condition.value}`} className="upload-buttonB">
                     <Upload size={16} />
                     Upload Image
                   </label>
@@ -229,11 +252,10 @@ const BaselineImagePage = () => {
       );
     }
 
-    // Debug: log the transformer object structure
-    console.log('🏗️ Rendering transformer info:', transformer);
+    console.log('Rendering transformer info:', transformer);
 
     return (
-      <p className="transformer-details">
+      <p className="transformer-detailsB">
         {transformer.locationDetails || 'Unknown Location'} - 
         Region: {transformer.region || 'N/A'}, 
         Pole No: {transformer.poleNo || 'N/A'}, 
@@ -243,21 +265,23 @@ const BaselineImagePage = () => {
   };
 
   return (
-    <div className="baseline-image-page">
+    <div className="baseline-image-pageB">
       {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-left">
+      <div className="page-headerB">
+        <div className="header-contentB">
+          <div className="header-leftB">
             <button 
               onClick={() => navigate(-1)} 
-              className="back-button"
+              className="back-buttonB"
             >
               ← Back
             </button>
-            <div className="header-info">
-              <h1 className="page-title">Baseline Images</h1>
-              <div className="transformer-info">
-                <h2 className="transformer-number">{transformerNo}</h2>
+            <div className="header-infoB">
+              <h1 className="page-titleB">Baseline Images</h1>
+              <div className="transformer-infoB">
+                <h2 className="transformer-numberB">
+                  {transformer?.transformerNo || transformerId}
+                </h2>
                 {renderTransformerInfo()}
               </div>
             </div>
@@ -265,30 +289,30 @@ const BaselineImagePage = () => {
         </div>
       </div>
 
-
       {/* Error Display */}
       {error && (
-        <div className="error-banner">
+        <div className="error-bannerB">
           <AlertTriangle size={20} />
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="error-close">
+          <button onClick={() => setError(null)} className="error-closeB">
             <X size={16} />
           </button>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="main-content">
-        <div className="weather-grid">
+      <div className="main-contentB">
+        <div className="weather-gridB">
           {weatherConditions.map(condition => renderWeatherBox(condition))}
         </div>
 
         {isLoading && (
-          <div className="loading-overlay">
-            <div className="spinner"></div>
-            <p>Loading...</p>
+          <div className="loading-overlayB">
+            <div className="spinnerB"></div>
+            <p>Processing...</p>
           </div>
         )}
+        
       </div>
     </div>
   );
