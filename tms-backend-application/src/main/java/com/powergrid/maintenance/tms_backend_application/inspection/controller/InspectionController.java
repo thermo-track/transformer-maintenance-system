@@ -26,8 +26,6 @@ import com.powergrid.maintenance.tms_backend_application.inspection.dto.Inspecti
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.service.InspectionService;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadResponseDTO;
 
 import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
@@ -108,7 +106,7 @@ public class InspectionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<InspectionResponseDTO> getInspectionById(
-            @Parameter(description = "Inspection ID (9-digit format)", example = "000000001")
+            @Parameter(description = "Inspection ID (9-digit format)")
             @PathVariable String id) {
         log.info("Retrieving inspection with ID: {}", id);
         return inspectionService.getInspectionById(id);
@@ -153,7 +151,6 @@ public class InspectionController {
         log.info("Retrieving inspections for date range: {} to {}", startDate, endDate);
         return inspectionService.getInspectionsByDateRange(startDate, endDate);
     }
-    // Add this method to your existing InspectionController.java
 
     @Operation(summary = "Get inspections by transformer ID", description = "Retrieves all inspection records for a specific transformer")
     @ApiResponses(value = {
@@ -200,77 +197,6 @@ public class InspectionController {
         log.info("Retrieving latest inspection for each transformer");
         return inspectionService.getLatestInspectionPerTransformer();
     }
-
-
-/**
- * Save image metadata after Cloudinary upload
- */
-@PostMapping("/{inspectionId}/image-metadata")
-public ResponseEntity<CloudImageUploadResponseDTO> saveImageMetadata(
-        @PathVariable String inspectionId,
-        @RequestBody @Valid CloudImageUploadDTO cloudImageUploadDTO) {
-    try {
-        CloudImageUploadResponseDTO response = inspectionService.saveImageMetadata(inspectionId, cloudImageUploadDTO);
-        return ResponseEntity.ok(response);
-    } catch (RuntimeException e) {
-        // Return 404 if inspection not found
-        return ResponseEntity.notFound().build();
-    } catch (Exception e) {
-        // Return 400 for other validation errors
-        return ResponseEntity.badRequest().build();
-    }
-}
-/**
- * Delete image metadata
- */
-@DeleteMapping("/{inspectionId}/image-metadata")
-public ResponseEntity<Void> deleteImageMetadata(@PathVariable String inspectionId) {
-    try {
-        boolean deleted = inspectionService.deleteImageMetadata(inspectionId);
-        if (deleted) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().build();
-    }
-}
-
-
-/**
- * Check if inspection has cloud image specifically
- */
-@GetMapping("/{inspectionId}/has-cloud-image")
-public ResponseEntity<Map<String, Boolean>> hasCloudImage(@PathVariable String inspectionId) {
-    try {
-        boolean hasCloudImage = inspectionService.hasCloudImage(inspectionId);
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("hasCloudImage", hasCloudImage);
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().build();
-    }
-}
-
-/**
- * Get cloud image URL
- */
-@GetMapping("/{inspectionId}/cloud-image-url")
-public ResponseEntity<Map<String, String>> getCloudImageUrl(@PathVariable String inspectionId) {
-    try {
-        String cloudImageUrl = inspectionService.getCloudImageUrl(inspectionId);
-        if (cloudImageUrl != null) {
-            Map<String, String> response = new HashMap<>();
-            response.put("cloudImageUrl", cloudImageUrl);
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().build();
-    }
-}
     
 
 }
