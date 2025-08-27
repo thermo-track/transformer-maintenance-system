@@ -106,7 +106,7 @@ const InspectionsTable = ({ inspections, onEdit, onDelete, startIndex }) => {
                   <td className="inspection-date">
                     {formatInspectionDateTime(inspection.inspectionTimestamp)}
                   </td>
-                  <td className="inspector">
+                  <td className="maintenance-date">
                     {formatInspectionDateTime(inspection.maintenanceDateTime)}
                   </td>
                   <td>

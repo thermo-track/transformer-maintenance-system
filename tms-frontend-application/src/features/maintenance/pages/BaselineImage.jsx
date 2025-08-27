@@ -4,6 +4,7 @@ import { Upload, X, AlertTriangle, Camera, Trash2, Edit } from 'lucide-react';
 import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/baseline-image-page.css';
 import { transformerService } from '../services/TransformerService';
+import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
 
 const BaselineImagePage = () => {
   // Changed from transformerNo to transformerId
@@ -274,7 +275,7 @@ const BaselineImagePage = () => {
               onClick={() => navigate(-1)} 
               className="back-buttonB"
             >
-              ← Back
+              <ArrowLeftIcon />
             </button>
             <div className="header-infoB">
               <h1 className="page-titleB">Baseline Images</h1>
