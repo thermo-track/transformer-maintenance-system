@@ -1,4 +1,3 @@
-// Updated Repository Interface
 package com.powergrid.maintenance.tms_backend_application.inspection.repo;
 
 import java.time.LocalDate;
@@ -21,9 +20,10 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
     List<Inspection> findByBranch(String branch);
     
     /**
-     * Find inspections by transformer No
+     * Find inspections by transformer No - UPDATED to use relationship
      */
-    List<Inspection> findByTransformerNo(String transformerNo);
+    @Query("SELECT i FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo")
+    List<Inspection> findByTransformerNo(@Param("transformerNo") String transformerNo);
     
     /**
      * Find inspections by date range using timestamp
@@ -41,22 +41,22 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
                                              @Param("endDate") LocalDate endDate);
     
     /**
-     * Check if inspection exists by transformer No and date (extracted from timestamp)
+     * Check if inspection exists by transformer No and date (extracted from timestamp) - UPDATED
      */
-    @Query("SELECT COUNT(i) > 0 FROM Inspection i WHERE i.transformerNo = :transformerNo AND DATE(i.inspectionTimestamp) = :inspectionDate")
+    @Query("SELECT COUNT(i) > 0 FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo AND DATE(i.inspectionTimestamp) = :inspectionDate")
     boolean existsByTransformerNoAndInspectionDate(@Param("transformerNo") String transformerNo, 
                                                   @Param("inspectionDate") LocalDate inspectionDate);
     
     /**
-     * Find latest inspection by transformer No
+     * Find latest inspection by transformer No - UPDATED
      */
-    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo ORDER BY i.inspectionTimestamp DESC LIMIT 1")
+    @Query("SELECT i FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo ORDER BY i.inspectionTimestamp DESC LIMIT 1")
     Optional<Inspection> findLatestByTransformerNo(@Param("transformerNo") String transformerNo);
     
     /**
-     * Find inspections by transformer No and date range
+     * Find inspections by transformer No and date range - UPDATED
      */
-    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo AND DATE(i.inspectionTimestamp) BETWEEN :startDate AND :endDate")
+    @Query("SELECT i FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo AND DATE(i.inspectionTimestamp) BETWEEN :startDate AND :endDate")
     List<Inspection> findByTransformerNoAndDateRange(@Param("transformerNo") String transformerNo,
                                                     @Param("startDate") LocalDate startDate,
                                                     @Param("endDate") LocalDate endDate);
@@ -69,18 +69,21 @@ public interface InspectionRepo extends JpaRepository<Inspection, String> {
                                                      @Param("endTimestamp") ZonedDateTime endTimestamp);
     
     /**
-     * Find inspections by transformer No within timestamp range
+     * Find inspections by transformer No within timestamp range - UPDATED
      */
-    @Query("SELECT i FROM Inspection i WHERE i.transformerNo = :transformerNo AND i.inspectionTimestamp BETWEEN :startTimestamp AND :endTimestamp")
+    @Query("SELECT i FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo AND i.inspectionTimestamp BETWEEN :startTimestamp AND :endTimestamp")
     List<Inspection> findByTransformerNoAndInspectionTimestampBetween(@Param("transformerNo") String transformerNo,
                                                                      @Param("startTimestamp") ZonedDateTime startTimestamp,
                                                                      @Param("endTimestamp") ZonedDateTime endTimestamp);
 
+    /**
+     * Find latest inspection per transformer - UPDATED to use relationship
+     */
     @Query("SELECT i FROM Inspection i " +
-       "WHERE i.inspectionTimestamp = (" +
-       "    SELECT MAX(i2.inspectionTimestamp) " +
-       "    FROM Inspection i2 " +
-       "    WHERE i2.transformerNo = i.transformerNo" +
-       ")")
-List<Inspection> findLatestInspectionPerTransformer();
+           "WHERE i.inspectionTimestamp = (" +
+           "    SELECT MAX(i2.inspectionTimestamp) " +
+           "    FROM Inspection i2 " +
+           "    WHERE i2.transformer.transformerNo = i.transformer.transformerNo" +
+           ")")
+    List<Inspection> findLatestInspectionPerTransformer();
 }

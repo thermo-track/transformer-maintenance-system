@@ -1,6 +1,7 @@
 -- Generate UUIDs (text) for the varchar id
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Insert transformers data with conflict handling
 INSERT INTO public.transformers (id, transformer_no, pole_no, region, type, location_details, created_at, updated_at)
 VALUES 
 ('de72eb41-12c3-43a4-9031-c2911cb986aa', 'TX-001', 'P-1001', 'COLOMBO', 'Distribution', 'Near Main St substation', NOW(), NOW()),
@@ -10,9 +11,8 @@ VALUES
 ('53136bd7-5775-4abb-a365-1c0de88762dd', 'TX-005', 'P-5890', 'NEGOMBO', 'Distribution', 'Agri market perimeter, pole 7', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- Insert data from your CSV file into transformer_images table
+-- Insert transformer_images data with conflict handling
+-- Note: The transformer_id column still exists in the database and maps to the transformer.id relationship
 INSERT INTO public.transformer_images 
 (id, base_cloudinary_public_id, base_image_name, base_image_type, base_image_uploaded_at, base_image_url, created_at, transformer_id, uploaded_by, weather_condition)
 VALUES
@@ -48,26 +48,7 @@ VALUES
 
 ON CONFLICT (id) DO NOTHING;
 
--- Optional: Also insert corresponding transformer records if they don't exist
--- This assumes you have a transformers table with these IDs as foreign keys
-INSERT INTO public.transformers (id, created_at, updated_at)
-SELECT DISTINCT 
-    transformer_id,
-    NOW(),
-    NOW()
-FROM (VALUES 
-    ('de72eb41-12c3-43a4-9031-c2911cb986aa'),
-    ('a2dd837e-2030-4f0b-95fe-4f4b43f31d6e'),
-    ('f2eae15d-b0f4-4156-a5e1-2edc0447e0ce'),
-    ('9ccdd6c3-3381-49ef-9b75-8c0dec91a34a'),
-    ('53136bd7-5775-4abb-a365-1c0de88762dd')
-) AS transformer_ids(transformer_id)
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.transformers t 
-    WHERE t.id = transformer_ids.transformer_id
-);
-
--- Verify the insert
+-- Verify the transformer_images insert
 SELECT 
     COUNT(*) as total_records,
     COUNT(DISTINCT transformer_id) as unique_transformers,
@@ -77,45 +58,43 @@ FROM public.transformer_images
 GROUP BY weather_condition
 ORDER BY weather_condition;
 
-
-
-
-
--- Insert inspection data into inspections table
+-- Insert inspection data with conflict handling (DO NOTHING approach)
 INSERT INTO public.inspections 
 (inspection_id, branch, cloud_image_name, cloud_image_type, cloud_image_url, cloud_uploaded_at, cloudinary_public_id, environmental_condition, inspection_timestamp, status, transformer_no)
 VALUES
-('000000001', 'COLOMBO', 'Sunny 01 (1).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756302900/inspections/000000001/000000001_sunny_1756302898776.jpg', '2025-08-27 19:25:00.55+05:30', 'inspections/000000001/000000001_sunny_1756302898776', 'sunny', '2025-08-27 19:23:00+05:30', 'COMPLETED', 'TX-001'),
+('100000001', 'COLOMBO', 'Sunny 01 (1).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756302900/inspections/000000001/000000001_sunny_1756302898776.jpg', '2025-08-27 19:25:00.55+05:30', 'inspections/000000001/000000001_sunny_1756302898776', 'sunny', '2025-08-27 19:23:00+05:30', 'COMPLETED', 'TX-001'),
 
-('000000002', 'COLOMBO', 'cloudy 01.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756302958/inspections/000000002/000000002_cloudy_1756302957509.jpg', '2025-08-27 19:25:58.898+05:30', 'inspections/000000002/000000002_cloudy_1756302957509', 'cloudy', '2025-08-27 19:24:00+05:30', 'IN_PROGRESS', 'TX-001'),
+('100000002', 'COLOMBO', 'cloudy 01.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756302958/inspections/000000002/000000002_cloudy_1756302957509.jpg', '2025-08-27 19:25:58.898+05:30', 'inspections/000000002/000000002_cloudy_1756302957509', 'cloudy', '2025-08-27 19:24:00+05:30', 'IN_PROGRESS', 'TX-001'),
 
-('000000003', 'COLOMBO', 'Rainy 01.png', 'image/png', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303020/inspections/000000003/000000003_rainy_1756303018426.jpg', '2025-08-27 19:27:00.225+05:30', 'inspections/000000003/000000003_rainy_1756303018426', 'rainy', '2025-08-27 19:22:00+05:30', 'SCHEDULED', 'TX-001'),
+('100000003', 'COLOMBO', 'Rainy 01.png', 'image/png', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303020/inspections/000000003/000000003_rainy_1756303018426.jpg', '2025-08-27 19:27:00.225+05:30', 'inspections/000000003/000000003_rainy_1756303018426', 'rainy', '2025-08-27 19:22:00+05:30', 'SCHEDULED', 'TX-001'),
 
-('000000004', 'KANDY', 'Sunny 01 (2).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303167/inspections/000000004/000000004_sunny_1756303166292.jpg', '2025-08-27 19:29:27.942+05:30', 'inspections/000000004/000000004_sunny_1756303166292', 'sunny', '2025-08-27 19:28:00+05:30', 'IN_PROGRESS', 'TX-002'),
+('100000004', 'KANDY', 'Sunny 01 (2).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303167/inspections/000000004/000000004_sunny_1756303166292.jpg', '2025-08-27 19:29:27.942+05:30', 'inspections/000000004/000000004_sunny_1756303166292', 'sunny', '2025-08-27 19:28:00+05:30', 'IN_PROGRESS', 'TX-002'),
 
-('000000005', 'KANDY', 'Rainy 02.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303207/inspections/000000005/000000005_rainy_1756303206748.jpg', '2025-08-27 19:30:08.032+05:30', 'inspections/000000005/000000005_rainy_1756303206748', 'rainy', '2025-08-27 19:27:00+05:30', 'IN_PROGRESS', 'TX-002'),
+('100000005', 'KANDY', 'Rainy 02.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303207/inspections/000000005/000000005_rainy_1756303206748.jpg', '2025-08-27 19:30:08.032+05:30', 'inspections/000000005/000000005_rainy_1756303206748', 'rainy', '2025-08-27 19:27:00+05:30', 'IN_PROGRESS', 'TX-002'),
 
-('000000006', 'KANDY', 'Cloudy 02.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303184/inspections/000000006/000000006_cloudy_1756303183922.jpg', '2025-08-27 19:29:44.806+05:30', 'inspections/000000006/000000006_cloudy_1756303183922', 'cloudy', '2025-08-27 19:19:00+05:30', 'COMPLETED', 'TX-002'),
+('100000006', 'KANDY', 'Cloudy 02.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303184/inspections/000000006/000000006_cloudy_1756303183922.jpg', '2025-08-27 19:29:44.806+05:30', 'inspections/000000006/000000006_cloudy_1756303183922', 'cloudy', '2025-08-27 19:19:00+05:30', 'COMPLETED', 'TX-002'),
 
-('000000007', 'GALLE', 'Cloudy 03.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303343/inspections/000000007/000000007_cloudy_1756303342213.jpg', '2025-08-27 19:32:24.05+05:30', 'inspections/000000007/000000007_cloudy_1756303342213', 'cloudy', '2025-08-27 19:18:00+05:30', 'COMPLETED', 'TX-003'),
+('100000007', 'GALLE', 'Cloudy 03.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303343/inspections/000000007/000000007_cloudy_1756303342213.jpg', '2025-08-27 19:32:24.05+05:30', 'inspections/000000007/000000007_cloudy_1756303342213', 'cloudy', '2025-08-27 19:18:00+05:30', 'COMPLETED', 'TX-003'),
 
-('000000008', 'GALLE', 'Rainy 03.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303380/inspections/000000008/000000008_rainy_1756303379812.jpg', '2025-08-27 19:33:00.803+05:30', 'inspections/000000008/000000008_rainy_1756303379812', 'rainy', '2025-08-27 07:06:00+05:30', 'COMPLETED', 'TX-003'),
+('100000008', 'GALLE', 'Rainy 03.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303380/inspections/000000008/000000008_rainy_1756303379812.jpg', '2025-08-27 19:33:00.803+05:30', 'inspections/000000008/000000008_rainy_1756303379812', 'rainy', '2025-08-27 07:06:00+05:30', 'COMPLETED', 'TX-003'),
 
-('000000009', 'GALLE', 'Sunny 01 (3).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303362/inspections/000000009/000000009_sunny_1756303362124.jpg', '2025-08-27 19:32:42.93+05:30', 'inspections/000000009/000000009_sunny_1756303362124', 'sunny', '2025-08-27 19:17:00+05:30', 'IN_PROGRESS', 'TX-003'),
+('100000009', 'GALLE', 'Sunny 01 (3).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303362/inspections/000000009/000000009_sunny_1756303362124.jpg', '2025-08-27 19:32:42.93+05:30', 'inspections/000000009/000000009_sunny_1756303362124', 'sunny', '2025-08-27 19:17:00+05:30', 'IN_PROGRESS', 'TX-003'),
 
-('000000010', 'JAFFNA', 'Sunny 01 (4).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303462/inspections/000000010/000000010_sunny_1756303460777.jpg', '2025-08-27 19:34:22.414+05:30', 'inspections/000000010/000000010_sunny_1756303460777', 'sunny', '2025-08-27 19:15:00+05:30', 'IN_PROGRESS', 'TX-004'),
+('100000010', 'JAFFNA', 'Sunny 01 (4).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303462/inspections/000000010/000000010_sunny_1756303460777.jpg', '2025-08-27 19:34:22.414+05:30', 'inspections/000000010/000000010_sunny_1756303460777', 'sunny', '2025-08-27 19:15:00+05:30', 'IN_PROGRESS', 'TX-004'),
 
-('000000011', 'JAFFNA', 'Cloudy 04.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303492/inspections/000000011/000000011_cloudy_1756303490979.jpg', '2025-08-27 19:34:52.296+05:30', 'inspections/000000011/000000011_cloudy_1756303490979', 'cloudy', '2025-08-27 19:16:00+05:30', 'COMPLETED', 'TX-004'),
+('100000011', 'JAFFNA', 'Cloudy 04.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303492/inspections/000000011/000000011_cloudy_1756303490979.jpg', '2025-08-27 19:34:52.296+05:30', 'inspections/000000011/000000011_cloudy_1756303490979', 'cloudy', '2025-08-27 19:16:00+05:30', 'COMPLETED', 'TX-004'),
 
-('000000012', 'JAFFNA', 'Rainy 04.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303476/inspections/000000012/000000012_rainy_1756303475975.jpg', '2025-08-27 19:34:36.667+05:30', 'inspections/000000012/000000012_rainy_1756303475975', 'rainy', '2025-08-27 19:14:00+05:30', 'SCHEDULED', 'TX-004'),
+('100000012', 'JAFFNA', 'Rainy 04.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303476/inspections/000000012/000000012_rainy_1756303475975.jpg', '2025-08-27 19:34:36.667+05:30', 'inspections/000000012/000000012_rainy_1756303475975', 'rainy', '2025-08-27 19:14:00+05:30', 'SCHEDULED', 'TX-004'),
 
-('000000013', 'COLOMBO', 'Cloudy 05.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303614/inspections/000000013/000000013_cloudy_1756303612801.jpg', '2025-08-27 19:36:54.561+05:30', 'inspections/000000013/000000013_cloudy_1756303612801', 'cloudy', '2025-08-04 19:35:00+05:30', 'IN_PROGRESS', 'TX-005'),
+('100000013', 'COLOMBO', 'Cloudy 05.jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303614/inspections/000000013/000000013_cloudy_1756303612801.jpg', '2025-08-27 19:36:54.561+05:30', 'inspections/000000013/000000013_cloudy_1756303612801', 'cloudy', '2025-08-04 19:35:00+05:30', 'IN_PROGRESS', 'TX-005'),
 
-('000000014', 'COLOMBO', 'Sunny 01 (5).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303626/inspections/000000014/000000014_sunny_1756303625436.jpg', '2025-08-27 19:37:06.747+05:30', 'inspections/000000014/000000014_sunny_1756303625436', 'sunny', '2025-08-06 19:36:00+05:30', 'COMPLETED', 'TX-005'),
+('100000014', 'COLOMBO', 'Sunny 01 (5).jpeg', 'image/jpeg', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303626/inspections/000000014/000000014_sunny_1756303625436.jpg', '2025-08-27 19:37:06.747+05:30', 'inspections/000000014/000000014_sunny_1756303625436', 'sunny', '2025-08-06 19:36:00+05:30', 'COMPLETED', 'TX-005'),
 
-('000000015', 'GALLE', 'Rainy 05.png', 'image/png', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303644/inspections/000000015/000000015_rainy_1756303641818.png', '2025-08-27 19:37:24.548+05:30', 'inspections/000000015/000000015_rainy_1756303641818', 'rainy', '2025-08-12 05:06:00+05:30', 'COMPLETED', 'TX-005');
+('100000015', 'GALLE', 'Rainy 05.png', 'image/png', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756303644/inspections/000000015/000000015_rainy_1756303641818.png', '2025-08-27 19:37:24.548+05:30', 'inspections/000000015/000000015_rainy_1756303641818', 'rainy', '2025-08-12 05:06:00+05:30', 'COMPLETED', 'TX-005')
 
--- Verify the insert
+ON CONFLICT (inspection_id) DO NOTHING;
+
+-- Verify inspection data
 SELECT 
     COUNT(*) as total_records,
     COUNT(DISTINCT transformer_no) as unique_transformers,
@@ -124,3 +103,22 @@ SELECT
 FROM public.inspections 
 GROUP BY status
 ORDER BY status;
+
+-- Performance indexes - Create indexes if they don't exist
+CREATE INDEX IF NOT EXISTS idx_transformer_images_transformer_id ON public.transformer_images(transformer_id);
+CREATE INDEX IF NOT EXISTS idx_transformer_images_weather ON public.transformer_images(weather_condition);
+CREATE INDEX IF NOT EXISTS idx_inspections_transformer_no ON public.inspections(transformer_no);
+
+-- Verify foreign key relationships work properly
+-- This query should return all transformer images with their transformer details
+SELECT 
+    t.transformer_no,
+    t.region,
+    ti.weather_condition,
+    ti.base_image_name,
+    ti.created_at
+FROM public.transformers t
+JOIN public.transformer_images ti ON t.id = ti.transformer_id
+ORDER BY t.transformer_no, ti.weather_condition;
+
+ALTER SEQUENCE inspection_id_sequence RESTART WITH 100000016;

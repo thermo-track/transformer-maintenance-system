@@ -23,9 +23,10 @@ public class TransformerImage {
     @UuidGenerator
     private String id;
     
-    // Foreign key to transformer - using transformer_id (UUID) is better for referential integrity
-    @Column(name = "transformer_id", nullable = false, length = 36)
-    private String transformerId;
+    // Proper JPA relationship instead of String transformerId
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transformer_id", nullable = false)
+    private Transformer transformer;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "weather_condition", nullable = false, length = 20)
@@ -64,6 +65,22 @@ public class TransformerImage {
         }
     }
     
+    // Helper method to get transformer ID when needed
+    public String getTransformerId() {
+        return transformer != null ? transformer.getId() : null;
+    }
+    
+    // Helper method to set transformer by ID (useful for API operations)
+    public void setTransformerId(String transformerId) {
+        if (transformerId != null) {
+            Transformer t = new Transformer();
+            t.setId(transformerId);
+            this.transformer = t;
+        } else {
+            this.transformer = null;
+        }
+    }
+    
     // Weather condition enum
     public enum WeatherCondition {
         SUNNY("sunny"),
@@ -79,5 +96,19 @@ public class TransformerImage {
         public String getValue() {
             return value;
         }
+    }
+    
+    // Important: Override equals and hashCode for proper collection handling
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TransformerImage)) return false;
+        TransformerImage that = (TransformerImage) o;
+        return id != null && id.equals(that.id);
+    }
+    
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

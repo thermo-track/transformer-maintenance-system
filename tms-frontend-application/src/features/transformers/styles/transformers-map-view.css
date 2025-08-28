@@ -545,3 +545,51 @@
 .map-legend div span {
   margin-left: 6px;
 }
+
+/* Custom marker icons for transformers */
+.custom-div-icon {
+  background: none !important;
+  border: none !important;
+}
+
+.map-custom-distribution-icon {
+  width: 30px;
+  height: 30px;
+  background-color: #3498db;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+.map-custom-distribution-icon::before {
+  content: '⚡';
+  font-size: 16px;
+}
+
+.map-custom-bulk-icon {
+  width: 30px;
+  height: 30px;
+  background-color: #e74c3c;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+.map-custom-bulk-icon::before {
+  content: '🏭';
+  font-size: 12px;
+}
