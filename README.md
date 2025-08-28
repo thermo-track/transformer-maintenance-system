@@ -71,7 +71,6 @@ DB_PASSWORD=<postgres_password>
 # Cloudinary configuration
 VITE_CLOUDINARY_CLOUD_NAME=<your_cloudinary_cloud_name>
 VITE_CLOUDINARY_UPLOAD_PRESET=<your_cloudinary_upload_preset>
-VITE_CLOUDINARY_API_KEY=<your_cloudinary_api_key>
 
 # Backend API endpoint
 VITE_BACKEND_API_URL=http://localhost:8080/api
