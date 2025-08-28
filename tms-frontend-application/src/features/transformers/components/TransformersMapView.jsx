@@ -33,8 +33,8 @@ export default function TransformersMapView({ transformerService }) {
   // Stats for display
   const stats = {
     total: transformers.length,
-    distribution: transformers.filter(t => t.type === 'DISTRIBUTION').length,
-    bulk: transformers.filter(t => t.type === 'BULK').length,
+    distribution: transformers.filter(t => t.type === 'Distribution').length,
+    bulk: transformers.filter(t => t.type === 'Bulk').length,
     regions: uniqueRegions.length
   };
 
@@ -124,7 +124,7 @@ export default function TransformersMapView({ transformerService }) {
 
   // Create custom icon based on transformer type
   const createCustomIcon = (transformerType) => {
-    const iconHtml = transformerType === 'DISTRIBUTION' 
+    const iconHtml = transformerType === 'Distribution' 
       ? `<div class="map-custom-distribution-icon"></div>`
       : `<div class="map-custom-bulk-icon"></div>`;
 
@@ -288,9 +288,9 @@ export default function TransformersMapView({ transformerService }) {
           const marker = window.L.marker([lat, lng], { icon: customIcon }).addTo(mapInstanceRef.current);
           
           // Create popup content
-          const typeIcon = transformer.type === 'DISTRIBUTION' ? '⚡' : '🏭';
-          const typeColor = transformer.type === 'DISTRIBUTION' ? '#3498db' : '#e74c3c';
-          
+          const typeIcon = transformer.type === 'Distribution' ? '⚡' : '🏭';
+          const typeColor = transformer.type === 'Distribution' ? '#3498db' : '#e74c3c';
+
           const popupContent = `
             <div style="font-family: Arial, sans-serif; min-width: 200px;">
               <h3 style="margin: 0 0 10px 0; color: ${typeColor}; display: flex; align-items: center; gap: 8px;">
@@ -466,8 +466,8 @@ export default function TransformersMapView({ transformerService }) {
               className="map-filter-select"
             >
               <option value="ALL">All Types</option>
-              <option value="DISTRIBUTION">⚡ Distribution</option>
-              <option value="BULK">🏭 Bulk</option>
+              <option value="Distribution">⚡ Distribution</option>
+              <option value="Bulk">🏭 Bulk</option>
             </select>
           </div>
 

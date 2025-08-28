@@ -14,6 +14,11 @@ const menuData = [
         label: "Inspections",
         icon: faClipboardCheck,
       },
+            {
+        path: "/transformers/map",
+        label: "Transformer Map",
+        icon: faClipboardCheck,
+      },
     ],
   },
   {

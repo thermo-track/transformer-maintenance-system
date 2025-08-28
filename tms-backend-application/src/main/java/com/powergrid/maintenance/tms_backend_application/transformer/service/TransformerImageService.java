@@ -47,7 +47,7 @@ public class TransformerImageService {
         
         // Check if image already exists for this weather condition
         Optional<TransformerImage> existingImage = transformerImageRepository
-            .findByTransformerIdAndWeatherCondition(transformerId, weatherCondition);
+            .findByTransformer_IdAndWeatherCondition(transformerId, weatherCondition);
         
         TransformerImage transformerImage;
         
@@ -93,7 +93,7 @@ public class TransformerImageService {
         }
         
         Optional<TransformerImage> image = transformerImageRepository
-            .findByTransformerIdAndWeatherCondition(transformerId, condition);
+            .findByTransformer_IdAndWeatherCondition(transformerId, condition);
         
         return image.map(TransformerImage::getBaseImageUrl).orElse(null);
     }
@@ -109,11 +109,11 @@ public class TransformerImageService {
         
         // Get all images for this transformer
         Optional<TransformerImage> sunnyImage = transformerImageRepository
-            .findByTransformerIdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.SUNNY);
+            .findByTransformer_IdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.SUNNY);
         Optional<TransformerImage> cloudyImage = transformerImageRepository
-            .findByTransformerIdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.CLOUDY);
+            .findByTransformer_IdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.CLOUDY);
         Optional<TransformerImage> rainyImage = transformerImageRepository
-            .findByTransformerIdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.RAINY);
+            .findByTransformer_IdAndWeatherCondition(transformerId, TransformerImage.WeatherCondition.RAINY);
         
         return TransformerImageMapper.toTransformerImageInfoDTO(
             transformer, 
@@ -139,7 +139,7 @@ public class TransformerImageService {
         }
         
         Optional<TransformerImage> image = transformerImageRepository
-            .findByTransformerIdAndWeatherCondition(transformerId, condition);
+            .findByTransformer_IdAndWeatherCondition(transformerId, condition);
         
         if (image.isPresent()) {
             transformerImageRepository.delete(image.get());
@@ -161,7 +161,7 @@ public class TransformerImageService {
         
         // Get the most recently uploaded image
         Optional<TransformerImage> latestImage = transformerImageRepository
-            .findFirstByTransformerIdOrderByBaseImageUploadedAtDesc(transformerId);
+            .findFirstByTransformer_IdOrderByBaseImageUploadedAtDesc(transformerId);
         
         return TransformerImageMapper.toLastUpdatedDTO(transformer, latestImage.orElse(null));
     }
