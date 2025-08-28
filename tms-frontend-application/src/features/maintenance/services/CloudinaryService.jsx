@@ -5,7 +5,6 @@ class CloudinaryService {
 
     this.cloudName = env.VITE_CLOUDINARY_CLOUD_NAME;
     this.uploadPreset = env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    this.apiKey = env.VITE_CLOUDINARY_API_KEY;
     this.backendApiUrl = env.VITE_BACKEND_API_URL || 'http://localhost:8080/api';
 
     if (!this.cloudName || !this.uploadPreset) {
