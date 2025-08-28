@@ -190,7 +190,6 @@ npm run build
 - **Data Validation**: Limited server-side validation for some numeric and domain-specific fields
 - **Security Hardening**: No rate limiting, content security policy, or request size constraints configured
 - **Deployment**: No IaC scripts (Terraform/Docker Compose) provided
-- **Bulk Operations**: No bulk import/export (CSV/Excel) for transformers or inspections
 - **Mobile Optimization**: Layout not fully optimized for narrow devices
 
 ## 📄 License
