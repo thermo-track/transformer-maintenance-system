@@ -18,11 +18,14 @@ def main():
     p.add_argument('--out-viz', type=Path, default=None)
     p.add_argument('--iou-thresh', type=float, default=0.35)
     p.add_argument('--conf-thresh', type=float, default=0.25)
+    # Phase-2 requirement: expose threshold as a percentage for unsupervised map
+    p.add_argument('--threshold-pct', type=float, default=2.0,
+                   help='Percentile threshold for anomaly map (e.g., 2.0 => top 2%% of fused map).')
     args = p.parse_args()
 
     config = {
         'processing': {'work_size': [640, 640], 'smooth_sigma': 1.0},
-        'thresholding': {'mode': 'percentile', 'value': 2.0, 'min_area_pct': 0.002},
+        'thresholding': {'mode': 'percentile', 'value': float(args.threshold_pct), 'min_area_pct': 0.002},
         'fuse_weights': [0.6, 0.4],
     }
 

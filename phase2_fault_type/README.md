@@ -46,6 +46,7 @@ python -m phase2_fault_type.pipeline.run_pair `
 	--weights "phase2_fault_type\weights\best.pt" `
 	--out-json "outputs\json\t8_pair_fused.json" `
 	--out-viz "outputs\viz\t8_pair_overlay.png" `
+	--threshold-pct 2.0 `
 	--iou-thresh 0.35 `
 	--conf-thresh 0.25
 ```
@@ -53,6 +54,25 @@ python -m phase2_fault_type.pipeline.run_pair `
 Outputs:
 - Fused JSON at `--out-json` with unsupervised regions enriched by YOLO `fault_type` and `fault_confidence` when overlap IoU ≥ threshold.
 - Optional overlay PNG at `--out-viz` showing regions and labels.
+
+### Arguments
+- `--baseline` (path): Baseline/reference image of the same transformer under comparable conditions.
+- `--maintenance` (path): Current image to be inspected and compared against the baseline.
+- `--weights` (path): YOLO model weights `.pt` used for fault-type detection (place at `phase2_fault_type/weights/best.pt`).
+- `--out-json` (path): Output path for the fused results JSON. Parent folders are created automatically.
+- `--out-viz` (path, optional): Output path for an annotated overlay PNG. Parent folders are created automatically.
+- `--threshold-pct` (float, default 2.0): Unsupervised anomaly threshold as a percentile. Keeps the top N% of the fused anomaly map (lower value = stricter, fewer regions).
+- `--iou-thresh` (float, default 0.35): Minimum IoU to match a YOLO detection to an unsupervised region during fusion.
+
+  IoU formula:
+
+  $$
+  \mathrm{IoU} 
+  = \frac{\text{Area of Overlap}}{\text{Area of Union}}
+  = \frac{\left| B_{\mathrm{det}} \cap R_{\mathrm{unsup}} \right|}{\left| B_{\mathrm{det}} \cup R_{\mathrm{unsup}} \right|}
+  $$
+
+- `--conf-thresh` (float, default 0.25): Minimum YOLO detection confidence to consider a detection for fusion.
 
 ## JSON fields (anomaly items)
 
