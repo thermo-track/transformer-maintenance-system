@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['Full wire overload', 'Loose Joint -Faulty', 'Loose Joint -Potential', 'Point Overload - Faulty', 'normal']
+
+roboflow:
+  workspace: dinuka-7npfe
+  project: my-first-project-fnrgi-yjjwx
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/dinuka-7npfe/my-first-project-fnrgi-yjjwx/dataset/1
