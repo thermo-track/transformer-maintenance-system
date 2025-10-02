@@ -19,7 +19,7 @@ phase2_fault_type/
 ├─ fuse_detections.py       # IoU fusion + overlay utility
 ├─ requirements.txt         # runtime dependencies
 ├─ weights/
-│  └─ .gitkeep              # place best.pt here at runtime (not committed)
+│  └─ best.pt
 ├─ README.md                # you are here
 └─ __init__.py
 ```
@@ -86,10 +86,5 @@ Each anomaly in the fused JSON typically includes:
 The JSON root also contains `detector_summary` with the weights path, image name, parameters, and raw detections.
 
 ## Notes and tips
-- Weights are not committed; download or mount `best.pt` at runtime into `phase2_fault_type/weights/`.
 - The pipeline runs on CPU if no CUDA is available; Ultralytics automatically falls back.
 - Adjust `--iou-thresh` (fusion strictness) and `--conf-thresh` (minimum detection confidence) per your data.
-
-## Next steps (optional)
-- Batch processing: add a CSV-driven runner to process many pairs and write a manifest. Not included here to keep the runtime footprint small.
-- Retraining: if you need to retrain YOLO, keep `train_yolo.py` and the `Annotated_dataset/` folder; otherwise they’re not required for web deployment.
