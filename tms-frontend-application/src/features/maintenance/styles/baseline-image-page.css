@@ -1,0 +1,366 @@
+/* baseline-image-page.css */
+
+.baseline-image-pageB {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 0;
+}
+
+/* Page Header */
+.page-headerB {
+  background: linear-gradient(135deg, #07103a 0%, #16032a 100%);
+  color: white;
+  padding: 2rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.header-contentB {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.header-leftB {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.back-buttonB {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-buttonB:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-2px);
+}
+
+.header-infoB .page-titleB {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  margin-bottom: 0.5rem;
+}
+
+.transformer-numberB {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  margin-bottom: 0.25rem;
+}
+
+.transformer-detailsB {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Error Banner */
+.error-bannerB {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 1rem 2rem;
+  margin: 1rem auto;
+  max-width: 1200px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error-closeB {
+  background: none;
+  border: none;
+  color: #c33;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.error-closeB:hover {
+  background-color: rgba(204, 51, 51, 0.1);
+}
+
+/* Main Content */
+.main-contentB {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  position: relative;
+}
+
+/* Weather Grid */
+.weather-gridB {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .weather-gridB {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Weather Box */
+.weather-boxB {
+  background: white;
+  border-radius: 1rem;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.weather-boxB:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.weather-headerB {
+  padding: 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.weather-iconB {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.weather-titleB {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #2d3748;
+}
+
+/* Image Container */
+.image-containerB {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.baseline-imageB {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.image-overlayB {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-containerB:hover .image-overlayB {
+  opacity: 1;
+}
+
+.image-actionsB {
+  display: flex;
+  gap: 1rem;
+}
+
+.action-btnB {
+  background: #170678;
+  border: none;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.update-btnB {
+  color: #4299e1;
+}
+
+.update-btnB:hover {
+  background-color: #4299e1;
+  color: white;
+  transform: scale(1.1);
+}
+
+.delete-btnB {
+  color: #e53e3e;
+}
+
+.delete-btn:hover {
+  background-color: #e53e3e;
+  color: white;
+  transform: scale(1.1);
+}
+
+.action-btnB:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Upload Area */
+.upload-areaB {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e0;
+  margin: 1rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.upload-areaB:hover {
+  border-color: #4299e1;
+  background: #ebf8ff;
+}
+
+.upload-iconB {
+  color: #a0aec0;
+  margin-bottom: 1rem;
+}
+
+.upload-textB {
+  color: #718096;
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.upload-buttonB {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.upload-buttonB:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Uploading State */
+.uploading-stateB {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #4299e1;
+}
+
+.uploading-stateB p {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Loading Overlay */
+.loading-overlayB {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  gap: 1rem;
+}
+
+.loading-overlayB p {
+  font-size: 1.1rem;
+  color: #4a5568;
+  margin: 0;
+}
+
+/* Spinner Animation */
+.spinnerB {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #4299e1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-contentB {
+    padding: 0 1rem;
+  }
+  
+  .header-leftB {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .main-contentB {
+    padding: 1rem;
+  }
+  
+  .weather-gridB {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .weather-boxB {
+    min-height: 350px;
+  }
+  
+  .baseline-imageB {
+    height: 250px;
+  }
+}

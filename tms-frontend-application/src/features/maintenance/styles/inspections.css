@@ -1,0 +1,24 @@
+/* styles/inspections.css */
+
+.inspections-page {
+  min-height: 100vh;
+  color: white;
+}
+
+.inspections-page .container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .inspections-page {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .inspections-page {
+    padding: 0.5rem;
+  }
+}
