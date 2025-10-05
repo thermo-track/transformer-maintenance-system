@@ -14,6 +14,7 @@ import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,27 @@ public class TransformerService {
 
   public Transformer getEntity(String id) {
     return repo.findById(id).orElseThrow(() -> new NotFoundException("Transformer not found"));
+  }
+
+  public Transformer getEntityByTransformerNo(String transformerNo) {
+    return repo.findByTransformerNo(transformerNo).orElseThrow(() -> new NotFoundException("Transformer not found"));
+  }
+
+  public TransformerResponse getByTransformerNo(String transformerNo) {
+    Optional<Object[]> result = repo.findTransformerDataByTransformerNo(transformerNo);
+    if (result.isEmpty()) {
+      throw new NotFoundException("Transformer not found");
+    }
+    
+    Object[] data = result.get();
+    return new TransformerResponse(
+      (String) data[0], // id
+      (String) data[1], // transformerNo
+      (String) data[2], // poleNo
+      (String) data[3], // region
+      (String) data[4], // type
+      (String) data[5]  // locationDetails
+    );
   }
 
   // Keep existing method for backward compatibility
@@ -101,6 +123,8 @@ public class TransformerService {
   }
 
   public static TransformerResponse toResponse(Transformer t) {
+    // This method should only be used with fully loaded entities (not proxies)
+    // For better performance, use getByTransformerNo which avoids entity loading
     return new TransformerResponse(
       t.getId(),
       t.getTransformerNo(),

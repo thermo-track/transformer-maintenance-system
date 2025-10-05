@@ -15,6 +15,7 @@ import jakarta.persistence.ForeignKey;
 
 import java.time.ZonedDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 
 import lombok.Data;
@@ -71,6 +72,7 @@ public class Inspection {
         nullable = false,
         foreignKey = @ForeignKey(name = "fk_inspections_transformer_no")
     )
+    @JsonBackReference
     private Transformer transformer;
 
     // Transient field to provide formatted string ID for API responses
