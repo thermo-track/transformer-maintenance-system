@@ -11,4 +11,8 @@ public class ImageMetadataDTO {
     private String cloudImageType;
     private String environmentalCondition;
     private ZonedDateTime cloudUploadedAt;
+
+    private Double thresholdPct = 2.0;
+    private Double iouThresh = 0.35;
+    private Double confThresh = 0.25;
 }

@@ -1,0 +1,238 @@
+/* Threshold Settings Modal Styles */
+.threshold-settings-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.threshold-settings-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.threshold-settings-modal .header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.threshold-settings-modal .header-content h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.threshold-settings-modal .close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.threshold-settings-modal .close-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.threshold-settings-modal .modal-body {
+  padding: 24px;
+}
+
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: #1565c0;
+}
+
+.threshold-group {
+  margin-bottom: 28px;
+}
+
+.threshold-group:last-child {
+  margin-bottom: 0;
+}
+
+.threshold-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.label-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1a1a;
+}
+
+.label-description {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.threshold-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.threshold-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.input-suffix {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.range-info {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.threshold-settings-modal .modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.reset-btn {
+  padding: 10px 16px;
+  border: 1px solid #d0d0d0;
+  background: white;
+  color: #666;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #b0b0b0;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  border: 1px solid #d0d0d0;
+  background: white;
+  color: #666;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #b0b0b0;
+}
+
+.apply-btn {
+  padding: 10px 20px;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.apply-btn:hover {
+  background-color: #0056b3;
+}
+
+.apply-btn:active {
+  transform: translateY(1px);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .threshold-settings-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .threshold-settings-modal .modal-header {
+    padding: 16px 20px;
+  }
+
+  .threshold-settings-modal .modal-body {
+    padding: 20px;
+  }
+
+  .threshold-settings-modal .modal-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    width: 100%;
+  }
+
+  .reset-btn,
+  .cancel-btn,
+  .apply-btn {
+    flex: 1;
+  }
+}
+
