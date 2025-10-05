@@ -27,7 +27,6 @@ public class TransformerController {
 
   @GetMapping("/{id}")
   public TransformerResponse get(@PathVariable String id) {
-    // Check if id looks like a transformer number (TX-XXX) or UUID
     if (id.startsWith("TX-")) {
       return service.getByTransformerNo(id);
     } else {

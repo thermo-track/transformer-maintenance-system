@@ -313,23 +313,32 @@ const ThermalImageComparison = ({
 
   const handleAnomalyClick = (anomaly) => {
     setSelectedAnomaly(anomaly);
+    setNotes(anomaly.notes || ''); // Load existing notes if any
     setShowAnomalyModal(true);
   };
 
   const handleSaveNotes = async () => {
-    if (!selectedAnomaly || !notes) {
-      alert('Please select an anomaly and enter notes');
+    if (!selectedAnomaly) {
+      alert('Please select an anomaly from the detected faults list');
+      return;
+    }
+
+    if (!notes.trim()) {
+      alert('Please enter notes before saving');
       return;
     }
 
     try {
       await cloudinaryService.updateAnomalyNotes(inspectionId, selectedAnomaly.id, notes);
       setShowAnomalyModal(false);
+      setSelectedAnomaly(null);
+      setNotes('');
+      
+      // Refresh anomalies list
       if (inspectionId) {
         await fetchAnomalies(inspectionId);
       }
       alert('Notes saved successfully');
-      navigate(-1);
     } catch (error) {
       console.error('Error saving notes:', error);
       alert('Failed to save notes');
@@ -338,8 +347,8 @@ const ThermalImageComparison = ({
 
   const handleCancelNotes = () => {
     setNotes('');
+    setSelectedAnomaly(null);
     setShowAnomalyModal(false);
-    navigate(-1);
   };
 
   const ImagePanel = ({ type, image, date }) => (
@@ -491,19 +500,60 @@ const ThermalImageComparison = ({
         </div>
 
         <div className="notes-section">
-          <h4 style={{color: "black"}}>Notes</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h4 style={{color: "black", margin: 0}}>Notes</h4>
+            {selectedAnomaly && (
+              <div style={{ 
+                padding: '4px 12px', 
+                backgroundColor: selectedAnomaly.faultConfidence > 0.7 ? '#fee' : '#fff3e0',
+                border: `2px solid ${selectedAnomaly.faultConfidence > 0.7 ? '#dc3545' : '#ff9800'}`,
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                color: selectedAnomaly.faultConfidence > 0.7 ? '#dc3545' : '#f57c00'
+              }}>
+                {selectedAnomaly.faultType} ({(selectedAnomaly.faultConfidence * 100).toFixed(0)}%)
+              </div>
+            )}
+          </div>
+          {!selectedAnomaly && (
+            <div style={{ 
+              padding: '8px', 
+              backgroundColor: '#f5f5f5', 
+              borderRadius: '4px', 
+              marginBottom: '8px',
+              fontSize: '13px',
+              color: '#666',
+              textAlign: 'center'
+            }}>
+              👆 Click on a detected fault above to add notes
+            </div>
+          )}
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="notes-textarea"
-            placeholder="Type here to add notes..."
+            placeholder={selectedAnomaly ? "Type notes for the selected anomaly..." : "Select an anomaly first..."}
             rows={4}
+            disabled={!selectedAnomaly}
+            style={{
+              opacity: selectedAnomaly ? 1 : 0.6,
+              cursor: selectedAnomaly ? 'text' : 'not-allowed'
+            }}
           />
           <div className="notes-actions">
-            <button className="cancel-btn" onClick={handleCancelNotes}>
+            <button 
+              className="cancel-btn" 
+              onClick={handleCancelNotes}
+              disabled={!selectedAnomaly}
+            >
               Cancel
             </button>
-            <button className="confirm-btn" onClick={handleSaveNotes}>
+            <button 
+              className="confirm-btn" 
+              onClick={handleSaveNotes}
+              disabled={!selectedAnomaly || !notes.trim()}
+            >
               Save Notes
             </button>
           </div>

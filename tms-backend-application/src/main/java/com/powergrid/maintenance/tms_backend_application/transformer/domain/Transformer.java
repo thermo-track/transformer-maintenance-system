@@ -6,12 +6,6 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-// Import the Inspection entity
-import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 
 @Data
 @Entity
