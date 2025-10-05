@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useLocation } from "react-router-dom";
-import { X, RotateCcw, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from "react-router-dom";
+import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle } from 'lucide-react';
 import '../styles/thermal-image-comparison.css';
 import { baselineImageService } from '../services/BaselineImageService';
+import { cloudinaryService } from '../services/CloudinaryService';
 
 const ThermalImageComparison = ({ 
   transformerId,
@@ -14,50 +15,180 @@ const ThermalImageComparison = ({
   onRefresh 
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { transformerNo, inspectionId } = useParams();
+  const { transformerNo } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [weatherBasedBaselineImage, setWeatherBasedBaselineImage] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [anomalies, setAnomalies] = useState([]);
+  const [detections, setDetections] = useState([]);
+  const [inspectionId, setInspectionId] = useState(null);
   
-  console.log('📊 Full inspectionData:', inspectionData);
-  console.log('🌤️ Weather condition from inspectionData:', inspectionData?.weatherCondition);
-  
-  // Use current image for display (second panel remains unchanged)
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
+
+  const [zoom, setZoom] = useState({ baseline: 1, current: 1 });
+  const [position, setPosition] = useState({ 
+    baseline: { x: 0, y: 0 }, 
+    current: { x: 0, y: 0 } 
+  });
+  const [isDragging, setIsDragging] = useState({ baseline: false, current: false });
+
   const displayCurrentImage = currentImage || baselineImage;
 
-  const handleDeleteClick = () => {
-    setShowDeleteConfirm(true);
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteConfirm(false);
-  };
-
-  const handleConfirmDelete = () => {
-    setShowDeleteConfirm(false);
-    if (onDelete) {
-      onDelete();
-    }
-  };
-
+  // Update inspectionId when inspectionData changes
   useEffect(() => {
-    console.log('🚀 ThermalImageComparison mounted with:');
-    console.log('  - transformerNo:', transformerNo);
-    console.log('  - inspectionData?.weatherCondition:', inspectionData?.weatherCondition);
-    
-    if (transformerNo && inspectionData?.weatherCondition) {
-      console.log('✅ All required data available, loading weather-based baseline image');
-      loadWeatherBasedBaselineImage();
-    } else {
-      console.warn('⚠️ Missing required data:');
-      console.warn('  - transformerNo:', !!transformerNo);
-      console.warn('  - weatherCondition:', !!inspectionData?.weatherCondition);
-      
-      if (!transformerNo) {
-        setError('No transformer number provided');
-      }
+    if (inspectionData?.inspectionId) {
+      console.log('Setting inspection ID:', inspectionData.inspectionId);
+      setInspectionId(inspectionData.inspectionId);
     }
-  }, [transformerNo, inspectionData?.weatherCondition]);
+  }, [inspectionData]);
+
+  // Fetch anomalies when inspectionId changes
+  useEffect(() => {
+    if (inspectionId) {
+      console.log('Fetching anomalies for inspection:', inspectionId);
+      fetchAnomalies(inspectionId);
+    }
+  }, [inspectionId]);
+
+  // Draw bounding boxes when anomalies or image changes
+  useEffect(() => {
+    if (imageRef.current && canvasRef.current && (anomalies.length > 0 || detections.length > 0)) {
+      console.log('Drawing bounding boxes:', { anomalies: anomalies.length, detections: detections.length });
+      drawBoundingBoxes();
+    }
+  }, [anomalies, detections, zoom.current, position.current]);
+
+  const fetchAnomalies = async (inspId) => {
+    try {
+      console.log('Fetching anomalies from backend for:', inspId);
+      const result = await cloudinaryService.getInspectionAnomalies(inspId);
+      console.log('Anomalies result:', result);
+      
+      setAnomalies(result.anomalies || []);
+      
+      const detectionData = (result.anomalies || []).filter(a => a.faultType);
+      setDetections(detectionData);
+      
+      console.log('Set anomalies:', result.anomalies?.length || 0, 'detections:', detectionData.length);
+      
+    } catch (error) {
+      console.error('Error fetching anomalies:', error);
+    }
+  };
+
+  const drawBoundingBoxes = () => {
+    const canvas = canvasRef.current;
+    const image = imageRef.current;
+    
+    if (!canvas || !image || !image.complete) {
+      console.log('Canvas or image not ready');
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = image.width;
+    canvas.height = image.height;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const scaleX = image.width / image.naturalWidth;
+    const scaleY = image.height / image.naturalHeight;
+    
+    console.log('Drawing boxes with scale:', { scaleX, scaleY, imageWidth: image.width, imageHeight: image.height });
+    
+    ctx.save();
+    ctx.scale(zoom.current, zoom.current);
+    ctx.translate(position.current.x / zoom.current, position.current.y / zoom.current);
+
+    // Draw unsupervised anomalies (yellow boxes)
+    anomalies.forEach((anomaly, index) => {
+      if (!anomaly.faultType && anomaly.bboxX !== null) {
+        const x = anomaly.bboxX * scaleX;
+        const y = anomaly.bboxY * scaleY;
+        const width = anomaly.bboxWidth * scaleX;
+        const height = anomaly.bboxHeight * scaleY;
+        
+        console.log(`Drawing anomaly ${index}:`, { x, y, width, height });
+        
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, width, height);
+        
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+        ctx.fillRect(x, y - 25, 120, 25);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`Anomaly ${index + 1}`, x + 5, y - 8);
+      }
+    });
+
+    // Draw YOLO detections (red boxes)
+    detections.forEach((detection, index) => {
+      if (detection.bboxX !== null) {
+        const x = detection.bboxX * scaleX;
+        const y = detection.bboxY * scaleY;
+        const width = detection.bboxWidth * scaleX;
+        const height = detection.bboxHeight * scaleY;
+        
+        console.log(`Drawing detection ${index}:`, detection.faultType, { x, y, width, height });
+        
+        const confidence = detection.faultConfidence || 0;
+        const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, width, height);
+        
+        const label = `${detection.faultType} (${(confidence * 100).toFixed(0)}%)`;
+        const textWidth = ctx.measureText(label).width + 10;
+        
+        ctx.fillStyle = `rgba(${confidence > 0.7 ? '255,0,0' : '255,165,0'}, 0.8)`;
+        ctx.fillRect(x, y - 25, textWidth, 25);
+        
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(label, x + 5, y - 8);
+      }
+    });
+
+    ctx.restore();
+    console.log('Finished drawing bounding boxes');
+  };
+
+  const handleZoom = (imageType, delta) => {
+    setZoom(prev => ({
+      ...prev,
+      [imageType]: Math.max(1, Math.min(3, prev[imageType] + delta))
+    }));
+  };
+
+  const handleDragStart = (imageType, e) => {
+    setIsDragging(prev => ({ ...prev, [imageType]: true }));
+  };
+
+  const handleDragMove = (imageType, e) => {
+    if (!isDragging[imageType]) return;
+    
+    setPosition(prev => ({
+      ...prev,
+      [imageType]: {
+        x: prev[imageType].x + e.movementX,
+        y: prev[imageType].y + e.movementY
+      }
+    }));
+  };
+
+  const handleDragEnd = (imageType) => {
+    setIsDragging(prev => ({ ...prev, [imageType]: false }));
+  };
+
+  const resetImage = (imageType) => {
+    setZoom(prev => ({ ...prev, [imageType]: 1 }));
+    setPosition(prev => ({ ...prev, [imageType]: { x: 0, y: 0 } }));
+  };
 
   const loadWeatherBasedBaselineImage = async () => {
     try {
@@ -65,24 +196,15 @@ const ThermalImageComparison = ({
       setError(null);
       
       const weatherCondition = inspectionData?.weatherCondition?.toLowerCase() || 'sunny';
-      console.log('🎯 Loading baseline image for:');
-      console.log('  - transformer:', transformerNo);
-      console.log('  - weather:', weatherCondition);
-      
-      // Use the correct method from BaselineImageService
       const imageUrl = await baselineImageService.getBaselineImage(transformerId, weatherCondition);
       
       if (imageUrl) {
         setWeatherBasedBaselineImage(imageUrl);
-        console.log('✅ Baseline image loaded successfully for weather condition:', weatherCondition);
       } else {
-        console.log('❌ No baseline image found for weather condition:', weatherCondition);
         setWeatherBasedBaselineImage(null);
         setError(`No baseline image available for ${weatherCondition} condition`);
       }
-      
     } catch (error) {
-      console.error('💥 Error loading weather-based baseline image:', error);
       setError('Failed to load baseline image: ' + error.message);
       setWeatherBasedBaselineImage(null);
     } finally {
@@ -90,207 +212,178 @@ const ThermalImageComparison = ({
     }
   };
 
-  // No need to cleanup blob URL since we're getting direct URLs from Cloudinary
   useEffect(() => {
-    return () => {
-      // Only cleanup if it's a blob URL (which shouldn't happen with the new service)
-      if (weatherBasedBaselineImage && weatherBasedBaselineImage.startsWith('blob:')) {
-        URL.revokeObjectURL(weatherBasedBaselineImage);
-      }
-    };
-  }, [weatherBasedBaselineImage]);
+    if (transformerId && inspectionData?.weatherCondition) {
+      loadWeatherBasedBaselineImage();
+    }
+  }, [transformerId, inspectionData?.weatherCondition]);
+
+  const handleRefreshClick = () => {
+    console.log('Refresh clicked, fetching anomalies for:', inspectionId);
+    if (inspectionId) {
+      fetchAnomalies(inspectionId);
+    }
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
+  const ImagePanel = ({ type, image, date }) => (
+    <div className={`image-panel ${type}-panel`}>
+      <div className="image-header">
+        <div className="image-label-section">
+          <span className="image-label">{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+        </div>
+        <span className="image-date">{date}</span>
+      </div>
+      
+      <div className="thermal-image-wrapper">
+        <div className="image-controls">
+          <button onClick={() => handleZoom(type, 0.1)} title="Zoom in">
+            <ZoomIn size={16} />
+          </button>
+          <button onClick={() => handleZoom(type, -0.1)} title="Zoom out">
+            <ZoomOut size={16} />
+          </button>
+          <button onClick={() => resetImage(type)} title="Reset view">
+            <RotateCcw size={16} />
+          </button>
+        </div>
+
+        {image ? (
+          <div 
+            className="draggable-container"
+            onMouseDown={(e) => handleDragStart(type, e)}
+            onMouseMove={(e) => handleDragMove(type, e)}
+            onMouseUp={() => handleDragEnd(type)}
+            onMouseLeave={() => handleDragEnd(type)}
+            style={{ cursor: isDragging[type] ? 'grabbing' : 'grab', position: 'relative' }}
+          >
+            <img 
+              ref={type === 'current' ? imageRef : null}
+              src={image} 
+              alt={`${type} thermal image`}
+              className="thermal-image"
+              style={{
+                transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
+                transition: isDragging[type] ? 'none' : 'transform 0.3s'
+              }}
+              onError={() => setError(`Failed to load ${type} image`)}
+              onLoad={() => {
+                console.log(`${type} image loaded`);
+                if (type === 'current') {
+                  setTimeout(() => drawBoundingBoxes(), 100);
+                }
+              }}
+            />
+            {type === 'current' && (
+              <canvas
+                ref={canvasRef}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  pointerEvents: 'none',
+                  transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
+                  transition: isDragging[type] ? 'none' : 'transform 0.3s'
+                }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="image-placeholder">
+            <span>No {type} image available</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="thermal-comparison-container">
       <div className="comparison-header">
         <h3 className="comparison-title">Thermal Image Comparison</h3>
         <div className="comparison-actions">
-          <button 
-            onClick={onRefresh}
-            className="action-btnT refresh-btnT"
-            title="Refresh images"
-          >
+          <button onClick={handleRefreshClick} className="action-btnT refresh-btnT">
             <RotateCcw size={16} />
             Refresh
           </button>
-          <button 
-            onClick={onUploadNew}
-            className="action-btnT upload-new-btnT"
-            title="Upload new image"
-          >
-            📤 Upload New
+          <button onClick={onUploadNew} className="action-btnT upload-new-btnT">
+            Upload New
           </button>
-          <button 
-            onClick={handleDeleteClick}
-            className="action-btnT delete-btnT"
-            title="Delete images"
-          >
+          <button onClick={() => setShowDeleteConfirm(true)} className="action-btnT delete-btnT">
             <X size={16} />
             Delete
           </button>
         </div>
       </div>
-      
+
       <div className="image-comparison-grid">
-        {/* Baseline Image Panel */}
-        <div className="image-panel baseline-panel">
-          <div className="image-header">
-            <div className="image-label-section">
-              <span className="image-label">Baseline</span>
-              <span className="image-status normal">Normal</span>
-            </div>
-            <span className="image-date">
-              {inspectionData?.baselineDate || '1/9/2025 9:10:03 PM'}
-            </span>
-          </div>
-          
-          <div className="thermal-image-wrapper">
-            {isLoading ? (
-              <div className="image-placeholder">
-                <div className="loading-spinner"></div>
-                <span>Loading baseline image...</span>
-              </div>
-            ) : error ? (
-              <div className="image-placeholder error">
-                <AlertTriangle size={24} />
-                <span>{error}</span>
-                <button 
-                  onClick={loadWeatherBasedBaselineImage}
-                  className="retry-btn"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : weatherBasedBaselineImage ? (
-              <img 
-                src={weatherBasedBaselineImage} 
-                alt={`Baseline thermal image (${inspectionData?.weatherCondition || 'unknown'} condition)`}
-                className="thermal-image"
-                onError={(e) => {
-                  console.error('Failed to load baseline image:', e);
-                  setError('Failed to display baseline image');
-                }}
-              />
-            ) : (
-              <div className="image-placeholder">
-                <span>No baseline image available for {inspectionData?.weatherCondition || 'current weather'} condition</span>
-                <button 
-                  onClick={onUploadNew}
-                  className="upload-baseline-btn"
-                >
-                  Upload Baseline
-                </button>
-              </div>
-            )}
-            
-            {/* Temperature Scale */}
-            <div className="temperature-scale">
-              <div className="scale-bar">
-                <div className="scale-gradient"></div>
-                <div className="scale-labels">
-                  <span className="temp-max">45°C</span>
-                  <span className="temp-mid">25°C</span>
-                  <span className="temp-min">5°C</span>
+        <ImagePanel 
+          type="baseline"
+          image={weatherBasedBaselineImage}
+          date={inspectionData?.baselineDate || '1/9/2025 9:10:03 PM'}
+        />
+        <ImagePanel 
+          type="current"
+          image={displayCurrentImage}
+          date={inspectionData?.currentDate || new Date().toLocaleString()}
+        />
+      </div>
+
+      <div className="analysis-sections">
+        <div className="anomalies-section">
+          <h4 style={{color: "black"}}>Anomalies Detected</h4>
+          <div className="anomaly-list">
+            {detections.length > 0 ? (
+              detections.map((detection, index) => (
+                <div key={index} className="anomaly-item">
+                  <span className="anomaly-location">{detection.faultType}</span>
+                  <span className="anomaly-temp">{(detection.faultConfidence * 100).toFixed(0)}%</span>
+                  <span className={`anomaly-severity ${detection.faultConfidence > 0.7 ? 'critical' : 'high'}`}>
+                    {detection.faultConfidence > 0.7 ? 'Critical' : 'High'}
+                  </span>
                 </div>
-              </div>
-            </div>
-            
-            {/* Temperature Reading */}
-            <div className="temperature-reading baseline-temp">
-              {inspectionData?.baselineTemperature || '73.0°F'}
-            </div>
+              ))
+            ) : (
+              <p>No anomalies detected</p>
+            )}
           </div>
         </div>
 
-        {/* Current Image Panel - UNCHANGED */}
-        <div className="image-panel current-panel">
-          <div className="image-header">
-            <div className="image-label-section">
-              <span className="image-label">Current</span>
-              {inspectionData?.hasAnomaly !== false && (
-                <span className="image-status anomaly">
-                  ⚠️ Anomaly Detected
-                </span>
-              )}
-            </div>
-            <span className="image-date">
-              {inspectionData?.currentDate || '5/7/2025 6:34:21 PM'}
-            </span>
-          </div>
-          
-          <div className="thermal-image-wrapper">
-            {displayCurrentImage ? (
-              <img 
-                src={displayCurrentImage} 
-                alt="Current thermal image" 
-                className="thermal-image"
-              />
-            ) : (
-              <div className="image-placeholder">
-                <span>No current image</span>
-              </div>
-            )}
-            
-            {/* Temperature Scale */}
-            <div className="temperature-scale">
-              <div className="scale-bar">
-                <div className="scale-gradient"></div>
-                <div className="scale-labels">
-                  <span className="temp-max">45°C</span>
-                  <span className="temp-mid">25°C</span>
-                  <span className="temp-min">5°C</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Temperature Reading */}
-            <div className="temperature-reading current-temp">
-              {inspectionData?.currentTemperature || '89.2°F'}
-            </div>
-            
-            {/* Anomaly Detection Boxes - Show only if anomalies detected */}
-            {inspectionData?.hasAnomaly !== false && (
-              <div className="anomaly-boxes">
-                <div className="anomaly-box box-1" title="Hot spot detected">
-                  <span className="anomaly-temp">38.1°C</span>
-                </div>
-                <div className="anomaly-box box-2" title="Hot spot detected">
-                  <span className="anomaly-temp">41.7°C</span>
-                </div>
-              </div>
-            )}
+        <div className="notes-section">
+          <h4 style={{color: "black"}}>Notes</h4>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="notes-textarea"
+            placeholder="Type here to add notes..."
+            rows={4}
+          />
+          <div className="notes-actions">
+            <button className="cancel-btn" onClick={() => setNotes('')}>
+              Cancel
+            </button>
+            <button className="confirm-btn" onClick={() => console.log('Notes saved:', notes)}>
+              Save Notes
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="modal-overlay" onClick={handleCancelDelete}>
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
           <div className="delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="warning-icon">
-                <AlertTriangle size={24} color="#dc3545" />
-              </div>
-              <h3 className="modal-title">Delete Thermal Images</h3>
+              <AlertTriangle size={24} color="#dc3545" />
+              <h3>Delete Thermal Images</h3>
             </div>
-            
-            <div className="modal-content">
-              <p className="warning-text">
-                Are you sure you want to delete inspection thermal image? <br /> This action cannot be undone.
-              </p>
-            </div>
-            
+            <p>Are you sure you want to delete these thermal images? This action cannot be undone.</p>
             <div className="modal-actions">
-              <button 
-                onClick={handleCancelDelete}
-                className="cancel-btn"
-              >
+              <button onClick={() => setShowDeleteConfirm(false)} className="cancel-btn">
                 Cancel
               </button>
-              <button 
-                onClick={handleConfirmDelete}
-                className="confirm-delete-btn"
-              >
+              <button onClick={() => { onDelete?.(); setShowDeleteConfirm(false); }} className="confirm-delete-btn">
                 <X size={16} />
                 Delete
               </button>
@@ -298,33 +391,6 @@ const ThermalImageComparison = ({
           </div>
         </div>
       )}
-
-      {/* Analysis Summary */}
-      <div className="analysis-summary">
-        <div className="summary-stats">
-          <div className="stat-item">
-            <span className="stat-label">Temperature Difference:</span>
-            <span className="stat-value">
-              {inspectionData?.temperatureDiff || '+16.2°F'}
-            </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Analysis Status:</span>
-            <span className={`stat-value ${inspectionData?.hasAnomaly !== false ? 'anomaly' : 'normal'}`}>
-              {inspectionData?.hasAnomaly !== false ? 'Anomaly Detected' : 'Normal'}
-            </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Weather Condition:</span>
-            <span className="stat-value">
-              {inspectionData?.weatherCondition ? 
-                inspectionData.weatherCondition.charAt(0).toUpperCase() + inspectionData.weatherCondition.slice(1) : 
-                'Sunny'
-              }
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

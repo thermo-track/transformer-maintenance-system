@@ -14,12 +14,22 @@ import java.util.Optional;
 public interface TransformerImageRepository extends JpaRepository<TransformerImage, String> {
 
     /**
+     * Find images by transformer ID and weather condition string
+     * This method accepts String for compatibility with the inference service
+     */
+    @Query("SELECT ti FROM TransformerImage ti WHERE ti.transformer.id = :transformerId AND UPPER(CAST(ti.weatherCondition AS string)) = :weatherCondition")
+    List<TransformerImage> findByTransformerIdAndWeatherCondition(
+            @Param("transformerId") String transformerId,
+            @Param("weatherCondition") String weatherCondition
+    );
+
+    /**
      * Find image by transformer ID and weather condition
      * Using the relationship path transformer.id
      */
     Optional<TransformerImage> findByTransformer_IdAndWeatherCondition(
-        String transformerId, 
-        TransformerImage.WeatherCondition weatherCondition
+            String transformerId,
+            TransformerImage.WeatherCondition weatherCondition
     );
 
     /**
@@ -32,8 +42,8 @@ public interface TransformerImageRepository extends JpaRepository<TransformerIma
      * Alternative method using the entity relationship
      */
     Optional<TransformerImage> findByTransformerAndWeatherCondition(
-        Transformer transformer, 
-        TransformerImage.WeatherCondition weatherCondition
+            Transformer transformer,
+            TransformerImage.WeatherCondition weatherCondition
     );
 
     /**
@@ -94,8 +104,8 @@ public interface TransformerImageRepository extends JpaRepository<TransformerIma
      */
     @Query("SELECT ti FROM TransformerImage ti WHERE ti.transformer.id = :transformerId AND ti.weatherCondition IN :weatherConditions")
     List<TransformerImage> findByTransformerIdAndWeatherConditionIn(
-        @Param("transformerId") String transformerId,
-        @Param("weatherConditions") List<TransformerImage.WeatherCondition> weatherConditions
+            @Param("transformerId") String transformerId,
+            @Param("weatherConditions") List<TransformerImage.WeatherCondition> weatherConditions
     );
 
     /**
@@ -103,8 +113,8 @@ public interface TransformerImageRepository extends JpaRepository<TransformerIma
      */
     @Query("SELECT DISTINCT ti.transformer FROM TransformerImage ti WHERE ti.weatherCondition IN :weatherConditions GROUP BY ti.transformer HAVING COUNT(DISTINCT ti.weatherCondition) = :conditionCount")
     List<Transformer> findTransformersWithAllWeatherConditions(
-        @Param("weatherConditions") List<TransformerImage.WeatherCondition> weatherConditions,
-        @Param("conditionCount") long conditionCount
+            @Param("weatherConditions") List<TransformerImage.WeatherCondition> weatherConditions,
+            @Param("conditionCount") long conditionCount
     );
 
     /**

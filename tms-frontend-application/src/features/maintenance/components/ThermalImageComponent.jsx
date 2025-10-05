@@ -24,7 +24,6 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
     { value: 'rainy', label: 'Rainy' },
   ];
 
-  // Fetch weather condition and check for existing images when component mounts
   useEffect(() => {
     if (inspectionId) {
       fetchWeatherConditionAndLoadImages();
@@ -32,7 +31,6 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
       setIsLoading(false);
     }
     
-    // Cleanup function to revoke blob URLs
     return () => {
       if (currentImage && currentImage.startsWith('blob:')) {
         URL.revokeObjectURL(currentImage);
@@ -49,8 +47,7 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
       setError(null);
       console.log('Fetching weather condition for inspection:', inspectionId);
       
-      // Fetch weather condition from database FIRST
-      let finalWeatherCondition = 'sunny'; // default
+      let finalWeatherCondition = 'sunny';
       
       try {
         setIsLoadingWeather(true);
@@ -60,20 +57,16 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
         if (weatherFromDB) {
           finalWeatherCondition = weatherFromDB.toLowerCase();
           setWeatherCondition(finalWeatherCondition);
-          console.log('Weather condition set to:', weatherFromDB);
         } else {
-          console.warn('No weather condition returned, using default: sunny');
           setWeatherCondition('sunny');
         }
       } catch (weatherError) {
         console.error('Error fetching weather condition:', weatherError);
-        console.warn('Using default weather condition: sunny');
         setWeatherCondition('sunny');
       } finally {
         setIsLoadingWeather(false);
       }
       
-      // Check for existing cloud images only
       await checkAndLoadExistingCloudImage(finalWeatherCondition);
       
     } catch (error) {
@@ -93,30 +86,23 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
       
       if (hasImage) {
         setHasExistingImage(true);
-        console.log('Setting hasExistingImage to true');
         
         try {
-          // Get cloud image URL from backend
           const cloudImageUrl = await cloudinaryService.getCloudImageUrlFromBackend(inspectionId);
           console.log('Loaded cloud image URL:', cloudImageUrl);
           
           if (cloudImageUrl) {
             const correctWeatherCondition = weatherConditionParam || weatherCondition || 'sunny';
-            console.log('Using weather condition for inspection data:', correctWeatherCondition);
             
             setCurrentImage(cloudImageUrl);
-            setBaselineImage(cloudImageUrl); // Same image for comparison
+            setBaselineImage(cloudImageUrl);
             
-            // Create inspection data object with cloud image
             setInspectionData({
+              inspectionId: inspectionId,
               imageUrl: cloudImageUrl,
               uploadDate: new Date().toLocaleString(),
-              hasAnomaly: true, // Dummy data - replace with actual analysis
-              currentTemperature: '89.2°F', // Dummy data
-              baselineTemperature: '73.0°F', // Dummy data
-              temperatureDiff: '+16.2°F', // Dummy data
               weatherCondition: correctWeatherCondition,
-              baselineDate: '1/9/2025 9:10:03 PM', // Dummy data
+              baselineDate: '1/9/2025 9:10:03 PM',
               currentDate: new Date().toLocaleString()
             });
           }
@@ -199,14 +185,12 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
     try {
       console.log('Starting cloud upload for inspection:', inspectionId, 'with weather condition:', weatherCondition);
 
-      // Upload to cloud only using the parent's handler
       if (onImageUpload) {
         await onImageUpload(selectedFile, weatherCondition);
       }
       
       setUploadProgress(100);
       
-      // After successful upload, reload the image data
       await checkAndLoadExistingCloudImage(weatherCondition);
       
       setTimeout(() => {
@@ -256,10 +240,10 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
   };
 
   const handleRefresh = () => {
-    fetchWeatherConditionAndLoadImages(); // This will refetch weather condition AND cloud images
+    console.log('Refresh triggered in ThermalImageComponent');
+    fetchWeatherConditionAndLoadImages();
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="thermal-image-container">
@@ -276,7 +260,6 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
 
   return (
     <div className="thermal-image-container">
-      {/* Show comparison view if images exist and not uploading */}
       {hasExistingImage && !isUploading && (baselineImage || currentImage) ? (
         <ThermalImageComparison
           transformerId={transformerId}
@@ -289,7 +272,6 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
         />
       ) : (
         <>
-          {/* Upload Interface */}
           <div className="thermal-header">
             <h2 className="thermal-title">Upload Thermal Image</h2>
           </div>
@@ -342,9 +324,6 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
               <div className="weather-section">
                 <label htmlFor="weather-select" className="weather-label">
                   Weather Condition
-                  {!isLoadingWeather && (
-                    <span className="weather-label-note"></span>
-                  )}
                 </label>
                 <select
                   id="weather-select"
@@ -384,7 +363,6 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
             </div>
           )}
 
-          {/* Upload Progress */}
           {isUploading && (
             <div className="upload-progress-section">
               <div className="progress-header">

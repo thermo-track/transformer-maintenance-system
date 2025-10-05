@@ -122,3 +122,72 @@ JOIN public.transformer_images ti ON t.id = ti.transformer_id
 ORDER BY t.transformer_no, ti.weather_condition;
 
 ALTER SEQUENCE inspection_id_sequence RESTART WITH 100000016;
+
+-- Create inference_metadata table to store inference run information
+CREATE TABLE IF NOT EXISTS public.inference_metadata (
+                                                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    inspection_id VARCHAR(50) UNIQUE NOT NULL,
+    baseline_image_url VARCHAR(500),
+    maintenance_image_url VARCHAR(500),
+    visualization_image_url VARCHAR(500),
+    registration_ok BOOLEAN,
+    registration_method VARCHAR(50),
+    registration_inliers INTEGER,
+    threshold_pct DOUBLE PRECISION,
+    iou_thresh DOUBLE PRECISION,
+    conf_thresh DOUBLE PRECISION,
+    full_json_result TEXT,
+    inference_run_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    FOREIGN KEY (inspection_id) REFERENCES public.inspections(inspection_id) ON DELETE CASCADE
+    );
+
+-- Create inspection_anomalies table to store detected anomalies
+CREATE TABLE IF NOT EXISTS public.inspection_anomalies (
+                                                           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    inspection_id VARCHAR(50) NOT NULL,
+
+    -- Bounding box coordinates [x, y, width, height]
+    bbox_x INTEGER,
+    bbox_y INTEGER,
+    bbox_width INTEGER,
+    bbox_height INTEGER,
+
+    -- Centroid coordinates
+    centroid_x DOUBLE PRECISION,
+    centroid_y DOUBLE PRECISION,
+
+    -- Anomaly properties
+    area_px INTEGER,
+    fault_type VARCHAR(100),
+    fault_confidence DOUBLE PRECISION,
+    class_id INTEGER,
+
+    -- Detector information (JSON string)
+    detector_box TEXT,
+    detector_iou DOUBLE PRECISION,
+
+    -- Metadata
+    detected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    FOREIGN KEY (inspection_id) REFERENCES public.inspections(inspection_id) ON DELETE CASCADE
+    );
+
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_inference_metadata_inspection_id
+    ON public.inference_metadata(inspection_id);
+
+CREATE INDEX IF NOT EXISTS idx_anomalies_inspection_id
+    ON public.inspection_anomalies(inspection_id);
+
+CREATE INDEX IF NOT EXISTS idx_anomalies_fault_type
+    ON public.inspection_anomalies(fault_type);
+
+CREATE INDEX IF NOT EXISTS idx_anomalies_detected_at
+    ON public.inspection_anomalies(detected_at);
+
+-- Add comments for documentation
+COMMENT ON TABLE public.inference_metadata IS 'Stores metadata about inference pipeline runs for each inspection';
+COMMENT ON TABLE public.inspection_anomalies IS 'Stores detected anomalies and faults from thermal image analysis';
+COMMENT ON COLUMN public.inspection_anomalies.detector_box IS 'JSON string containing full bounding box data from YOLO detector';

@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +19,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionUpdateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.service.InspectionService;
+import com.powergrid.maintenance.tms_backend_application.inspection.service.InferenceService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,15 +37,34 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 
-
 @Slf4j
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/inspections")
+@RequiredArgsConstructor
 public class InspectionController {
 
-    @Autowired
-    private InspectionService inspectionService;
+    private final InferenceService inferenceService;
+    private final InspectionService inspectionService;
+
+    @Operation(summary = "Get anomalies for inspection", description = "Retrieves all detected anomalies and inference metadata for a specific inspection")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Anomalies retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Inspection not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/{inspectionId}/anomalies")
+    public ResponseEntity<Map<String, Object>> getAnomalies(@PathVariable String inspectionId) {
+        List<InspectionAnomaly> anomalies = inferenceService.getAnomaliesForInspection(inspectionId);
+        InferenceMetadata metadata = inferenceService.getMetadataForInspection(inspectionId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("anomalies", anomalies);
+        response.put("metadata", metadata);
+        response.put("inspectionId", inspectionId);
+
+        return ResponseEntity.ok(response);
+    }
 
     @Operation(summary = "Create a new inspection", description = "Creates a new power grid inspection record")
     @ApiResponses(value = {
@@ -166,7 +188,7 @@ public class InspectionController {
         return inspectionService.getInspectionsByTransformerId(transformerId);
     }
 
-
+    @Operation(summary = "Get weather condition for inspection", description = "Retrieves the environmental/weather condition for a specific inspection")
     @GetMapping("/{inspectionId}/weather-condition")
     public ResponseEntity<Map<String, String>> getInspectionWeatherCondition(@PathVariable String inspectionId) {
         try {
@@ -175,10 +197,10 @@ public class InspectionController {
                 Map<String, String> response = new HashMap<>();
                 response.put("weatherCondition", weatherCondition);
                 response.put("inspectionId", inspectionId);
-                
+
                 return ResponseEntity.ok(response);
             }
-            
+
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             log.error("Error fetching weather condition for inspection: " + inspectionId, e);
@@ -186,8 +208,8 @@ public class InspectionController {
         }
     }
 
-    @Operation(summary = "Get latest inspection for each transformer", 
-           description = "Retrieves the most recent inspection record for each transformer")
+    @Operation(summary = "Get latest inspection for each transformer",
+            description = "Retrieves the most recent inspection record for each transformer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Latest inspections retrieved successfully"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -197,6 +219,4 @@ public class InspectionController {
         log.info("Retrieving latest inspection for each transformer");
         return inspectionService.getLatestInspectionPerTransformer();
     }
-    
-
 }
