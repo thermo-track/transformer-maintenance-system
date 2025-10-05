@@ -31,6 +31,7 @@ const ThermalImageComparison = ({
   
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+  const containerRef = useRef(null);
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentThresholds, setCurrentThresholds] = useState({
@@ -45,21 +46,16 @@ const ThermalImageComparison = ({
       setCurrentThresholds(newThresholds);
       setIsRerunLoading(true);
 
-      // Re-run inference with new thresholds
       await cloudinaryService.rerunInferenceWithThresholds(
         inspectionId,
         newThresholds
       );
       
-      // Refresh anomalies
       if (inspectionId) {
         await fetchAnomalies(inspectionId);
       }
-
-      // Optional: set a success banner state if you have one
     } catch (error) {
       console.error('Error applying thresholds:', error);
-      // Optional: set an error banner state if you have one
     } finally {
       setIsRerunLoading(false);
     }
@@ -86,12 +82,31 @@ const ThermalImageComparison = ({
     }
   }, [inspectionId]);
 
+  // Redraw bounding boxes when detections, zoom, or position changes
   useEffect(() => {
     if (imageRef.current && canvasRef.current && detections.length > 0) {
-      drawBoundingBoxes();
+      const timeoutId = setTimeout(() => {
+        drawBoundingBoxes();
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detections, zoom.current, position.current]); // kept as in your original
+  }, [detections, zoom.current, position.current]);
+
+  // Redraw on container resize
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver(() => {
+      if (detections.length > 0 && imageRef.current?.complete) {
+        requestAnimationFrame(() => drawBoundingBoxes());
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
+    return () => resizeObserver.disconnect();
+  }, [detections]);
 
   const fetchAnomalies = async (inspId) => {
     try {
@@ -106,43 +121,126 @@ const ThermalImageComparison = ({
   const drawBoundingBoxes = () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
+    const container = containerRef.current;
     
-    if (!canvas || !image || !image.complete) return;
+    if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
+    
+    // Set canvas size to match container
+    const containerRect = container.getBoundingClientRect();
+    canvas.width = containerRect.width;
+    canvas.height = containerRect.height;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+    const naturalWidth = image.naturalWidth;
+    const naturalHeight = image.naturalHeight;
+    
+    // Calculate how object-fit: cover displays the image
+    const containerAspect = containerWidth / containerHeight;
+    const imageAspect = naturalWidth / naturalHeight;
+    
+    let renderedWidth, renderedHeight, offsetX, offsetY;
+    
+    if (imageAspect > containerAspect) {
+      // Image is wider - height matches container, width overflows
+      renderedHeight = containerHeight;
+      renderedWidth = renderedHeight * imageAspect;
+      offsetX = (containerWidth - renderedWidth) / 2;
+      offsetY = 0;
+    } else {
+      // Image is taller - width matches container, height overflows
+      renderedWidth = containerWidth;
+      renderedHeight = renderedWidth / imageAspect;
+      offsetX = 0;
+      offsetY = (containerHeight - renderedHeight) / 2;
+    }
+    
+    // Apply zoom transformation
+    const currentZoom = zoom.current;
+    const zoomedWidth = renderedWidth * currentZoom;
+    const zoomedHeight = renderedHeight * currentZoom;
+    
+    // Calculate the position after zoom (zoom centers on the image)
+    const zoomOffsetX = (renderedWidth - zoomedWidth) / 2;
+    const zoomOffsetY = (renderedHeight - zoomedHeight) / 2;
+    
+    // Final position = base offset + zoom centering + user pan
+    const finalX = offsetX + zoomOffsetX + position.current.x;
+    const finalY = offsetY + zoomOffsetY + position.current.y;
+    
+    // Scale factor from original image coordinates to displayed coordinates
+    const scaleX = zoomedWidth / naturalWidth;
+    const scaleY = zoomedHeight / naturalHeight;
+
+    // Draw each detection
     detections.forEach((detection) => {
-      if (detection.bboxX !== null) {
-        const x = detection.bboxX;
-        const y = detection.bboxY;
-        const width = detection.bboxWidth;
-        const height = detection.bboxHeight;
-        
-        const confidence = detection.faultConfidence || 0;
-        const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
-        
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x, y, width, height);
-        
-        // Dynamic font size based on bounding box size
-        const boxArea = width * height;
-        const fontSize = Math.max(12, Math.min(24, Math.sqrt(boxArea) / 15));
-        
-        const label = `${detection.faultType} (${(confidence * 100).toFixed(0)}%)`;
-        ctx.font = `bold ${fontSize}px Arial`;
-        const textWidth = ctx.measureText(label).width + 10;
-        const labelHeight = fontSize + 10;
-        
-        ctx.fillStyle = `rgba(${confidence > 0.7 ? '255,0,0' : '255,165,0'}, 0.8)`;
-        ctx.fillRect(x, y - labelHeight, textWidth, labelHeight);
-        
-        ctx.fillStyle = '#FFF';
-        ctx.fillText(label, x + 5, y - 5);
+      if (detection.bboxX === null || detection.bboxY === null) return;
+      
+      // Transform bbox from original image space to displayed canvas space
+      const x = (detection.bboxX * scaleX) + finalX;
+      const y = (detection.bboxY * scaleY) + finalY;
+      const width = detection.bboxWidth * scaleX;
+      const height = detection.bboxHeight * scaleY;
+      
+      // Only draw if at least partially visible in viewport
+      if (x + width < 0 || y + height < 0 || 
+          x > containerWidth || y > containerHeight) {
+        return;
       }
+      
+      const confidence = detection.faultConfidence || 0;
+      const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
+      
+      // Draw bounding box
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, Math.min(5, 3 * currentZoom));
+      ctx.strokeRect(x, y, width, height);
+      
+      // Calculate font size that scales with zoom but stays readable
+      const baseFontSize = Math.max(12, Math.min(18, Math.sqrt(width * height) / 20));
+      const fontSize = Math.max(10, Math.min(24, baseFontSize));
+      
+      const label = `${detection.faultType} (${(confidence * 100).toFixed(0)}%)`;
+      ctx.font = `bold ${fontSize}px Arial`;
+      const textMetrics = ctx.measureText(label);
+      const textWidth = textMetrics.width + 10;
+      const labelHeight = fontSize + 10;
+      
+      // Position label above the box, but keep within canvas bounds
+      let labelX = x;
+      let labelY = y;
+      
+      // Keep label within horizontal bounds
+      if (labelX + textWidth > containerWidth) {
+        labelX = containerWidth - textWidth - 4;
+      }
+      if (labelX < 4) {
+        labelX = 4;
+      }
+      
+      // Put label above box if space available, otherwise below
+      if (labelY - labelHeight > 4) {
+        labelY = labelY - 2;
+      } else {
+        labelY = y + height + labelHeight - 2;
+      }
+      
+      // Draw label background
+      const bgAlpha = confidence > 0.7 ? 0.9 : 0.85;
+      ctx.fillStyle = confidence > 0.7 
+        ? `rgba(255, 0, 0, ${bgAlpha})` 
+        : `rgba(255, 165, 0, ${bgAlpha})`;
+      ctx.fillRect(labelX, labelY - labelHeight, textWidth, labelHeight);
+      
+      // Draw label text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textBaseline = 'top';
+      ctx.fillText(label, labelX + 5, labelY - labelHeight + 5);
     });
   };
 
@@ -154,11 +252,13 @@ const ThermalImageComparison = ({
   };
 
   const handleDragStart = (imageType, e) => {
+    e.preventDefault();
     setIsDragging(prev => ({ ...prev, [imageType]: true }));
   };
 
   const handleDragMove = (imageType, e) => {
     if (!isDragging[imageType]) return;
+    
     setPosition(prev => ({
       ...prev,
       [imageType]: {
@@ -200,7 +300,6 @@ const ThermalImageComparison = ({
     if (transformerId && inspectionData?.weatherCondition) {
       loadWeatherBasedBaselineImage();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transformerId, inspectionData?.weatherCondition]);
 
   const handleRefreshClick = () => {
@@ -218,24 +317,23 @@ const ThermalImageComparison = ({
   };
 
   const handleSaveNotes = async () => {
-      if (!selectedAnomaly || !notes) {
-          alert('Please select an anomaly and enter notes');
-          return;
-      }
+    if (!selectedAnomaly || !notes) {
+      alert('Please select an anomaly and enter notes');
+      return;
+    }
 
-      try {
-          await cloudinaryService.updateAnomalyNotes(inspectionId, selectedAnomaly.id, notes);
-          setShowAnomalyModal(false);
-          // Refresh anomalies list
-          if (inspectionId) {
-              await fetchAnomalies(inspectionId);
-          }
-          alert('Notes saved successfully');
-          navigate(-1); // Navigate back after successful save
-      } catch (error) {
-          console.error('Error saving notes:', error);
-          alert('Failed to save notes');
+    try {
+      await cloudinaryService.updateAnomalyNotes(inspectionId, selectedAnomaly.id, notes);
+      setShowAnomalyModal(false);
+      if (inspectionId) {
+        await fetchAnomalies(inspectionId);
       }
+      alert('Notes saved successfully');
+      navigate(-1);
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      alert('Failed to save notes');
+    }
   };
 
   const handleCancelNotes = () => {
@@ -268,12 +366,17 @@ const ThermalImageComparison = ({
 
         {image ? (
           <div 
+            ref={type === 'current' ? containerRef : null}
             className="draggable-container"
             onMouseDown={(e) => handleDragStart(type, e)}
             onMouseMove={(e) => handleDragMove(type, e)}
             onMouseUp={() => handleDragEnd(type)}
             onMouseLeave={() => handleDragEnd(type)}
-            style={{ cursor: isDragging[type] ? 'grabbing' : 'grab', position: 'relative' }}
+            style={{ 
+              cursor: isDragging[type] ? 'grabbing' : 'grab', 
+              position: 'relative',
+              overflow: 'hidden'
+            }}
           >
             <img 
               ref={type === 'current' ? imageRef : null}
@@ -282,14 +385,18 @@ const ThermalImageComparison = ({
               className="thermal-image"
               style={{
                 transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
-                transition: isDragging[type] ? 'none' : 'transform 0.3s'
+                transition: isDragging[type] ? 'none' : 'transform 0.3s ease',
+                objectFit: 'cover',
+                width: '100%',
+                height: '100%'
               }}
               onError={() => setError(`Failed to load ${type} image`)}
               onLoad={() => {
-                if (type === 'current') {
+                if (type === 'current' && detections.length > 0) {
                   setTimeout(() => drawBoundingBoxes(), 100);
                 }
               }}
+              draggable={false}
             />
             {type === 'current' && (
               <canvas
@@ -300,10 +407,7 @@ const ThermalImageComparison = ({
                   left: 0,
                   width: '100%',
                   height: '100%',
-                  pointerEvents: 'none',
-                  transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
-                  transformOrigin: 'top left',
-                  transition: isDragging[type] ? 'none' : 'transform 0.3s'
+                  pointerEvents: 'none'
                 }}
               />
             )}
@@ -443,7 +547,6 @@ const ThermalImageComparison = ({
         />
       )}
 
-      {/* Rerun loading overlay */}
       {isRerunLoading && (
         <div className="overlay loading-overlay">
           <div className="loading-card">
