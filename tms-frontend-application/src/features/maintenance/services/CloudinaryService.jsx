@@ -14,16 +14,16 @@ class CloudinaryService {
   }
 
   /**
-   * Upload image to Cloudinary and save metadata to backend
+   * Upload image to Cloudinary, save metadata to backend, and trigger inference pipeline
    * @param {File|Object|string} fileInput - Image file to upload (File, Blob, blob URL, or object with blob URLs)
    * @param {string} inspectionId - Inspection ID for folder organization
    * @param {string} environmentalCondition - sunny/cloudy/rainy
-   * @returns {Promise<Object>} Combined response with Cloudinary data and backend response
+   * @returns {Promise<Object>} Combined response with Cloudinary data, backend response, and inference results
    */
   async uploadInspectionImageCloud(fileInput, inspectionId, environmentalCondition) {
     try {
       // Debug file information
-      console.log('🔍 Original file input:', {
+      console.log('Original file input:', {
         input: fileInput,
         type: typeof fileInput,
         constructor: fileInput?.constructor?.name
@@ -32,7 +32,7 @@ class CloudinaryService {
       // Process the file input and convert to File object
       const file = await this.processFileInput(fileInput);
       
-      console.log('🔍 Processed file info:', {
+      console.log('Processed file info:', {
         name: file?.name,
         type: file?.type,
         size: file?.size,
@@ -46,12 +46,21 @@ class CloudinaryService {
       // Step 1: Upload to Cloudinary
       const cloudinaryResult = await this.uploadToCloudinary(file, inspectionId, environmentalCondition);
       
-      // Step 2: Save metadata to backend
-      const backendResponse = await this.saveImageMetadataToBackend(inspectionId, cloudinaryResult, file, environmentalCondition);
+      // Step 2: Save metadata to backend AND trigger inference
+      const backendResponse = await this.saveImageMetadataAndRunInference(
+        inspectionId, 
+        cloudinaryResult, 
+        file, 
+        environmentalCondition
+      );
       
       return {
         cloudinary: cloudinaryResult,
-        backend: backendResponse,
+        backend: backendResponse.metadata,
+        inference: backendResponse.inference,
+        anomalies: backendResponse.inference?.anomalies || [],
+        detections: backendResponse.inference?.detectorSummary?.detections || [],
+        visualizationUrl: backendResponse.inference?.visualizationUrl,
         success: true
       };
       
@@ -130,14 +139,14 @@ class CloudinaryService {
   }
 
   /**
-   * Save image metadata to backend
+   * Save image metadata to backend and trigger inference pipeline
    * @param {string} inspectionId - Inspection ID
    * @param {Object} cloudinaryResult - Result from Cloudinary upload
    * @param {File} file - Original file for metadata
    * @param {string} environmentalCondition - Environmental condition
-   * @returns {Promise<Object>} Backend response
+   * @returns {Promise<Object>} Backend response with inference results
    */
-  async saveImageMetadataToBackend(inspectionId, cloudinaryResult, file, environmentalCondition) {
+  async saveImageMetadataAndRunInference(inspectionId, cloudinaryResult, file, environmentalCondition) {
     try {
       const imageMetadata = {
         cloudImageUrl: cloudinaryResult.url,
@@ -145,31 +154,62 @@ class CloudinaryService {
         cloudImageName: file.name,
         cloudImageType: file.type,
         environmentalCondition: environmentalCondition,
-        cloudUploadedAt: new Date().toISOString() // Backend expects ZonedDateTime format
+        cloudUploadedAt: new Date().toISOString()
       };
 
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
-        },
-        body: JSON.stringify(imageMetadata)
-      });
+      // Call the backend endpoint that saves metadata AND triggers inference
+      const response = await fetch(
+        `${this.backendApiUrl}/inspections/${inspectionId}/upload-thermal-with-inference`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(imageMetadata)
+        }
+      );
 
       if (!response.ok) {
-        const error = new Error(`Backend save failed: ${response.status} ${response.statusText}`);
-        error.cloudinaryResult = cloudinaryResult; // Attach for cleanup
+        const errorText = await response.text();
+        const error = new Error(`Backend save/inference failed: ${response.status} ${errorText}`);
+        error.cloudinaryResult = cloudinaryResult;
         throw error;
       }
 
       const result = await response.json();
-      console.log('Backend metadata save successful:', result);
+      console.log('Backend metadata save and inference successful:', result);
       return result;
 
     } catch (error) {
-      error.cloudinaryResult = cloudinaryResult; // Attach for cleanup
+      error.cloudinaryResult = cloudinaryResult;
+      throw error;
+    }
+  }
+
+  /**
+   * Get anomalies for an inspection
+   * @param {string} inspectionId - Inspection ID
+   * @returns {Promise<Object>} Anomalies and metadata
+   */
+  async getInspectionAnomalies(inspectionId) {
+    try {
+      const response = await fetch(
+        `${this.backendApiUrl}/inspections/${inspectionId}/anomalies`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch anomalies: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching anomalies:', error);
       throw error;
     }
   }
@@ -194,7 +234,7 @@ class CloudinaryService {
       // Delete from Cloudinary first
       const cloudinaryDeleted = await this.deleteImageFromCloudinary(publicId);
       
-      // Then delete metadata from backend
+      // Then delete metadata from backend (this should also delete anomalies via CASCADE)
       const backendDeleted = await this.deleteImageMetadataFromBackend(inspectionId);
       
       return cloudinaryDeleted && backendDeleted;
@@ -212,26 +252,16 @@ class CloudinaryService {
    */
   async deleteImageFromCloudinary(publicId) {
     try {
-      // Generate timestamp and signature for authenticated delete
-      const timestamp = Math.round(Date.now() / 1000);
-      const signature = await this.generateDeleteSignature(publicId, timestamp);
-      
-      const formData = new FormData();
-      formData.append('public_id', publicId);
-      formData.append('signature', signature);
-      formData.append('api_key', this.apiKey);
-      formData.append('timestamp', timestamp);
-
+      // Note: This requires backend implementation for authenticated delete
+      // For now, we'll call the backend to handle Cloudinary deletion
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${this.cloudName}/image/destroy`,
+        `${this.backendApiUrl}/cloudinary/delete/${encodeURIComponent(publicId)}`,
         {
-          method: 'POST',
-          body: formData,
+          method: 'DELETE'
         }
       );
 
-      const result = await response.json();
-      return result.result === 'ok';
+      return response.ok;
       
     } catch (error) {
       console.error('Cloudinary delete error:', error);
@@ -246,13 +276,12 @@ class CloudinaryService {
    */
   async deleteImageMetadataFromBackend(inspectionId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`, {
-        method: 'DELETE',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
+      const response = await fetch(
+        `${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`,
+        {
+          method: 'DELETE'
         }
-      });
+      );
 
       return response.ok;
       
@@ -269,13 +298,12 @@ class CloudinaryService {
    */
   async hasCloudImage(inspectionId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/has-cloud-image`, {
-        method: 'GET',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
+      const response = await fetch(
+        `${this.backendApiUrl}/inspections/${inspectionId}/images/has-cloud-image`,
+        {
+          method: 'GET'
         }
-      });
+      );
 
       if (!response.ok) {
         return false;
@@ -297,13 +325,12 @@ class CloudinaryService {
    */
   async getCloudImageUrlFromBackend(inspectionId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/inspections/${inspectionId}/images/cloud-image-url`, {
-        method: 'GET',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
+      const response = await fetch(
+        `${this.backendApiUrl}/inspections/${inspectionId}/images/cloud-image-url`,
+        {
+          method: 'GET'
         }
-      });
+      );
 
       if (!response.ok) {
         return null;
@@ -371,7 +398,6 @@ class CloudinaryService {
       const response = await fetch(blobUrl);
       const blob = await response.blob();
       
-      // Create a File object from the blob
       const file = new File([blob], fileName, {
         type: blob.type || 'image/jpeg',
         lastModified: Date.now()
@@ -390,14 +416,12 @@ class CloudinaryService {
    * @returns {Promise<File>} File object ready for upload
    */
   async processFileInput(fileInput) {
-    console.log('🔄 Processing file input:', fileInput);
+    console.log('Processing file input:', fileInput);
 
-    // If it's already a File object, return as is
     if (fileInput instanceof File) {
       return fileInput;
     }
 
-    // If it's a Blob, convert to File
     if (fileInput instanceof Blob) {
       return new File([fileInput], 'thermal-image.jpg', {
         type: fileInput.type || 'image/jpeg',
@@ -405,14 +429,11 @@ class CloudinaryService {
       });
     }
 
-    // If it's a string (blob URL), convert to File
     if (typeof fileInput === 'string' && fileInput.startsWith('blob:')) {
       return await this.blobUrlToFile(fileInput);
     }
 
-    // If it's an object with blob URLs (like your thermal image data)
     if (fileInput && typeof fileInput === 'object') {
-      // Try to find a blob URL in the object
       let blobUrl = null;
       
       if (fileInput.current && typeof fileInput.current === 'string') {
@@ -436,15 +457,14 @@ class CloudinaryService {
    * @param {File} file - File to validate
    */
   validateImageFile(file) {
-    console.log('🔍 Validating file:', file);
+    console.log('Validating file:', file);
 
     if (!file) {
       throw new Error('Please select a file to upload');
     }
 
-    // Check if it's actually a File object
     if (!(file instanceof File) && !(file instanceof Blob)) {
-      console.error('❌ Invalid file object:', file);
+      console.error('Invalid file object:', file);
       console.error('File type:', typeof file);
       console.error('File constructor:', file?.constructor?.name);
       throw new Error('Invalid file object provided. Expected File or Blob, got: ' + typeof file);
@@ -452,7 +472,6 @@ class CloudinaryService {
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     
-    // More comprehensive MIME type checking
     const ALLOWED_TYPES = [
       'image/jpeg',
       'image/jpg', 
@@ -464,13 +483,12 @@ class CloudinaryService {
       'image/tif'
     ];
 
-    // Also check file extension as backup
     const ALLOWED_EXTENSIONS = [
       '.jpg', '.jpeg', '.png', '.gif', 
       '.bmp', '.webp', '.tiff', '.tif'
     ];
 
-    console.log('📝 File details:', {
+    console.log('File details:', {
       name: file.name,
       type: file.type,
       size: file.size,
@@ -481,21 +499,17 @@ class CloudinaryService {
       throw new Error(`File size should not exceed 5MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
     }
 
-    // Primary check: MIME type
     const isValidMimeType = ALLOWED_TYPES.includes(file.type.toLowerCase());
-    
-    // Secondary check: file extension
     const fileName = file.name ? file.name.toLowerCase() : '';
     const isValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
 
-    console.log('🔍 Validation checks:', {
+    console.log('Validation checks:', {
       mimeType: file.type,
       isValidMimeType,
       fileName,
       isValidExtension
     });
 
-    // Allow if either MIME type or extension is valid
     if (!isValidMimeType && !isValidExtension) {
       throw new Error(
         `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')}. ` +
@@ -503,21 +517,11 @@ class CloudinaryService {
       );
     }
 
-    // If MIME type is missing but extension is valid, warn but allow
     if (!file.type && isValidExtension) {
-      console.warn('⚠️ File has no MIME type but valid extension, allowing upload');
+      console.warn('File has no MIME type but valid extension, allowing upload');
     }
 
-    console.log('✅ File validation passed');
-  }
-   /**
-   * Generate signature for authenticated delete (placeholder - implement based on your security requirements)
-   * @param {string} publicId - Public ID
-   * @param {number} timestamp - Timestamp
-   * @returns {Promise<string>} Signature
-   */
-  async generateDeleteSignature(publicId, timestamp) {
-    return 'placeholder-signature';
+    console.log('File validation passed');
   }
 }
 
