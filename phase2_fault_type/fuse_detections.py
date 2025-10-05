@@ -6,7 +6,7 @@ Inputs:
 - --image: Maintenance image path used for unsupervised comparison
 - --json-in: Unsupervised JSON file to augment
 - --json-out: Output JSON path (defaults to overwrite input if omitted)
-- --iou-thresh: IoU threshold for associating a detection with a region (default 0.35)
+- --iou-thresh: IoU threshold for associating a detection with a region (default 0.7)
 - --conf-thresh: Minimum detector confidence to consider a detection (default 0.25)
 - --save-viz: Optional path to save an overlay image with both regions and detections
 
@@ -248,7 +248,7 @@ def main():
     p.add_argument('--image', type=Path, required=True)
     p.add_argument('--json-in', dest='json_in', type=Path, required=True)
     p.add_argument('--json-out', dest='json_out', type=Path, default=None)
-    p.add_argument('--iou-thresh', type=float, default=0.35)
+    p.add_argument('--iou-thresh', type=float, default=0.7)
     p.add_argument('--conf-thresh', type=float, default=0.25)
     p.add_argument('--save-viz', dest='save_viz', type=Path, default=None)
     args = p.parse_args()

@@ -169,7 +169,7 @@ public class ThermalInferenceService {
             request.put("inspection_id", inspectionId);
             // Use provided thresholds if present; otherwise apply defaults
             request.put("threshold_pct", thresholdPct != null ? thresholdPct : 2.0);
-            request.put("iou_thresh",   iouThresh    != null ? iouThresh    : 0.35);
+            request.put("iou_thresh",   iouThresh    != null ? iouThresh    : 0.7);
             request.put("conf_thresh",  confThresh   != null ? confThresh   : 0.25);
 
             HttpHeaders headers = new HttpHeaders();

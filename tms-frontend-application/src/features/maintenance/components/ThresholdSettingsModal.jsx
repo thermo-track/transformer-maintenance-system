@@ -5,7 +5,7 @@ import '../styles/threshold-settings-modal.css';
 const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
   const [thresholds, setThresholds] = useState({
     thresholdPct: currentSettings?.thresholdPct || 2.0,
-    iouThresh: currentSettings?.iouThresh || 0.35,
+    iouThresh: currentSettings?.iouThresh || 0.7,
     confThresh: currentSettings?.confThresh || 0.25
   });
 
@@ -25,7 +25,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
   const handleReset = () => {
     setThresholds({
       thresholdPct: 2.0,
-      iouThresh: 0.35,
+      iouThresh: 0.7,
       confThresh: 0.25
     });
   };
@@ -91,7 +91,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
                 className="threshold-input"
               />
             </div>
-            <span className="range-info">Range: 0-1 (Default: 0.35)</span>
+            <span className="range-info">Range: 0-1 (Default: 0.7)</span>
           </div>
 
           <div className="threshold-group">

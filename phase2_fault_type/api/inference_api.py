@@ -17,7 +17,7 @@ class InferenceRequest(BaseModel):
     inspection_id: str
     weights_path: str = "phase2_fault_type/weights/best.pt"
     threshold_pct: float = 2.0
-    iou_thresh: float = 0.35
+    iou_thresh: float = 0.7
     conf_thresh: float = 0.25
 
 def download_image(url: str, save_path: Path):

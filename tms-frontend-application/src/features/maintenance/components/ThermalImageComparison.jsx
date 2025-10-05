@@ -35,10 +35,16 @@ const ThermalImageComparison = ({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentThresholds, setCurrentThresholds] = useState({
     thresholdPct: 2.0,
-    iouThresh: 0.35,
+    iouThresh:7,
     confThresh: 0.25
   });
   const [isRerunLoading, setIsRerunLoading] = useState(false);
+
+  const weatherLabel =
+    inspectionData?.weatherCondition
+      ? inspectionData.weatherCondition.charAt(0).toUpperCase() +
+        inspectionData.weatherCondition.slice(1)
+      : null;
 
   const handleApplyThresholds = async (newThresholds) => {
     try {
@@ -230,7 +236,7 @@ const ThermalImageComparison = ({
           if (inspectionId) {
               await fetchAnomalies(inspectionId);
           }
-          alert('Notes saved successfully');
+          // alert('Notes saved successfully');
           navigate(-1); // Navigate back after successful save
       } catch (error) {
           console.error('Error saving notes:', error);
@@ -361,7 +367,26 @@ const ThermalImageComparison = ({
         />
       </div>
 
+
+
       <div className="analysis-sections">
+        {weatherLabel && (
+          <div style={{ marginBottom: 8 }}>
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '6px 10px',
+                borderRadius: 999,
+                background: '#e8f0fe',
+                color: '#1a56db',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Weather Condition:   {weatherLabel}
+            </span>
+          </div>
+        )}
         <div className="anomalies-section">
           <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
@@ -400,7 +425,7 @@ const ThermalImageComparison = ({
               Cancel
             </button>
             <button className="confirm-btn" onClick={handleSaveNotes}>
-              Save Notes
+              Save Changes
             </button>
           </div>
         </div>

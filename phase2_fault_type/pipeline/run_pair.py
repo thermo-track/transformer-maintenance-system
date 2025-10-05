@@ -16,7 +16,7 @@ def main():
     p.add_argument('--weights', type=Path, required=True, help='YOLO weights .pt')
     p.add_argument('--out-json', type=Path, required=True)
     p.add_argument('--out-viz', type=Path, default=None)
-    p.add_argument('--iou-thresh', type=float, default=0.35)
+    p.add_argument('--iou-thresh', type=float, default=0.7)
     p.add_argument('--conf-thresh', type=float, default=0.25)
     # Phase-2 requirement: expose threshold as a percentage for unsupervised map
     p.add_argument('--threshold-pct', type=float, default=2.0,
