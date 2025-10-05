@@ -45,7 +45,7 @@ const PageHeaderIns = ({
   }, [transformerId]); // Remove transformerService from dependencies
 
   const handleBaselineImagesClick = () => {
-    navigate(`/transformer/${transformerNo}/baseimage`);
+    navigate(`/transformer/${transformerId}/baseimage`);
   };
 
   const formatLastUpdatedText = () => {

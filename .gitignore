@@ -23,9 +23,16 @@
 hs_err_pid*
 replay_pid*
 
+In21-EN3350-Project Outline.md
+SDP/*
+additional/*
+outputs/*
+__pycache__/*
+phase2_anomaly_pipeline/*
+phase2_fault_type/__pycache__/*
+phase2_fault_type/pipeline/__pycache__/*
+phase2_fault_type/yolo11s.pt
 
-# VS Code
+
 .vscode/
-
-# IntelliJ IDEA
 .idea/
