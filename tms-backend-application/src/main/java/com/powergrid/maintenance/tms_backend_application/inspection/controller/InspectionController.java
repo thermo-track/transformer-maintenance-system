@@ -60,7 +60,6 @@ public class InspectionController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("anomalies", anomalies);
-        response.put("metadata", metadata);
         response.put("inspectionId", inspectionId);
 
         return ResponseEntity.ok(response);
