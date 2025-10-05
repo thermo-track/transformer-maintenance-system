@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from "react-router-dom";
-import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle } from 'lucide-react';
+import { useParams, useNavigate } from "react-router-dom";
+import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle, Settings } from 'lucide-react';
 import '../styles/thermal-image-comparison.css';
 import { baselineImageService } from '../services/BaselineImageService';
 import { cloudinaryService } from '../services/CloudinaryService';
+import AnomalyDetailsModal from './AnomalyDetailsModal';
+import ThresholdSettingsModal from './ThresholdSettingsModal';
 
 const ThermalImageComparison = ({ 
   transformerId,
@@ -20,12 +22,48 @@ const ThermalImageComparison = ({
   const [error, setError] = useState(null);
   const [weatherBasedBaselineImage, setWeatherBasedBaselineImage] = useState(null);
   const [notes, setNotes] = useState('');
-  const [anomalies, setAnomalies] = useState([]);
   const [detections, setDetections] = useState([]);
   const [inspectionId, setInspectionId] = useState(null);
+  const [selectedAnomaly, setSelectedAnomaly] = useState(null);
+  const [showAnomalyModal, setShowAnomalyModal] = useState(false);
+
+  const navigate = useNavigate();
   
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [currentThresholds, setCurrentThresholds] = useState({
+    thresholdPct: 2.0,
+    iouThresh: 0.35,
+    confThresh: 0.25
+  });
+  const [isRerunLoading, setIsRerunLoading] = useState(false);
+
+  const handleApplyThresholds = async (newThresholds) => {
+    try {
+      setCurrentThresholds(newThresholds);
+      setIsRerunLoading(true);
+
+      // Re-run inference with new thresholds
+      await cloudinaryService.rerunInferenceWithThresholds(
+        inspectionId,
+        newThresholds
+      );
+      
+      // Refresh anomalies
+      if (inspectionId) {
+        await fetchAnomalies(inspectionId);
+      }
+
+      // Optional: set a success banner state if you have one
+    } catch (error) {
+      console.error('Error applying thresholds:', error);
+      // Optional: set an error banner state if you have one
+    } finally {
+      setIsRerunLoading(false);
+    }
+  };
 
   const [zoom, setZoom] = useState({ baseline: 1, current: 1 });
   const [position, setPosition] = useState({ 
@@ -36,43 +74,30 @@ const ThermalImageComparison = ({
 
   const displayCurrentImage = currentImage || baselineImage;
 
-  // Update inspectionId when inspectionData changes
   useEffect(() => {
     if (inspectionData?.inspectionId) {
-      console.log('Setting inspection ID:', inspectionData.inspectionId);
       setInspectionId(inspectionData.inspectionId);
     }
   }, [inspectionData]);
 
-  // Fetch anomalies when inspectionId changes
   useEffect(() => {
     if (inspectionId) {
-      console.log('Fetching anomalies for inspection:', inspectionId);
       fetchAnomalies(inspectionId);
     }
   }, [inspectionId]);
 
-  // Draw bounding boxes when anomalies or image changes
   useEffect(() => {
-    if (imageRef.current && canvasRef.current && (anomalies.length > 0 || detections.length > 0)) {
-      console.log('Drawing bounding boxes:', { anomalies: anomalies.length, detections: detections.length });
+    if (imageRef.current && canvasRef.current && detections.length > 0) {
       drawBoundingBoxes();
     }
-  }, [anomalies, detections, zoom.current, position.current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detections, zoom.current, position.current]); // kept as in your original
 
   const fetchAnomalies = async (inspId) => {
     try {
-      console.log('Fetching anomalies from backend for:', inspId);
       const result = await cloudinaryService.getInspectionAnomalies(inspId);
-      console.log('Anomalies result:', result);
-      
-      setAnomalies(result.anomalies || []);
-      
       const detectionData = (result.anomalies || []).filter(a => a.faultType);
       setDetections(detectionData);
-      
-      console.log('Set anomalies:', result.anomalies?.length || 0, 'detections:', detectionData.length);
-      
     } catch (error) {
       console.error('Error fetching anomalies:', error);
     }
@@ -82,58 +107,19 @@ const ThermalImageComparison = ({
     const canvas = canvasRef.current;
     const image = imageRef.current;
     
-    if (!canvas || !image || !image.complete) {
-      console.log('Canvas or image not ready');
-      return;
-    }
+    if (!canvas || !image || !image.complete) return;
 
     const ctx = canvas.getContext('2d');
-    
-    canvas.width = image.width;
-    canvas.height = image.height;
-    
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    const scaleX = image.width / image.naturalWidth;
-    const scaleY = image.height / image.naturalHeight;
-    
-    console.log('Drawing boxes with scale:', { scaleX, scaleY, imageWidth: image.width, imageHeight: image.height });
-    
-    ctx.save();
-    ctx.scale(zoom.current, zoom.current);
-    ctx.translate(position.current.x / zoom.current, position.current.y / zoom.current);
 
-    // Draw unsupervised anomalies (yellow boxes)
-    anomalies.forEach((anomaly, index) => {
-      if (!anomaly.faultType && anomaly.bboxX !== null) {
-        const x = anomaly.bboxX * scaleX;
-        const y = anomaly.bboxY * scaleY;
-        const width = anomaly.bboxWidth * scaleX;
-        const height = anomaly.bboxHeight * scaleY;
-        
-        console.log(`Drawing anomaly ${index}:`, { x, y, width, height });
-        
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x, y, width, height);
-        
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
-        ctx.fillRect(x, y - 25, 120, 25);
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText(`Anomaly ${index + 1}`, x + 5, y - 8);
-      }
-    });
-
-    // Draw YOLO detections (red boxes)
-    detections.forEach((detection, index) => {
+    detections.forEach((detection) => {
       if (detection.bboxX !== null) {
-        const x = detection.bboxX * scaleX;
-        const y = detection.bboxY * scaleY;
-        const width = detection.bboxWidth * scaleX;
-        const height = detection.bboxHeight * scaleY;
-        
-        console.log(`Drawing detection ${index}:`, detection.faultType, { x, y, width, height });
+        const x = detection.bboxX;
+        const y = detection.bboxY;
+        const width = detection.bboxWidth;
+        const height = detection.bboxHeight;
         
         const confidence = detection.faultConfidence || 0;
         const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
@@ -142,20 +128,22 @@ const ThermalImageComparison = ({
         ctx.lineWidth = 3;
         ctx.strokeRect(x, y, width, height);
         
+        // Dynamic font size based on bounding box size
+        const boxArea = width * height;
+        const fontSize = Math.max(12, Math.min(24, Math.sqrt(boxArea) / 15));
+        
         const label = `${detection.faultType} (${(confidence * 100).toFixed(0)}%)`;
+        ctx.font = `bold ${fontSize}px Arial`;
         const textWidth = ctx.measureText(label).width + 10;
+        const labelHeight = fontSize + 10;
         
         ctx.fillStyle = `rgba(${confidence > 0.7 ? '255,0,0' : '255,165,0'}, 0.8)`;
-        ctx.fillRect(x, y - 25, textWidth, 25);
+        ctx.fillRect(x, y - labelHeight, textWidth, labelHeight);
         
         ctx.fillStyle = '#FFF';
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText(label, x + 5, y - 8);
+        ctx.fillText(label, x + 5, y - 5);
       }
     });
-
-    ctx.restore();
-    console.log('Finished drawing bounding boxes');
   };
 
   const handleZoom = (imageType, delta) => {
@@ -171,7 +159,6 @@ const ThermalImageComparison = ({
 
   const handleDragMove = (imageType, e) => {
     if (!isDragging[imageType]) return;
-    
     setPosition(prev => ({
       ...prev,
       [imageType]: {
@@ -194,19 +181,16 @@ const ThermalImageComparison = ({
     try {
       setIsLoading(true);
       setError(null);
-      
       const weatherCondition = inspectionData?.weatherCondition?.toLowerCase() || 'sunny';
       const imageUrl = await baselineImageService.getBaselineImage(transformerId, weatherCondition);
       
       if (imageUrl) {
         setWeatherBasedBaselineImage(imageUrl);
       } else {
-        setWeatherBasedBaselineImage(null);
         setError(`No baseline image available for ${weatherCondition} condition`);
       }
     } catch (error) {
       setError('Failed to load baseline image: ' + error.message);
-      setWeatherBasedBaselineImage(null);
     } finally {
       setIsLoading(false);
     }
@@ -216,16 +200,48 @@ const ThermalImageComparison = ({
     if (transformerId && inspectionData?.weatherCondition) {
       loadWeatherBasedBaselineImage();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transformerId, inspectionData?.weatherCondition]);
 
   const handleRefreshClick = () => {
-    console.log('Refresh clicked, fetching anomalies for:', inspectionId);
     if (inspectionId) {
       fetchAnomalies(inspectionId);
     }
     if (onRefresh) {
       onRefresh();
     }
+  };
+
+  const handleAnomalyClick = (anomaly) => {
+    setSelectedAnomaly(anomaly);
+    setShowAnomalyModal(true);
+  };
+
+  const handleSaveNotes = async () => {
+      if (!selectedAnomaly || !notes) {
+          alert('Please select an anomaly and enter notes');
+          return;
+      }
+
+      try {
+          await cloudinaryService.updateAnomalyNotes(inspectionId, selectedAnomaly.id, notes);
+          setShowAnomalyModal(false);
+          // Refresh anomalies list
+          if (inspectionId) {
+              await fetchAnomalies(inspectionId);
+          }
+          alert('Notes saved successfully');
+          navigate(-1); // Navigate back after successful save
+      } catch (error) {
+          console.error('Error saving notes:', error);
+          alert('Failed to save notes');
+      }
+  };
+
+  const handleCancelNotes = () => {
+    setNotes('');
+    setShowAnomalyModal(false);
+    navigate(-1);
   };
 
   const ImagePanel = ({ type, image, date }) => (
@@ -270,7 +286,6 @@ const ThermalImageComparison = ({
               }}
               onError={() => setError(`Failed to load ${type} image`)}
               onLoad={() => {
-                console.log(`${type} image loaded`);
                 if (type === 'current') {
                   setTimeout(() => drawBoundingBoxes(), 100);
                 }
@@ -283,8 +298,11 @@ const ThermalImageComparison = ({
                   position: 'absolute',
                   top: 0,
                   left: 0,
+                  width: '100%',
+                  height: '100%',
                   pointerEvents: 'none',
                   transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
+                  transformOrigin: 'top left',
                   transition: isDragging[type] ? 'none' : 'transform 0.3s'
                 }}
               />
@@ -304,7 +322,19 @@ const ThermalImageComparison = ({
       <div className="comparison-header">
         <h3 className="comparison-title">Thermal Image Comparison</h3>
         <div className="comparison-actions">
-          <button onClick={handleRefreshClick} className="action-btnT refresh-btnT">
+          <button
+            disabled={isRerunLoading}
+            onClick={() => setShowSettingsModal(true)}
+            className="action-btnT settings-btnT"
+          >
+            <Settings size={16} />
+            Settings
+          </button>
+          <button
+            disabled={isRerunLoading}
+            onClick={handleRefreshClick}
+            className="action-btnT refresh-btnT"
+          >
             <RotateCcw size={16} />
             Refresh
           </button>
@@ -333,11 +363,16 @@ const ThermalImageComparison = ({
 
       <div className="analysis-sections">
         <div className="anomalies-section">
-          <h4 style={{color: "black"}}>Anomalies Detected</h4>
+          <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
             {detections.length > 0 ? (
               detections.map((detection, index) => (
-                <div key={index} className="anomaly-item">
+                <div 
+                  key={index} 
+                  className="anomaly-item clickable"
+                  onClick={() => handleAnomalyClick(detection)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="anomaly-location">{detection.faultType}</span>
                   <span className="anomaly-temp">{(detection.faultConfidence * 100).toFixed(0)}%</span>
                   <span className={`anomaly-severity ${detection.faultConfidence > 0.7 ? 'critical' : 'high'}`}>
@@ -346,7 +381,7 @@ const ThermalImageComparison = ({
                 </div>
               ))
             ) : (
-              <p>No anomalies detected</p>
+              <p>No faults detected</p>
             )}
           </div>
         </div>
@@ -361,15 +396,23 @@ const ThermalImageComparison = ({
             rows={4}
           />
           <div className="notes-actions">
-            <button className="cancel-btn" onClick={() => setNotes('')}>
+            <button className="cancel-btn" onClick={handleCancelNotes}>
               Cancel
             </button>
-            <button className="confirm-btn" onClick={() => console.log('Notes saved:', notes)}>
+            <button className="confirm-btn" onClick={handleSaveNotes}>
               Save Notes
             </button>
           </div>
         </div>
       </div>
+
+      {showAnomalyModal && (
+        <AnomalyDetailsModal
+          anomaly={selectedAnomaly}
+          inspectionData={inspectionData}
+          onClose={() => setShowAnomalyModal(false)}
+        />
+      )}
 
       {showDeleteConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
@@ -387,6 +430,27 @@ const ThermalImageComparison = ({
                 <X size={16} />
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettingsModal && (
+        <ThresholdSettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          onApply={handleApplyThresholds}
+          currentSettings={currentThresholds}
+        />
+      )}
+
+      {/* Rerun loading overlay */}
+      {isRerunLoading && (
+        <div className="overlay loading-overlay">
+          <div className="loading-card">
+            <div className="spinner" />
+            <div className="loading-text">Re-running analysis…</div>
+            <div className="indeterminate-bar">
+              <div className="indeterminate-bar-inner" />
             </div>
           </div>
         </div>

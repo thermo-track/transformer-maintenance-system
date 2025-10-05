@@ -4,9 +4,11 @@ import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspe
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InspectionAnomalyRepository extends JpaRepository<InspectionAnomaly, String> {
     List<InspectionAnomaly> findByInspectionId(String inspectionId);
+    Optional<InspectionAnomaly> findById(Long id);
     void deleteByInspectionId(String inspectionId);
 }
