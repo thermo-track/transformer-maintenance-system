@@ -13,9 +13,9 @@ import java.util.Optional;
 @Repository
 public interface InferenceMetadataRepository extends JpaRepository<InferenceMetadata, String> {
 
-    Optional<InferenceMetadata> findByInspectionId(String inspectionId);
+    Optional<InferenceMetadata> findByInspectionId(Long inspectionId);
 
-    void deleteByInspectionId(String inspectionId);
+    void deleteByInspectionId(Long inspectionId);
 
     /**
      * Update ONLY the maintenance image URL for a given inspection.
@@ -28,6 +28,6 @@ public interface InferenceMetadataRepository extends JpaRepository<InferenceMeta
            SET m.maintenanceImageUrl = :maintenanceUrl
          WHERE m.inspectionId = :inspectionId
     """)
-    int updateMaintenanceUrlOnly(@Param("inspectionId") String inspectionId,
+    int updateMaintenanceUrlOnly(@Param("inspectionId") Long inspectionId,
                                  @Param("maintenanceUrl") String maintenanceUrl);
 }

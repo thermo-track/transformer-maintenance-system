@@ -383,6 +383,7 @@
 
 .delete-confirmation-modal {
   color: black;
+  color: black;
   background: white;
   border-radius: 12px;
   max-width: 480px;
@@ -667,6 +668,7 @@
 }
 
 .anomaly-list {
+  color: black;
   color: black;
   display: flex;
   flex-direction: column;

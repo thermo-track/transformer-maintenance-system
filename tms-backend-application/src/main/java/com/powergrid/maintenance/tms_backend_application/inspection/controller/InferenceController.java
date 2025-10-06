@@ -77,6 +77,7 @@ public class InferenceController {
         }
     }
 
+
     @PutMapping("/{inspectionId}/anomalies/{anomalyId}/notes")
     public ResponseEntity<InspectionAnomaly> updateAnomalyNotes(
             @PathVariable String inspectionId,

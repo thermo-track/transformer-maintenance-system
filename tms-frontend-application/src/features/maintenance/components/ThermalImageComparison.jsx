@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
-import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle, Settings } from 'lucide-react';
+import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle, Settings, Edit3, Trash2 } from 'lucide-react';
 import '../styles/thermal-image-comparison.css';
 import { baselineImageService } from '../services/BaselineImageService';
 import { cloudinaryService } from '../services/CloudinaryService';
+import anomalyNoteService from '../services/AnomalyNoteService';
 import AnomalyDetailsModal from './AnomalyDetailsModal';
 import ThresholdSettingsModal from './ThresholdSettingsModal';
 
@@ -26,6 +27,11 @@ const ThermalImageComparison = ({
   const [inspectionId, setInspectionId] = useState(null);
   const [selectedAnomaly, setSelectedAnomaly] = useState(null);
   const [showAnomalyModal, setShowAnomalyModal] = useState(false);
+  const [showNotesView, setShowNotesView] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
+  const [anomalyNotes, setAnomalyNotes] = useState([]);
+  const [currentUser, setCurrentUser] = useState('System User'); // TODO: Get from auth context
 
   const navigate = useNavigate();
   
@@ -99,7 +105,6 @@ const ThermalImageComparison = ({
     }
   }, [detections, zoom.current, position.current]);
 
-  // Redraw on container resize
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -135,7 +140,6 @@ const ThermalImageComparison = ({
 
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size to match container
     const containerRect = container.getBoundingClientRect();
     canvas.width = containerRect.width;
     canvas.height = containerRect.height;
@@ -146,54 +150,44 @@ const ThermalImageComparison = ({
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;
     
-    // Calculate how object-fit: cover displays the image
     const containerAspect = containerWidth / containerHeight;
     const imageAspect = naturalWidth / naturalHeight;
     
     let renderedWidth, renderedHeight, offsetX, offsetY;
     
     if (imageAspect > containerAspect) {
-      // Image is wider - height matches container, width overflows
       renderedHeight = containerHeight;
       renderedWidth = renderedHeight * imageAspect;
       offsetX = (containerWidth - renderedWidth) / 2;
       offsetY = 0;
     } else {
-      // Image is taller - width matches container, height overflows
       renderedWidth = containerWidth;
       renderedHeight = renderedWidth / imageAspect;
       offsetX = 0;
       offsetY = (containerHeight - renderedHeight) / 2;
     }
     
-    // Apply zoom transformation
     const currentZoom = zoom.current;
     const zoomedWidth = renderedWidth * currentZoom;
     const zoomedHeight = renderedHeight * currentZoom;
     
-    // Calculate the position after zoom (zoom centers on the image)
     const zoomOffsetX = (renderedWidth - zoomedWidth) / 2;
     const zoomOffsetY = (renderedHeight - zoomedHeight) / 2;
     
-    // Final position = base offset + zoom centering + user pan
     const finalX = offsetX + zoomOffsetX + position.current.x;
     const finalY = offsetY + zoomOffsetY + position.current.y;
     
-    // Scale factor from original image coordinates to displayed coordinates
     const scaleX = zoomedWidth / naturalWidth;
     const scaleY = zoomedHeight / naturalHeight;
 
-    // Draw each detection
     detections.forEach((detection) => {
       if (detection.bboxX === null || detection.bboxY === null) return;
       
-      // Transform bbox from original image space to displayed canvas space
       const x = (detection.bboxX * scaleX) + finalX;
       const y = (detection.bboxY * scaleY) + finalY;
       const width = detection.bboxWidth * scaleX;
       const height = detection.bboxHeight * scaleY;
       
-      // Only draw if at least partially visible in viewport
       if (x + width < 0 || y + height < 0 || 
           x > containerWidth || y > containerHeight) {
         return;
@@ -202,12 +196,10 @@ const ThermalImageComparison = ({
       const confidence = detection.faultConfidence || 0;
       const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
       
-      // Draw bounding box
       ctx.strokeStyle = color;
       ctx.lineWidth = Math.max(2, Math.min(5, 3 * currentZoom));
       ctx.strokeRect(x, y, width, height);
       
-      // Calculate font size that scales with zoom but stays readable
       const baseFontSize = Math.max(12, Math.min(18, Math.sqrt(width * height) / 20));
       const fontSize = Math.max(10, Math.min(24, baseFontSize));
       
@@ -217,11 +209,9 @@ const ThermalImageComparison = ({
       const textWidth = textMetrics.width + 10;
       const labelHeight = fontSize + 10;
       
-      // Position label above the box, but keep within canvas bounds
       let labelX = x;
       let labelY = y;
       
-      // Keep label within horizontal bounds
       if (labelX + textWidth > containerWidth) {
         labelX = containerWidth - textWidth - 4;
       }
@@ -229,21 +219,18 @@ const ThermalImageComparison = ({
         labelX = 4;
       }
       
-      // Put label above box if space available, otherwise below
       if (labelY - labelHeight > 4) {
         labelY = labelY - 2;
       } else {
         labelY = y + height + labelHeight - 2;
       }
       
-      // Draw label background
       const bgAlpha = confidence > 0.7 ? 0.9 : 0.85;
       ctx.fillStyle = confidence > 0.7 
         ? `rgba(255, 0, 0, ${bgAlpha})` 
         : `rgba(255, 165, 0, ${bgAlpha})`;
       ctx.fillRect(labelX, labelY - labelHeight, textWidth, labelHeight);
       
-      // Draw label text
       ctx.fillStyle = '#FFFFFF';
       ctx.textBaseline = 'top';
       ctx.fillText(label, labelX + 5, labelY - labelHeight + 5);
@@ -258,6 +245,7 @@ const ThermalImageComparison = ({
   };
 
   const handleDragStart = (imageType, e) => {
+    e.preventDefault();
     e.preventDefault();
     setIsDragging(prev => ({ ...prev, [imageType]: true }));
   };
@@ -322,31 +310,97 @@ const ThermalImageComparison = ({
     setShowAnomalyModal(true);
   };
 
-  const handleSaveNotes = async () => {
-    if (!selectedAnomaly || !notes) {
-      alert('Please select an anomaly and enter notes');
+  const handleViewNotesClick = async (anomaly, e) => {
+    e.stopPropagation();
+    setSelectedAnomaly(anomaly);
+    setShowNotesView(true);
+    
+    try {
+      const result = await anomalyNoteService.getAnomalyNotes(inspectionId, anomaly.id);
+      setAnomalyNotes(result.notes || []);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+      setAnomalyNotes([]);
+    }
+  };
+
+  const handleAddNewNote = () => {
+    setNotes('');
+    setEditingNoteId('new');
+  };
+
+  const handleEditNote = (note) => {
+    setEditingNoteId(note.id);
+    setEditingNoteText(note.note);
+  };
+
+  const handleSaveEditedNote = async (noteId) => {
+    const noteText = noteId === 'new' ? notes : editingNoteText;
+    
+    if (!noteText.trim()) {
+      alert('Please enter note text');
       return;
     }
 
-      try {
-          await cloudinaryService.updateAnomalyNotes(inspectionId, selectedAnomaly.id, notes);
-          setShowAnomalyModal(false);
-          // Refresh anomalies list
-          if (inspectionId) {
-              await fetchAnomalies(inspectionId);
-          }
-          // alert('Notes saved successfully');
-          navigate(-1); // Navigate back after successful save
-      } catch (error) {
-          console.error('Error saving notes:', error);
-          alert('Failed to save notes');
+    try {
+      if (noteId === 'new') {
+        await anomalyNoteService.addAnomalyNote(
+          inspectionId, 
+          selectedAnomaly.id, 
+          noteText, 
+          currentUser
+        );
+      } else {
+        await anomalyNoteService.updateAnomalyNote(
+          inspectionId, 
+          selectedAnomaly.id, 
+          noteId, 
+          noteText
+        );
       }
+      
+      const result = await anomalyNoteService.getAnomalyNotes(inspectionId, selectedAnomaly.id);
+      setAnomalyNotes(result.notes || []);
+      
+      setEditingNoteId(null);
+      setEditingNoteText('');
+      setNotes('');
+    } catch (error) {
+      console.error('Error saving note:', error);
+      alert('Failed to save note: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null);
+    setEditingNoteText('');
+    setNotes('');
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!confirm('Are you sure you want to delete this note?')) {
+      return;
+    }
+
+    try {
+      await anomalyNoteService.deleteAnomalyNote(inspectionId, selectedAnomaly.id, noteId);
+      
+      const result = await anomalyNoteService.getAnomalyNotes(inspectionId, selectedAnomaly.id);
+      setAnomalyNotes(result.notes || []);
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete note: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleCancelNotes = () => {
     setNotes('');
+    setSelectedAnomaly(null);
     setShowAnomalyModal(false);
-    navigate(-1);
+    setShowNotesView(false);
+    setEditingNoteId(null);
+    setEditingNoteText('');
+    setAnomalyNotes([]);
   };
 
   const ImagePanel = ({ type, image, date }) => (
@@ -494,44 +548,305 @@ const ThermalImageComparison = ({
         )}
         <div className="anomalies-section">
           <h4 style={{color: "black"}}>Detected Faults</h4>
+          <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
             {detections.length > 0 ? (
               detections.map((detection, index) => (
-                <div 
-                  key={index} 
-                  className="anomaly-item clickable"
-                  onClick={() => handleAnomalyClick(detection)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span className="anomaly-location">{detection.faultType}</span>
-                  <span className="anomaly-temp">{(detection.faultConfidence * 100).toFixed(0)}%</span>
-                  <span className={`anomaly-severity ${detection.faultConfidence > 0.7 ? 'critical' : 'high'}`}>
-                    {detection.faultConfidence > 0.7 ? 'Critical' : 'High'}
-                  </span>
+                <div key={index}>
+                  <div 
+                    className="anomaly-item"
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                      backgroundColor: selectedAnomaly?.id === detection.id ? '#e3f2fd' : 'transparent',
+                      border: selectedAnomaly?.id === detection.id ? '2px solid #2196f3' : '1px solid #e0e0e0'
+                    }}
+                  >
+                    <div 
+                      style={{ 
+                        flex: 1, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '12px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleAnomalyClick(detection)}
+                    >
+                      <span className="anomaly-location">{detection.faultType}</span>
+                      <span className="anomaly-temp">{(detection.faultConfidence * 100).toFixed(0)}%</span>
+                      <span className={`anomaly-severity ${detection.faultConfidence > 0.7 ? 'critical' : 'high'}`}>
+                        {detection.faultConfidence > 0.7 ? 'Critical' : 'High'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => handleViewNotesClick(detection, e)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: selectedAnomaly?.id === detection.id ? '#fff' : '#2196f3',
+                        backgroundColor: selectedAnomaly?.id === detection.id ? '#2196f3' : '#fff',
+                        border: '2px solid #2196f3',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedAnomaly?.id !== detection.id) {
+                          e.target.style.backgroundColor = '#e3f2fd';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedAnomaly?.id !== detection.id) {
+                          e.target.style.backgroundColor = '#fff';
+                        }
+                      }}
+                    >
+                      View Notes
+                    </button>
+                  </div>
+                  
+                  {selectedAnomaly?.id === detection.id && showNotesView && (
+                    <div style={{
+                      padding: '12px',
+                      backgroundColor: '#f5f9ff',
+                      border: '2px solid #2196f3',
+                      borderTop: 'none',
+                      borderRadius: '0 0 8px 8px',
+                      marginTop: '-1px'
+                    }}>
+                      <div style={{ 
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '12px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#1976d2'
+                      }}>
+                        <span>Notes for: {detection.faultType} ({(detection.faultConfidence * 100).toFixed(0)}%)</span>
+                        <button
+                          onClick={handleAddNewNote}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            backgroundColor: '#4caf50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + Add Note
+                        </button>
+                      </div>
+                      
+                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {anomalyNotes.map((note, index) => (
+                          <div key={note.id || index} style={{
+                            marginBottom: '8px',
+                            padding: '8px',
+                            backgroundColor: 'white',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px'
+                          }}>
+                            {editingNoteId === note.id ? (
+                              <div>
+                                <textarea
+                                  value={editingNoteText}
+                                  onChange={(e) => setEditingNoteText(e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '6px',
+                                    border: '1px solid #2196f3',
+                                    borderRadius: '4px',
+                                    fontSize: '13px',
+                                    resize: 'vertical'
+                                  }}
+                                  rows={2}
+                                  autoFocus
+                                />
+                                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                                  <button
+                                    onClick={() => handleSaveEditedNote(note.id)}
+                                    style={{
+                                      padding: '4px 8px',
+                                      fontSize: '11px',
+                                      backgroundColor: '#4caf50',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    style={{
+                                      padding: '4px 8px',
+                                      fontSize: '11px',
+                                      backgroundColor: '#f44336',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: '13px', marginBottom: '4px' }}>{note.note}</div>
+                                  <div style={{ fontSize: '11px', color: '#666' }}>
+                                    By {note.createdBy} • {new Date(note.createdAt).toLocaleString()}
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                                  <button
+                                    onClick={() => handleEditNote(note)}
+                                    style={{
+                                      padding: '4px',
+                                      fontSize: '11px',
+                                      backgroundColor: 'transparent',
+                                      border: '1px solid #2196f3',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      color: '#2196f3',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title="Edit note"
+                                  >
+                                    <Edit3 size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteNote(note.id)}
+                                    style={{
+                                      padding: '4px',
+                                      fontSize: '11px',
+                                      backgroundColor: 'transparent',
+                                      border: '1px solid #f44336',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      color: '#f44336',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title="Delete note"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        
+                        {editingNoteId === 'new' && (
+                          <div style={{
+                            marginBottom: '8px',
+                            padding: '8px',
+                            backgroundColor: 'white',
+                            border: '2px solid #4caf50',
+                            borderRadius: '4px'
+                          }}>
+                            <textarea
+                              value={notes}
+                              onChange={(e) => setNotes(e.target.value)}
+                              placeholder="Type your new note here..."
+                              style={{
+                                width: '100%',
+                                padding: '6px',
+                                border: '1px solid #4caf50',
+                                borderRadius: '4px',
+                                fontSize: '13px',
+                                resize: 'vertical'
+                              }}
+                              rows={2}
+                              autoFocus
+                            />
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                              <button
+                                onClick={() => handleSaveEditedNote('new')}
+                                disabled={!notes.trim()}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                  backgroundColor: notes.trim() ? '#4caf50' : '#ccc',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  cursor: notes.trim() ? 'pointer' : 'not-allowed'
+                                }}
+                              >
+                                Add Note
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                  backgroundColor: '#f44336',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {anomalyNotes.length === 0 && editingNoteId !== 'new' && (
+                          <div style={{
+                            textAlign: 'center',
+                            color: '#666',
+                            fontSize: '13px',
+                            padding: '16px'
+                          }}>
+                            No notes yet. Click "Add Note" to create the first note.
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'flex-end',
+                        marginTop: '12px'
+                      }}>
+                        <button 
+                          onClick={handleCancelNotes}
+                          style={{
+                            padding: '6px 16px',
+                            fontSize: '13px',
+                            backgroundColor: '#666',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
               <p>No faults detected</p>
             )}
-          </div>
-        </div>
-
-        <div className="notes-section">
-          <h4 style={{color: "black"}}>Notes</h4>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="notes-textarea"
-            placeholder="Type here to add notes..."
-            rows={4}
-          />
-          <div className="notes-actions">
-            <button className="cancel-btn" onClick={handleCancelNotes}>
-              Cancel
-            </button>
-            <button className="confirm-btn" onClick={handleSaveNotes}>
-              Save Changes
-            </button>
           </div>
         </div>
       </div>
@@ -560,6 +875,26 @@ const ThermalImageComparison = ({
                 <X size={16} />
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettingsModal && (
+        <ThresholdSettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          onApply={handleApplyThresholds}
+          currentSettings={currentThresholds}
+        />
+      )}
+
+      {isRerunLoading && (
+        <div className="overlay loading-overlay">
+          <div className="loading-card">
+            <div className="spinner" />
+            <div className="loading-text">Re-running analysis…</div>
+            <div className="indeterminate-bar">
+              <div className="indeterminate-bar-inner" />
             </div>
           </div>
         </div>

@@ -27,7 +27,11 @@ public class TransformerController {
 
   @GetMapping("/{id}")
   public TransformerResponse get(@PathVariable String id) {
-    return TransformerService.toResponse(service.getEntity(id));
+    if (id.startsWith("TX-")) {
+      return service.getByTransformerNo(id);
+    } else {
+      return TransformerService.toResponse(service.getEntity(id));
+    }
   }
 
   @GetMapping("/meta")

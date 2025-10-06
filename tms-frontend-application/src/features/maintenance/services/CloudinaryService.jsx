@@ -81,31 +81,6 @@ class CloudinaryService {
     }
   }
 
-async updateAnomalyNotes(inspectionId, anomalyId, notes) {
-    try {
-        const response = await fetch(
-            `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ notes: notes })
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Failed to update notes: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error updating anomaly notes:', error);
-        throw error;
-    }
-}
-
-
 
   /**
    * Upload image to Cloudinary only

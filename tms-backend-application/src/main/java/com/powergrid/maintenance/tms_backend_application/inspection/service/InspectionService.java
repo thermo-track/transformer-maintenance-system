@@ -84,7 +84,9 @@ public class InspectionService {
      */
     public ResponseEntity<InspectionResponseDTO> updateInspection(String id, InspectionUpdateRequestDTO requestDTO) {
         try {
-            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            // Parse string ID to Long
+            Long inspectionId = Long.parseLong(id);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
             
             if (optionalInspection.isEmpty()) {
                 log.warn("Inspection not found with id: {}", id);
@@ -112,6 +114,9 @@ public class InspectionService {
             log.info("Successfully updated inspection with ID: {}", id);
             return ResponseEntity.ok(responseDTO);
             
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", id);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (RuntimeException e) {
             log.error("Business logic error updating inspection {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -121,22 +126,26 @@ public class InspectionService {
         }
     }
 
-    // Rest of your methods remain the same...
-    
     /**
      * Delete an inspection
      */
     public ResponseEntity<Void> deleteInspection(String id) {
         try {
-            if (!inspectionRepo.existsById(id)) {
+            // Parse string ID to Long
+            Long inspectionId = Long.parseLong(id);
+            
+            if (!inspectionRepo.existsById(inspectionId)) {
                 log.warn("Inspection not found with id: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
 
-            inspectionRepo.deleteById(id);
+            inspectionRepo.deleteById(inspectionId);
             log.info("Successfully deleted inspection with ID: {}", id);
             return ResponseEntity.noContent().build();
             
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", id);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             log.error("Error deleting inspection with id {}: ", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -149,7 +158,9 @@ public class InspectionService {
     @Transactional(readOnly = true)
     public ResponseEntity<InspectionResponseDTO> getInspectionById(String id) {
         try {
-            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            // Parse string ID to Long
+            Long inspectionId = Long.parseLong(id);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
             
             if (optionalInspection.isEmpty()) {
                 log.warn("Inspection not found with id: {}", id);
@@ -159,6 +170,9 @@ public class InspectionService {
             InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(optionalInspection.get());
             return ResponseEntity.ok(responseDTO);
             
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", id);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             log.error("Error retrieving inspection with id {}: ", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -241,7 +255,9 @@ public class InspectionService {
 
     public String getWeatherCondition(String inspectionId) {
         try {
-            Optional<Inspection> inspection = inspectionRepo.findById(inspectionId);
+            // Parse string ID to Long
+            Long id = Long.parseLong(inspectionId);
+            Optional<Inspection> inspection = inspectionRepo.findById(id);
             
             if (inspection.isPresent()) {
                 return inspection.get().getEnvironmentalCondition();
@@ -249,6 +265,9 @@ public class InspectionService {
 
             log.warn("No inspection found with ID: " + inspectionId);
             return null;
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: " + inspectionId, e);
+            throw new RuntimeException("Invalid inspection ID format: " + inspectionId, e);
         } catch (Exception e) {
             log.error("Error fetching weather condition for inspection: " + inspectionId, e);
             throw new RuntimeException("Failed to fetch weather condition", e);
@@ -285,7 +304,9 @@ public class InspectionService {
                 return ResponseEntity.badRequest().build();
             }
             
-            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            // Parse string ID to Long
+            Long inspectionId = Long.parseLong(id);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
             
             if (optionalInspection.isEmpty()) {
                 log.warn("Inspection not found with ID: {}", id);
@@ -300,6 +321,9 @@ public class InspectionService {
             log.info("Successfully updated inspection status for ID: {} to: {}", id, newStatus.getValue());
             return ResponseEntity.ok(responseDTO);
             
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", id);
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Error updating inspection status for ID: {}", id, e);
             return ResponseEntity.internalServerError().build();
@@ -310,47 +334,79 @@ public class InspectionService {
      * Save image metadata after Cloudinary upload
      */
     public CloudImageUploadResponseDTO saveImageMetadata(String inspectionId, CloudImageUploadDTO dto) {
-        Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
-        if (optionalInspection.isEmpty()) {
-            throw new RuntimeException("Inspection not found with ID: " + inspectionId);
-        }
+        try {
+            // Parse string ID to Long
+            Long id = Long.parseLong(inspectionId);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            
+            if (optionalInspection.isEmpty()) {
+                throw new RuntimeException("Inspection not found with ID: " + inspectionId);
+            }
 
-        Inspection inspection = optionalInspection.get();
-        inspectionMapper.updateInspectionWithDTO(inspection, dto);
-        Inspection updatedInspection = inspectionRepo.save(inspection);
-        return inspectionMapper.toCloudImageUploadResponseDTO(updatedInspection);
+            Inspection inspection = optionalInspection.get();
+            inspectionMapper.updateInspectionWithDTO(inspection, dto);
+            Inspection updatedInspection = inspectionRepo.save(inspection);
+            return inspectionMapper.toCloudImageUploadResponseDTO(updatedInspection);
+            
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionId);
+            throw new RuntimeException("Invalid inspection ID format: " + inspectionId, e);
+        }
     }
 
     /**
      * Delete image metadata
      */
     public boolean deleteImageMetadata(String inspectionId) {
-        Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
-        if (optionalInspection.isPresent()) {
-            Inspection inspection = optionalInspection.get();
-            CloudImageUploadDTO empty = new CloudImageUploadDTO();
-            inspectionMapper.updateInspectionWithDTO(inspection, empty);
-            inspectionRepo.save(inspection);
-            return true;
+        try {
+            // Parse string ID to Long
+            Long id = Long.parseLong(inspectionId);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
+            
+            if (optionalInspection.isPresent()) {
+                Inspection inspection = optionalInspection.get();
+                CloudImageUploadDTO empty = new CloudImageUploadDTO();
+                inspectionMapper.updateInspectionWithDTO(inspection, empty);
+                inspectionRepo.save(inspection);
+                return true;
+            }
+            return false;
+            
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionId);
+            return false;
         }
-        return false;
     }
 
     /**
      * Check if inspection has cloud image specifically
      */
     public boolean hasCloudImage(String inspectionId) {
-        return inspectionRepo.findById(inspectionId)
-                .map(Inspection::hasCloudImage)
-                .orElse(false);
+        try {
+            // Parse string ID to Long
+            Long id = Long.parseLong(inspectionId);
+            return inspectionRepo.findById(id)
+                    .map(Inspection::hasCloudImage)
+                    .orElse(false);
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionId);
+            return false;
+        }
     }
 
     /**
      * Get cloud image URL for inspection
      */
     public String getCloudImageUrl(String inspectionId) {
-        return inspectionRepo.findById(inspectionId)
-                .map(Inspection::getCloudImageUrl)
-                .orElse(null);
+        try {
+            // Parse string ID to Long
+            Long id = Long.parseLong(inspectionId);
+            return inspectionRepo.findById(id)
+                    .map(Inspection::getCloudImageUrl)
+                    .orElse(null);
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionId);
+            return null;
+        }
     }
 }

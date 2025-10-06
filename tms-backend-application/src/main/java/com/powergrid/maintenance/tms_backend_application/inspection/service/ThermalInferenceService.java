@@ -45,97 +45,174 @@ public class ThermalInferenceService {
     @Value("${inference.api.url:http://localhost:8001}")
     private String pythonApiUrl;
 
-    public InspectionAnomaly updateAnomalyNotes(String inspectionId, Long anomalyId, String notes) {
-        try {
-            InspectionAnomaly anomaly = anomalyRepository.findById(anomalyId)
-                    .orElseThrow(() -> new RuntimeException("Anomaly not found: " + anomalyId));
-
-            if (!anomaly.getInspectionId().equals(inspectionId)) {
-                throw new RuntimeException("Anomaly does not belong to inspection");
-            }
-
-            anomaly.setNotes(notes);
-            return anomalyRepository.save(anomaly);
-        } catch (Exception e) {
-            log.error("Error updating anomaly notes: {}", e.getMessage());
-            throw new RuntimeException("Failed to update anomaly notes", e);
-        }
-    }
-
     /** Update ONLY the maintenance image URL for this inspection (create row if missing). */
     public void updateMaintenanceImageUrlOnly(String inspectionId, String maintenanceUrl) {
-        int updated = inferenceMetadataRepository.updateMaintenanceUrlOnly(inspectionId, maintenanceUrl);
+        int updated = inferenceMetadataRepository.updateMaintenanceUrlOnly(Long.parseLong(inspectionId), maintenanceUrl);
         if (updated > 0) {
             log.info("Updated maintenance image URL for inspection {} -> {}", inspectionId, maintenanceUrl);
             return;
         }
         // Row not found -> create the single record for this inspection
         InferenceMetadata meta = new InferenceMetadata();
-        meta.setInspectionId(inspectionId);
+        meta.setInspectionId(Long.parseLong(inspectionId));
         meta.setMaintenanceImageUrl(maintenanceUrl);
         meta.setCreatedAt(LocalDateTime.now());   // keep your existing createdAt usage
         inferenceMetadataRepository.save(meta);
         log.info("Created inference metadata row for inspection {} with maintenance URL {}", inspectionId, maintenanceUrl);
     }
 
-    public Map<String, Object> processAndInfer(String inspectionId, ImageMetadataDTO imageMetadata) {
+    /**
+     * Update notes for a specific anomaly
+     * @param inspectionIdStr String representation of inspection ID
+     * @param anomalyId The anomaly ID
+     * @param notes The notes to save
+     * @return Updated anomaly
+     */
+    public InspectionAnomaly updateAnomalyNotes(String inspectionIdStr, Long anomalyId, String notes) {
+        try {
+            // Convert string ID to Long for database operations
+            Long inspectionId = Long.parseLong(inspectionIdStr);
+            
+            InspectionAnomaly anomaly = anomalyRepository.findById(anomalyId)
+                    .orElseThrow(() -> new RuntimeException("Anomaly not found: " + anomalyId));
 
-        // 1. Update inspection record (only non-null fields)
-        Inspection inspection = inspectionRepository.findById(inspectionId)
-                .orElseThrow(() -> new RuntimeException("Inspection not found: " + inspectionId));
+            // Verify the anomaly belongs to this inspection
+            if (!anomaly.getInspectionId().equals(inspectionId)) {
+                throw new RuntimeException("Anomaly does not belong to inspection");
+            }
 
-        if (imageMetadata.getCloudImageUrl() != null)
-            inspection.setCloudImageUrl(imageMetadata.getCloudImageUrl());
-        if (imageMetadata.getCloudinaryPublicId() != null)
-            inspection.setCloudinaryPublicId(imageMetadata.getCloudinaryPublicId());
-        if (imageMetadata.getCloudImageName() != null)
-            inspection.setCloudImageName(imageMetadata.getCloudImageName());
-        if (imageMetadata.getCloudImageType() != null)
-            inspection.setCloudImageType(imageMetadata.getCloudImageType());
-        if (imageMetadata.getEnvironmentalCondition() != null)
-            inspection.setEnvironmentalCondition(imageMetadata.getEnvironmentalCondition());
-        if (imageMetadata.getCloudUploadedAt() != null)
-            inspection.setCloudUploadedAt(imageMetadata.getCloudUploadedAt());
-
-        inspectionRepository.save(inspection);
-        log.info("Updated inspection {} with cloud image metadata", inspectionId);
-
-        // 2. Baseline lookup
-        String env = imageMetadata.getEnvironmentalCondition() != null
-                ? imageMetadata.getEnvironmentalCondition()
-                : inspection.getEnvironmentalCondition();
-
-        String baselineUrl = getBaselineImageUrl(inspection.getTransformerNo(), env);
-        if (baselineUrl == null) {
-            throw new RuntimeException("No baseline image found for transformer " +
-                    inspection.getTransformerNo() + " with condition " + env);
+            // Update notes - you'll need to add a notes field to InspectionAnomaly entity
+            // anomaly.setNotes(notes);
+            
+            return anomalyRepository.save(anomaly);
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionIdStr);
+            throw new RuntimeException("Invalid inspection ID format: " + inspectionIdStr, e);
+        } catch (Exception e) {
+            log.error("Error updating anomaly notes: {}", e.getMessage());
+            throw new RuntimeException("Failed to update anomaly notes", e);
         }
-
-        // 3. Call Python inference
-        Map<String, Object> inferenceResult = callPythonInference(
-                baselineUrl,
-                imageMetadata.getCloudImageUrl(),
-                inspectionId,
-                imageMetadata.getThresholdPct(),
-                imageMetadata.getIouThresh(),
-                imageMetadata.getConfThresh()
-        );
-
-        // 4. UPSERT results (no delete/insert)
-        upsertInferenceResults(inspectionId, inferenceResult, baselineUrl, imageMetadata.getCloudImageUrl());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("metadata", imageMetadata);
-        response.put("inference", inferenceResult);
-        return response;
     }
 
+    /**
+     * Process inspection image and run inference
+     * @param inspectionIdStr String representation of inspection ID
+     * @param imageMetadata Image metadata including thresholds
+     * @return Combined response with metadata and inference results
+     */
+    public Map<String, Object> processAndInfer(String inspectionIdStr, ImageMetadataDTO imageMetadata) {
+        try {
+            // Convert string ID to Long for database operations
+            Long inspectionId = Long.parseLong(inspectionIdStr);
+
+            // 1. Load inspection and update only non-null fields (avoid clobbering on reruns)
+            Inspection inspection = inspectionRepository.findById(inspectionId)
+                    .orElseThrow(() -> new RuntimeException("Inspection not found: " + inspectionIdStr));
+
+            if (imageMetadata.getCloudImageUrl() != null)
+                inspection.setCloudImageUrl(imageMetadata.getCloudImageUrl());
+            if (imageMetadata.getCloudinaryPublicId() != null)
+                inspection.setCloudinaryPublicId(imageMetadata.getCloudinaryPublicId());
+            if (imageMetadata.getCloudImageName() != null)
+                inspection.setCloudImageName(imageMetadata.getCloudImageName());
+            if (imageMetadata.getCloudImageType() != null)
+                inspection.setCloudImageType(imageMetadata.getCloudImageType());
+            if (imageMetadata.getEnvironmentalCondition() != null)
+                inspection.setEnvironmentalCondition(imageMetadata.getEnvironmentalCondition());
+            if (imageMetadata.getCloudUploadedAt() != null)
+                inspection.setCloudUploadedAt(imageMetadata.getCloudUploadedAt());
+
+            inspectionRepository.save(inspection);
+            log.info("Updated inspection {} with cloud image metadata", inspectionIdStr);
+
+            // 2. Determine env (prefer DTO, else persisted inspection) and fetch baseline URL
+            String env = imageMetadata.getEnvironmentalCondition() != null
+                    ? imageMetadata.getEnvironmentalCondition()
+                    : inspection.getEnvironmentalCondition();
+
+            String baselineUrl = getBaselineImageUrl(inspection.getTransformerNo(), env);
+
+            if (baselineUrl == null) {
+                throw new RuntimeException("No baseline image found for transformer " +
+                        inspection.getTransformerNo() + " with condition " + env);
+            }
+
+            // 3. Call Python inference API with thresholds (DTO values or defaults)
+            // Note: Python API can still receive string ID if needed
+            Map<String, Object> inferenceResult = callPythonInference(
+                    baselineUrl,
+                    imageMetadata.getCloudImageUrl(),
+                    inspectionIdStr,  // Send as string to Python API
+                    imageMetadata.getThresholdPct(),
+                    imageMetadata.getIouThresh(),
+                    imageMetadata.getConfThresh()
+            );
+
+            // 4. Save inference results to database using Long ID
+            saveInferenceResults(inspectionId, inferenceResult, baselineUrl, imageMetadata.getCloudImageUrl());
+
+            // 5. Return combined response
+            Map<String, Object> response = new HashMap<>();
+            response.put("metadata", imageMetadata);
+            response.put("inference", inferenceResult);
+            return response;
+            
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionIdStr);
+            throw new RuntimeException("Invalid inspection ID format: " + inspectionIdStr, e);
+        }
+    }
+
+    /**
+     * Re-run inference with new threshold settings
+     * @param inspectionIdStr String representation of inspection ID
+     * @param thresholds New threshold configuration
+     * @return Inference results
+     */
+    public Map<String, Object> rerunInference(String inspectionIdStr, ThresholdConfigDTO thresholds) {
+        try {
+            // Convert string ID to Long for database operations
+            Long inspectionId = Long.parseLong(inspectionIdStr);
+            
+            // Get existing inspection image URL - use Long ID
+            Inspection inspection = inspectionRepository.findById(inspectionId)
+                    .orElseThrow(() -> new RuntimeException("Inspection not found"));
+
+            if (inspection.getCloudImageUrl() == null) {
+                throw new RuntimeException("No image found for this inspection");
+            }
+
+            // Delete existing anomalies using Long ID
+            anomalyRepository.deleteByInspectionId(inspectionId);
+
+            // Create metadata with new thresholds (preserve env so baseline lookup works)
+            ImageMetadataDTO metadata = new ImageMetadataDTO();
+            metadata.setCloudImageUrl(inspection.getCloudImageUrl());
+            metadata.setEnvironmentalCondition(inspection.getEnvironmentalCondition());
+            metadata.setThresholdPct(thresholds.getThresholdPct());
+            metadata.setIouThresh(thresholds.getIouThresh());
+            metadata.setConfThresh(thresholds.getConfThresh());
+
+            // Re-run inference with string ID for API consistency
+            return processAndInfer(inspectionIdStr, metadata);
+            
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", inspectionIdStr);
+            throw new RuntimeException("Invalid inspection ID format: " + inspectionIdStr, e);
+        }
+    }
+
+    /**
+     * Get baseline image URL for a transformer and environmental condition
+     */
     private String getBaselineImageUrl(String transformerNo, String environmentalCondition) {
         try {
             if (environmentalCondition == null || environmentalCondition.isBlank()) {
                 throw new RuntimeException("Environmental condition is missing for baseline lookup");
             }
-            log.info("Looking for baseline image for transformer: {} with condition: {}", transformerNo, environmentalCondition);
+
+            log.info("Looking for baseline image for transformer: {} with condition: {}",
+                    transformerNo, environmentalCondition);
 
             Transformer transformer = transformerRepository.findByTransformerNo(transformerNo)
                     .orElseThrow(() -> new RuntimeException("Transformer not found: " + transformerNo));
@@ -161,6 +238,9 @@ public class ThermalInferenceService {
         }
     }
 
+    /**
+     * Call Python inference API
+     */
     private Map<String, Object> callPythonInference(
             String baselineUrl,
             String maintenanceUrl,
@@ -176,8 +256,9 @@ public class ThermalInferenceService {
             request.put("baseline_url", baselineUrl);
             request.put("maintenance_url", maintenanceUrl);
             request.put("inspection_id", inspectionId);
+            // Use provided thresholds if present; otherwise apply defaults
             request.put("threshold_pct", thresholdPct != null ? thresholdPct : 2.0);
-            request.put("iou_thresh",   iouThresh    != null ? iouThresh    : 0.7);
+            request.put("iou_thresh",   iouThresh    != null ? iouThresh    : 0.35);
             request.put("conf_thresh",  confThresh   != null ? confThresh   : 0.25);
 
             HttpHeaders headers = new HttpHeaders();
@@ -187,6 +268,7 @@ public class ThermalInferenceService {
 
             log.info("Calling Python inference API: {}", url);
             log.info("Request: baseline={}, maintenance={}", baselineUrl, maintenanceUrl);
+
 
             @SuppressWarnings("rawtypes")
             Map response = restTemplate.postForObject(url, entity, Map.class);
@@ -201,37 +283,30 @@ public class ThermalInferenceService {
         }
     }
 
-    public Map<String, Object> rerunInference(String inspectionId, ThresholdConfigDTO thresholds) {
-        Inspection inspection = inspectionRepository.findById(inspectionId)
-                .orElseThrow(() -> new RuntimeException("Inspection not found"));
-
-        if (inspection.getCloudImageUrl() == null) {
-            throw new RuntimeException("No image found for this inspection");
-        }
-
-        anomalyRepository.deleteByInspectionId(inspectionId);
-
-        ImageMetadataDTO metadata = new ImageMetadataDTO();
-        metadata.setCloudImageUrl(inspection.getCloudImageUrl());
-        metadata.setEnvironmentalCondition(inspection.getEnvironmentalCondition());
-        metadata.setThresholdPct(thresholds.getThresholdPct());
-        metadata.setIouThresh(thresholds.getIouThresh());
-        metadata.setConfThresh(thresholds.getConfThresh());
-
-        return processAndInfer(inspectionId, metadata);
-    }
-
-    private void upsertInferenceResults(String inspectionId, Map<String, Object> inferenceResult,
-                                        String baselineUrl, String maintenanceUrl) {
+    /**
+     * Save inference results to database
+     * @param inspectionId Long ID for database operations
+     */
+    private void saveInferenceResults(Long inspectionId, Map<String, Object> inferenceResult,
+                                      String baselineUrl, String maintenanceUrl) {
         try {
-            InferenceMetadata metadata = inferenceMetadataRepository.findByInspectionId(inspectionId)
-                    .orElseGet(() -> {
-                        InferenceMetadata m = new InferenceMetadata();
-                        m.setInspectionId(inspectionId);
-                        m.setCreatedAt(LocalDateTime.now());
-                        return m;
+            // Check if metadata already exists and delete it
+            inferenceMetadataRepository.findByInspectionId(inspectionId)
+                    .ifPresent(existingMetadata -> {
+                        log.info("Deleting existing inference metadata for inspection {}", inspectionId);
+                        inferenceMetadataRepository.delete(existingMetadata);
                     });
 
+            // Delete existing anomalies
+            List<InspectionAnomaly> existingAnomalies = anomalyRepository.findByInspectionId(inspectionId);
+            if (!existingAnomalies.isEmpty()) {
+                log.info("Deleting {} existing anomalies for inspection {}", existingAnomalies.size(), inspectionId);
+                anomalyRepository.deleteAll(existingAnomalies);
+            }
+
+            // Now save new metadata
+            InferenceMetadata metadata = new InferenceMetadata();
+            metadata.setInspectionId(inspectionId);  // Now sets Long
             metadata.setBaselineImageUrl(baselineUrl);
             metadata.setMaintenanceImageUrl(maintenanceUrl);
 
@@ -254,29 +329,30 @@ public class ThermalInferenceService {
             inferenceMetadataRepository.save(metadata);
             log.info("Upserted inference metadata for inspection {}", inspectionId);
 
-            // Rebuild anomalies
-            List<InspectionAnomaly> existingAnomalies = anomalyRepository.findByInspectionId(inspectionId);
-            if (!existingAnomalies.isEmpty()) {
-                log.info("Deleting {} existing anomalies for inspection {}", existingAnomalies.size(), inspectionId);
-                anomalyRepository.deleteAll(existingAnomalies);
-            }
-
+            // Save detections from YOLO (supervised detections) - ONLY FAULTS
             @SuppressWarnings("unchecked")
             Map<String, Object> detectorSummary = (Map<String, Object>) inferenceResult.get("detector_summary");
             if (detectorSummary != null) {
                 @SuppressWarnings("unchecked")
+
                 List<Map<String, Object>> detections = (List<Map<String, Object>>) detectorSummary.get("detections");
                 if (detections != null) {
                     int savedCount = 0;
+                    int skippedCount = 0;
 
                     for (Map<String, Object> detection : detections) {
                         String className = (String) detection.get("class_name");
+
+                        // CRITICAL: Skip "normal" detections - only save actual faults
                         if (className != null && className.toLowerCase().contains("normal")) {
-                            continue; // skip “normal”
+                            log.debug("Skipping normal detection: {} with confidence {}",
+                                    className, detection.get("conf"));
+                            skippedCount++;
+                            continue;
                         }
 
                         InspectionAnomaly anomaly = new InspectionAnomaly();
-                        anomaly.setInspectionId(inspectionId);
+                        anomaly.setInspectionId(inspectionId);  // Now sets Long
                         anomaly.setFaultType(className);
 
                         Object conf = detection.get("conf");
@@ -289,6 +365,7 @@ public class ThermalInferenceService {
                             anomaly.setClassId(((Number) classId).intValue());
                         }
 
+                        // Extract bbox coordinates from bbox_xywh
                         @SuppressWarnings("unchecked")
                         List<Number> bboxXywh = (List<Number>) detection.get("bbox_xywh");
                         if (bboxXywh != null && bboxXywh.size() >= 4) {
@@ -301,9 +378,11 @@ public class ThermalInferenceService {
 
                         anomalyRepository.save(anomaly);
                         savedCount++;
+                        savedCount++;
                     }
 
-                    log.info("Saved {} fault detections for inspection {}", savedCount, inspectionId);
+                    log.info("Saved {} fault detections for inspection {} (skipped {} normal detections)",
+                            savedCount, inspectionId, skippedCount);
                 }
             }
 

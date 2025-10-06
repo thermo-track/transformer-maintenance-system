@@ -2,6 +2,7 @@ package com.powergrid.maintenance.tms_backend_application.transformer.service;
 
 import com.powergrid.maintenance.tms_backend_application.common.exception.ConflictException;
 import com.powergrid.maintenance.tms_backend_application.common.exception.NotFoundException;
+import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.*;
 import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
@@ -14,12 +15,14 @@ import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class TransformerService {
 
   private final TransformerRepository repo;
+  private final InspectionRepo inspectionRepo;
 
   public Transformer create(TransformerCreateRequest r) {
     repo.findByTransformerNo(r.transformerNo()).ifPresent(x -> {
@@ -36,6 +39,27 @@ public class TransformerService {
 
   public Transformer getEntity(String id) {
     return repo.findById(id).orElseThrow(() -> new NotFoundException("Transformer not found"));
+  }
+
+  public Transformer getEntityByTransformerNo(String transformerNo) {
+    return repo.findByTransformerNo(transformerNo).orElseThrow(() -> new NotFoundException("Transformer not found"));
+  }
+
+  public TransformerResponse getByTransformerNo(String transformerNo) {
+    Optional<Object[]> result = repo.findTransformerDataByTransformerNo(transformerNo);
+    if (result.isEmpty()) {
+      throw new NotFoundException("Transformer not found");
+    }
+    
+    Object[] data = result.get();
+    return new TransformerResponse(
+      (String) data[0], // id
+      (String) data[1], // transformerNo
+      (String) data[2], // poleNo
+      (String) data[3], // region
+      (String) data[4], // type
+      (String) data[5]  // locationDetails
+    );
   }
 
   // Keep existing method for backward compatibility
@@ -97,10 +121,19 @@ public class TransformerService {
   }
 
   public void delete(String id) {
-    repo.delete(getEntity(id));
+    Transformer transformer = getEntity(id);
+    int inspectionCount = inspectionRepo.findByTransformerNo(transformer.getTransformerNo()).size();
+    
+    System.out.println("WARNING: Deleting transformer " + transformer.getTransformerNo() + 
+                      " will cascade delete " + inspectionCount + 
+                      " inspection(s) and all associated notes, anomalies, and metadata.");
+    
+    repo.delete(transformer);
   }
 
   public static TransformerResponse toResponse(Transformer t) {
+    // This method should only be used with fully loaded entities (not proxies)
+    // For better performance, use getByTransformerNo which avoids entity loading
     return new TransformerResponse(
       t.getId(),
       t.getTransformerNo(),

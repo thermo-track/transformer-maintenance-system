@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .unsupervised import run_unsupervised_pair, save_json
 from .detector import run_yolo
-from ..fuse_detections import fuse_regions_with_detections, draw_viz
+from fuse_detections import fuse_regions_with_detections, draw_viz
 
 
 def main():

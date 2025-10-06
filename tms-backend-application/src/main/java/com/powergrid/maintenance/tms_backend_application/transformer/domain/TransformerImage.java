@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import java.time.ZonedDateTime;
 
 @Data
@@ -26,6 +28,7 @@ public class TransformerImage {
     // Proper JPA relationship instead of String transformerId
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transformer_id", nullable = false)
+    @JsonBackReference
     private Transformer transformer;
     
     @Enumerated(EnumType.STRING)

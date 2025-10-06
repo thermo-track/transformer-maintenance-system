@@ -14,7 +14,7 @@ public class InferenceMetadata {
     private String id;
 
     @Column(name = "inspection_id", unique = true, nullable = false)
-    private String inspectionId;
+    private Long inspectionId;
 
     @OneToOne
     @JoinColumn(name = "inspection_id", referencedColumnName = "inspection_id", insertable = false, updatable = false)

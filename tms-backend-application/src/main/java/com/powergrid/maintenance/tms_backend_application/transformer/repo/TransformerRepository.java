@@ -12,6 +12,10 @@ public interface TransformerRepository extends JpaRepository<Transformer, String
 
     Optional<Transformer> findByTransformerNo(String transformerNo);
 
+    // Query that returns DTO data directly to avoid loading entity relationships
+    @Query("SELECT t.id, t.transformerNo, t.poleNo, t.region, t.type, t.locationDetails FROM Transformer t WHERE t.transformerNo = :transformerNo")
+    Optional<Object[]> findTransformerDataByTransformerNo(String transformerNo);
+
     // All transformer numbers (distinct for safety)
     @Query("select distinct t.transformerNo from Transformer t order by t.transformerNo asc")
     List<String> findAllTransformerNos();

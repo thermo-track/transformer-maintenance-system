@@ -8,14 +8,17 @@ from pathlib import Path
 import shutil
 import os
 import traceback
+import sys
+import subprocess
 
+python_executable = sys.executable 
 app = FastAPI(title="Thermal Image Inference API")
 
 class InferenceRequest(BaseModel):
     baseline_url: str
     maintenance_url: str
     inspection_id: str
-    weights_path: str = "phase2_fault_type/weights/best.pt"
+    weights_path: str = "../weights/best.pt"  # Remove the leading slash
     threshold_pct: float = 2.0
     iou_thresh: float = 0.7
     conf_thresh: float = 0.25
@@ -86,28 +89,31 @@ async def run_inference(request: InferenceRequest):
         
         # Run inference pipeline
         cmd = [
-            "python", "-m", "phase2_fault_type.pipeline.run_pair",
-            "--baseline", str(baseline_path),
-            "--maintenance", str(maintenance_path),
-            "--weights", str(weights_path),
-            "--out-json", str(output_json),
-            "--out-viz", str(output_viz),
+            python_executable, "-m", "pipeline.run_pair",  # Run as module, not phase2_fault_type.pipeline.run_pair
+            "--baseline", str(baseline_path.absolute()),
+            "--maintenance", str(maintenance_path.absolute()),
+            "--weights", str(weights_path.absolute()),
+            "--out-json", str(output_json.absolute()),
+            "--out-viz", str(output_viz.absolute()),
             "--threshold-pct", str(request.threshold_pct),
             "--iou-thresh", str(request.iou_thresh),
             "--conf-thresh", str(request.conf_thresh)
         ]
-        
+
         print(f"\nRunning command:")
         print(" ".join(cmd))
         print()
-        
+
+        # Set working directory to phase2_fault_type (parent of api)
+        parent_dir = Path(os.getcwd()).parent
+
         result = subprocess.run(
             cmd, 
             capture_output=True, 
             text=True, 
             timeout=300,
-            cwd=os.getcwd()
-        )
+            cwd=str(parent_dir)  # Run from phase2_fault_type directory
+)
         
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
@@ -159,7 +165,7 @@ async def run_inference(request: InferenceRequest):
 
 @app.get("/health")
 async def health_check():
-    weights_exist = Path("phase2_fault_type/weights/best.pt").exists()
+    weights_exist = Path("weights/best.pt").exists()
     return {
         "status": "healthy",
         "service": "thermal-inference-api",
@@ -171,5 +177,5 @@ if __name__ == "__main__":
     import uvicorn
     print(f"Starting inference API...")
     print(f"Current working directory: {os.getcwd()}")
-    print(f"Weights path: {Path('phase2_fault_type/weights/best.pt').absolute()}")
+    print(f"Weights path: {Path('weights/best.pt').absolute()}")
     uvicorn.run(app, host="0.0.0.0", port=8001)
