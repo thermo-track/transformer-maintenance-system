@@ -25,4 +25,11 @@ public class InferenceService {
     public InferenceMetadata getMetadataForInspection(Long inspectionId) {
         return metadataRepository.findByInspectionId(inspectionId).orElse(null);
     }
+
+    public InspectionAnomaly updateAnomalyNotes(String anomalyId, String notes) {
+        InspectionAnomaly anomaly = anomalyRepository.findById(anomalyId)
+                .orElseThrow(() -> new RuntimeException("Anomaly not found"));
+        anomaly.setNotes(notes);
+        return anomalyRepository.save(anomaly);
+    }
 }

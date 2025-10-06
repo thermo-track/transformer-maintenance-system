@@ -6,6 +6,7 @@ import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspe
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageMetadataDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ThresholdConfigDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.ThresholdConfigDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InferenceMetadataRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionAnomalyRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
@@ -44,6 +45,22 @@ public class ThermalInferenceService {
 
     @Value("${inference.api.url:http://localhost:8001}")
     private String pythonApiUrl;
+
+    /** Update ONLY the maintenance image URL for this inspection (create row if missing). */
+    public void updateMaintenanceImageUrlOnly(String inspectionId, String maintenanceUrl) {
+        int updated = inferenceMetadataRepository.updateMaintenanceUrlOnly(inspectionId, maintenanceUrl);
+        if (updated > 0) {
+            log.info("Updated maintenance image URL for inspection {} -> {}", inspectionId, maintenanceUrl);
+            return;
+        }
+        // Row not found -> create the single record for this inspection
+        InferenceMetadata meta = new InferenceMetadata();
+        meta.setInspectionId(inspectionId);
+        meta.setMaintenanceImageUrl(maintenanceUrl);
+        meta.setCreatedAt(LocalDateTime.now());   // keep your existing createdAt usage
+        inferenceMetadataRepository.save(meta);
+        log.info("Created inference metadata row for inspection {} with maintenance URL {}", inspectionId, maintenanceUrl);
+    }
 
     /**
      * Update notes for a specific anomaly
@@ -198,11 +215,9 @@ public class ThermalInferenceService {
             log.info("Looking for baseline image for transformer: {} with condition: {}",
                     transformerNo, environmentalCondition);
 
-            // Get transformer by transformer number
             Transformer transformer = transformerRepository.findByTransformerNo(transformerNo)
                     .orElseThrow(() -> new RuntimeException("Transformer not found: " + transformerNo));
 
-            // Get baseline image for this transformer and weather condition
             List<TransformerImage> images = transformerImageRepository
                     .findByTransformerIdAndWeatherCondition(
                             transformer.getId(),
@@ -210,8 +225,7 @@ public class ThermalInferenceService {
                     );
 
             if (images.isEmpty()) {
-                log.error("No baseline image found for transformer {} with condition {}",
-                        transformerNo, environmentalCondition);
+                log.error("No baseline image found for transformer {} with condition {}", transformerNo, environmentalCondition);
                 return null;
             }
 
@@ -257,8 +271,12 @@ public class ThermalInferenceService {
             log.info("Request: baseline={}, maintenance={}", baselineUrl, maintenanceUrl);
 
             @SuppressWarnings("rawtypes")
+            @SuppressWarnings("rawtypes")
             Map response = restTemplate.postForObject(url, entity, Map.class);
 
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) response.get("inference_result");
+            return result;
             @SuppressWarnings("unchecked")
             Map<String, Object> result = (Map<String, Object>) response.get("inference_result");
             return result;
@@ -297,23 +315,30 @@ public class ThermalInferenceService {
             metadata.setMaintenanceImageUrl(maintenanceUrl);
 
             @SuppressWarnings("unchecked")
+            @SuppressWarnings("unchecked")
             Map<String, Object> registration = (Map<String, Object>) inferenceResult.get("registration");
             if (registration != null) {
                 metadata.setRegistrationOk((Boolean) registration.get("ok"));
                 metadata.setRegistrationMethod((String) registration.get("method"));
-                metadata.setRegistrationInliers((Integer) registration.get("inliers"));
+                Object inliers = registration.get("inliers");
+                if (inliers instanceof Number) {
+                    metadata.setRegistrationInliers(((Number) inliers).intValue());
+                } else if (inliers != null) {
+                    try { metadata.setRegistrationInliers(Integer.parseInt(inliers.toString())); } catch (Exception ignore) {}
+                }
             }
 
             metadata.setFullJsonResult(objectMapper.writeValueAsString(inferenceResult));
             metadata.setInferenceRunAt(LocalDateTime.now());
 
             inferenceMetadataRepository.save(metadata);
-            log.info("Saved inference metadata for inspection {}", inspectionId);
+            log.info("Upserted inference metadata for inspection {}", inspectionId);
 
             // Save detections from YOLO (supervised detections) - ONLY FAULTS
             @SuppressWarnings("unchecked")
             Map<String, Object> detectorSummary = (Map<String, Object>) inferenceResult.get("detector_summary");
             if (detectorSummary != null) {
+                @SuppressWarnings("unchecked")
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> detections = (List<Map<String, Object>>) detectorSummary.get("detections");
                 if (detections != null) {
@@ -358,6 +383,7 @@ public class ThermalInferenceService {
 
                         anomalyRepository.save(anomaly);
                         savedCount++;
+                        savedCount++;
                     }
 
                     log.info("Saved {} fault detections for inspection {} (skipped {} normal detections)",
@@ -366,7 +392,7 @@ public class ThermalInferenceService {
             }
 
         } catch (Exception e) {
-            log.error("Failed to save inference results: {}", e.getMessage(), e);
+            log.error("Failed to upsert inference results: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to save inference results", e);
         }
     }

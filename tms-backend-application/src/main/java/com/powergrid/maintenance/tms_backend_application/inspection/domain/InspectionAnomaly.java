@@ -21,6 +21,7 @@ public class InspectionAnomaly {
     @ManyToOne
     @JoinColumn(name = "inspection_id", referencedColumnName = "inspection_id", insertable = false, updatable = false)
     @JsonIgnore
+    @JsonIgnore
     private Inspection inspection;
 
     @Column(name = "bbox_x")

@@ -42,10 +42,16 @@ const ThermalImageComparison = ({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentThresholds, setCurrentThresholds] = useState({
     thresholdPct: 2.0,
-    iouThresh: 0.35,
+    iouThresh:7,
     confThresh: 0.25
   });
   const [isRerunLoading, setIsRerunLoading] = useState(false);
+
+  const weatherLabel =
+    inspectionData?.weatherCondition
+      ? inspectionData.weatherCondition.charAt(0).toUpperCase() +
+        inspectionData.weatherCondition.slice(1)
+      : null;
 
   const handleApplyThresholds = async (newThresholds) => {
     try {
@@ -88,6 +94,7 @@ const ThermalImageComparison = ({
     }
   }, [inspectionId]);
 
+  // Redraw bounding boxes when detections, zoom, or position changes
   useEffect(() => {
     if (imageRef.current && canvasRef.current && detections.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -126,7 +133,9 @@ const ThermalImageComparison = ({
     const canvas = canvasRef.current;
     const image = imageRef.current;
     const container = containerRef.current;
+    const container = containerRef.current;
     
+    if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
     if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
       return;
     }
@@ -238,6 +247,7 @@ const ThermalImageComparison = ({
   };
 
   const handleDragStart = (imageType, e) => {
+    e.preventDefault();
     e.preventDefault();
     setIsDragging(prev => ({ ...prev, [imageType]: true }));
   };
@@ -420,11 +430,17 @@ const ThermalImageComparison = ({
         {image ? (
           <div 
             ref={type === 'current' ? containerRef : null}
+            ref={type === 'current' ? containerRef : null}
             className="draggable-container"
             onMouseDown={(e) => handleDragStart(type, e)}
             onMouseMove={(e) => handleDragMove(type, e)}
             onMouseUp={() => handleDragEnd(type)}
             onMouseLeave={() => handleDragEnd(type)}
+            style={{ 
+              cursor: isDragging[type] ? 'grabbing' : 'grab', 
+              position: 'relative',
+              overflow: 'hidden'
+            }}
             style={{ 
               cursor: isDragging[type] ? 'grabbing' : 'grab', 
               position: 'relative',
@@ -442,13 +458,19 @@ const ThermalImageComparison = ({
                 objectFit: 'cover',
                 width: '100%',
                 height: '100%'
+                transition: isDragging[type] ? 'none' : 'transform 0.3s ease',
+                objectFit: 'cover',
+                width: '100%',
+                height: '100%'
               }}
               onError={() => setError(`Failed to load ${type} image`)}
               onLoad={() => {
                 if (type === 'current' && detections.length > 0) {
+                if (type === 'current' && detections.length > 0) {
                   setTimeout(() => drawBoundingBoxes(), 100);
                 }
               }}
+              draggable={false}
               draggable={false}
             />
             {type === 'current' && (
@@ -458,6 +480,9 @@ const ThermalImageComparison = ({
                   position: 'absolute',
                   top: 0,
                   left: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none'
                   width: '100%',
                   height: '100%',
                   pointerEvents: 'none'
@@ -479,6 +504,19 @@ const ThermalImageComparison = ({
       <div className="comparison-header">
         <h3 className="comparison-title">Thermal Image Comparison</h3>
         <div className="comparison-actions">
+          <button
+            disabled={isRerunLoading}
+            onClick={() => setShowSettingsModal(true)}
+            className="action-btnT settings-btnT"
+          >
+            <Settings size={16} />
+            Settings
+          </button>
+          <button
+            disabled={isRerunLoading}
+            onClick={handleRefreshClick}
+            className="action-btnT refresh-btnT"
+          >
           <button
             disabled={isRerunLoading}
             onClick={() => setShowSettingsModal(true)}
@@ -518,8 +556,28 @@ const ThermalImageComparison = ({
         />
       </div>
 
+
+
       <div className="analysis-sections">
+        {weatherLabel && (
+          <div style={{ marginBottom: 8 }}>
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '6px 10px',
+                borderRadius: 999,
+                background: '#e8f0fe',
+                color: '#1a56db',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Weather Condition:   {weatherLabel}
+            </span>
+          </div>
+        )}
         <div className="anomalies-section">
+          <h4 style={{color: "black"}}>Detected Faults</h4>
           <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
             {detections.length > 0 ? (
@@ -847,6 +905,26 @@ const ThermalImageComparison = ({
                 <X size={16} />
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettingsModal && (
+        <ThresholdSettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          onApply={handleApplyThresholds}
+          currentSettings={currentThresholds}
+        />
+      )}
+
+      {isRerunLoading && (
+        <div className="overlay loading-overlay">
+          <div className="loading-card">
+            <div className="spinner" />
+            <div className="loading-text">Re-running analysis…</div>
+            <div className="indeterminate-bar">
+              <div className="indeterminate-bar-inner" />
             </div>
           </div>
         </div>

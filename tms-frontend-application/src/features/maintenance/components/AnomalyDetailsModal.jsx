@@ -5,15 +5,14 @@ import '../styles/anomaly-details-modal.css';
 const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
   if (!anomaly) return null;
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleString('en-US', {
+  const formatDate = (date) =>
+    new Date(date).toLocaleString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
-  };
 
   const getSeverityColor = (confidence) => {
     if (confidence > 0.7) return '#dc3545';
@@ -25,7 +24,10 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
     <div className="anomaly-modal-overlay" onClick={onClose}>
       <div className="anomaly-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="anomaly-modal-header">
-          <div className="header-icon" style={{ backgroundColor: getSeverityColor(anomaly.faultConfidence) }}>
+          <div
+            className="header-icon"
+            style={{ backgroundColor: getSeverityColor(anomaly.faultConfidence) }}
+          >
             <AlertTriangle size={24} color="white" />
           </div>
           <h2>Fault Detection Details</h2>
@@ -42,16 +44,16 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
                 <label>Fault Type</label>
                 <p className="fault-type-value">{anomaly.faultType}</p>
               </div>
-              
+
               <div className="detail-item">
                 <label>Confidence Score</label>
                 <div className="confidence-display">
                   <div className="confidence-bar-bg">
-                    <div 
-                      className="confidence-bar-fill" 
-                      style={{ 
+                    <div
+                      className="confidence-bar-fill"
+                      style={{
                         width: `${anomaly.faultConfidence * 100}%`,
-                        backgroundColor: getSeverityColor(anomaly.faultConfidence)
+                        backgroundColor: getSeverityColor(anomaly.faultConfidence),
                       }}
                     ></div>
                   </div>
@@ -63,11 +65,15 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
 
               <div className="detail-item">
                 <label>Severity Level</label>
-                <span 
-                  className="severity-badge" 
+                <span
+                  className="severity-badge"
                   style={{ backgroundColor: getSeverityColor(anomaly.faultConfidence) }}
                 >
-                  {anomaly.faultConfidence > 0.7 ? 'Critical' : anomaly.faultConfidence > 0.5 ? 'High' : 'Medium'}
+                  {anomaly.faultConfidence > 0.7
+                    ? 'Critical'
+                    : anomaly.faultConfidence > 0.5
+                    ? 'High'
+                    : 'Medium'}
                 </span>
               </div>
             </div>
@@ -81,21 +87,27 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
                   <MapPin size={16} />
                   <label>Bounding Box Position</label>
                 </div>
-                <p>X: {anomaly.bboxX}px, Y: {anomaly.bboxY}px</p>
+                <p>
+                  X: {anomaly.bboxX}px, Y: {anomaly.bboxY}px
+                </p>
               </div>
-              
+
               <div className="detail-item">
                 <div className="detail-icon-label">
                   <TrendingUp size={16} />
                   <label>Dimensions</label>
                 </div>
-                <p>Width: {anomaly.bboxWidth}px, Height: {anomaly.bboxHeight}px</p>
+                <p>
+                  Width: {anomaly.bboxWidth}px, Height: {anomaly.bboxHeight}px
+                </p>
               </div>
 
               {anomaly.centroidX && anomaly.centroidY && (
                 <div className="detail-item">
                   <label>Centroid</label>
-                  <p>({anomaly.centroidX.toFixed(1)}, {anomaly.centroidY.toFixed(1)})</p>
+                  <p>
+                    ({anomaly.centroidX.toFixed(1)}, {anomaly.centroidY.toFixed(1)})
+                  </p>
                 </div>
               )}
             </div>
@@ -109,9 +121,11 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
                   <Calendar size={16} />
                   <label>Detection Date</label>
                 </div>
-                <p>{anomaly.detectedAt ? formatDate(anomaly.detectedAt) : formatDate(new Date())}</p>
+                <p>
+                  {anomaly.detectedAt ? formatDate(anomaly.detectedAt) : formatDate(new Date())}
+                </p>
               </div>
-              
+
               <div className="detail-item">
                 <div className="detail-icon-label">
                   <User size={16} />
@@ -124,27 +138,10 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
                 <label>Inspection ID</label>
                 <p className="inspection-id2">{inspectionData?.inspectionId || 'N/A'}</p>
               </div>
-
-              {inspectionData?.weatherCondition && (
-                <div className="detail-item">
-                  <label>Weather Condition</label>
-                  <p>{inspectionData.weatherCondition.charAt(0).toUpperCase() + inspectionData.weatherCondition.slice(1)}</p>
-                </div>
-              )}
             </div>
           </div>
 
-          {anomaly.classId !== undefined && (
-            <div className="detail-section">
-              <h3>Classification</h3>
-              <div className="detail-grid">
-                <div className="detail-item">
-                  <label>Class ID</label>
-                  <p>{anomaly.classId}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Classification section removed */}
         </div>
 
         <div className="anomaly-modal-footer">

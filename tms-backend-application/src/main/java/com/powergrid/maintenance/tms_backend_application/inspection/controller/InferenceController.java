@@ -20,6 +20,10 @@ public class InferenceController {
 
     private final ThermalInferenceService thermalInferenceService;
 
+    /**
+     * Existing endpoint: upload + run inference.
+     * (Now writes inference results via UPSERT; no unique constraint issues.)
+     */
     @PostMapping("/{inspectionId}/upload-thermal-with-inference")
     public ResponseEntity<Map<String, Object>> uploadThermalWithInference(
             @PathVariable String inspectionId,
@@ -32,7 +36,6 @@ public class InferenceController {
                     inspectionId,
                     imageMetadata
             );
-
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
@@ -40,6 +43,40 @@ public class InferenceController {
             throw new RuntimeException("Thermal image processing failed: " + e.getMessage());
         }
     }
+
+    /**
+     * NEW: Only update the maintenance image URL in inference_metadata (no inference).
+     * Pass the URL in ImageMetadataDTO.cloudImageUrl.
+     */
+    @PutMapping("/{inspectionId}/maintenance-url")
+    public ResponseEntity<?> updateMaintenanceUrlOnly(
+            @PathVariable String inspectionId,
+            @RequestBody ImageMetadataDTO dto) {
+
+        try {
+            if (dto.getCloudImageUrl() == null || dto.getCloudImageUrl().isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "BAD_REQUEST",
+                        "message", "cloudImageUrl is required"
+                ));
+            }
+
+            thermalInferenceService.updateMaintenanceImageUrlOnly(inspectionId, dto.getCloudImageUrl());
+            return ResponseEntity.ok(Map.of(
+                    "inspectionId", inspectionId,
+                    "maintenanceImageUrl", dto.getCloudImageUrl(),
+                    "status", "URL_UPDATED"
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to update maintenance URL for inspection {}: {}", inspectionId, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "INTERNAL_ERROR",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
 
     @PutMapping("/{inspectionId}/anomalies/{anomalyId}/notes")
     public ResponseEntity<InspectionAnomaly> updateAnomalyNotes(
@@ -82,5 +119,4 @@ public class InferenceController {
             return ResponseEntity.badRequest().build();
         }
     }
-
 }
