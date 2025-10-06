@@ -105,6 +105,102 @@ async updateAnomalyNotes(inspectionId, anomalyId, notes) {
     }
 }
 
+  // New methods for multiple notes functionality
+  async getAnomalyNotes(inspectionId, anomalyId) {
+    try {
+        const response = await fetch(
+            `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes`,
+            {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to get notes: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching anomaly notes:', error);
+        // Return empty notes array as fallback
+        return { notes: [] };
+    }
+  }
+
+  async addAnomalyNote(inspectionId, anomalyId, noteText) {
+    try {
+        const response = await fetch(
+            `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: noteText })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to add note: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error adding anomaly note:', error);
+        throw error;
+    }
+  }
+
+  async updateAnomalyNote(inspectionId, anomalyId, noteId, noteText) {
+    try {
+        const response = await fetch(
+            `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes/${noteId}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: noteText })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to update note: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating anomaly note:', error);
+        throw error;
+    }
+  }
+
+  async deleteAnomalyNote(inspectionId, anomalyId, noteId) {
+    try {
+        const response = await fetch(
+            `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes/${noteId}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to delete note: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting anomaly note:', error);
+        throw error;
+    }
+  }
+
 
 
   /**

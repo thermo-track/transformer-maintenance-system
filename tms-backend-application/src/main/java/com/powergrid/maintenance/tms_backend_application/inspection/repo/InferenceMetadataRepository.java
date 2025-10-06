@@ -7,6 +7,6 @@ import java.util.Optional;
 
 @Repository
 public interface InferenceMetadataRepository extends JpaRepository<InferenceMetadata, String> {
-    Optional<InferenceMetadata> findByInspectionId(String inspectionId);
-    void deleteByInspectionId(String inspectionId);
+    Optional<InferenceMetadata> findByInspectionId(Long inspectionId);
+    void deleteByInspectionId(Long inspectionId);
 }

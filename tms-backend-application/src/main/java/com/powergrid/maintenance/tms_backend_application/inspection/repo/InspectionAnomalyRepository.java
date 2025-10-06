@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface InspectionAnomalyRepository extends JpaRepository<InspectionAnomaly, String> {
-    List<InspectionAnomaly> findByInspectionId(String inspectionId);
+public interface InspectionAnomalyRepository extends JpaRepository<InspectionAnomaly, Long> {
+    List<InspectionAnomaly> findByInspectionId(Long inspectionId);
     Optional<InspectionAnomaly> findById(Long id);
-    void deleteByInspectionId(String inspectionId);
+    void deleteByInspectionId(Long inspectionId); 
 }

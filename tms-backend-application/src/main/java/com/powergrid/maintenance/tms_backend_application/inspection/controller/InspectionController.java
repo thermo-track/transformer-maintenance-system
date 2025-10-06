@@ -55,12 +55,14 @@ public class InspectionController {
     })
     @GetMapping("/{inspectionId}/anomalies")
     public ResponseEntity<Map<String, Object>> getAnomalies(@PathVariable String inspectionId) {
-        List<InspectionAnomaly> anomalies = inferenceService.getAnomaliesForInspection(inspectionId);
-        InferenceMetadata metadata = inferenceService.getMetadataForInspection(inspectionId);
+        Long inspectionIdLong = Long.parseLong(inspectionId);
+        List<InspectionAnomaly> anomalies = inferenceService.getAnomaliesForInspection(inspectionIdLong);
+        InferenceMetadata metadata = inferenceService.getMetadataForInspection(inspectionIdLong);
 
         Map<String, Object> response = new HashMap<>();
         response.put("anomalies", anomalies);
         response.put("inspectionId", inspectionId);
+        response.put("metadata", metadata);
 
         return ResponseEntity.ok(response);
     }

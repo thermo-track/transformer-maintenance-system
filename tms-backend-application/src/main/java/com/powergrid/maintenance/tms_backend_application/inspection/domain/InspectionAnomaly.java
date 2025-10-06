@@ -11,11 +11,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class InspectionAnomaly {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Changed
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "inspection_id", nullable = false)
-    private String inspectionId;
+    private Long inspectionId;
 
     @ManyToOne
     @JoinColumn(name = "inspection_id", referencedColumnName = "inspection_id", insertable = false, updatable = false)
@@ -63,9 +63,6 @@ public class InspectionAnomaly {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes;
 
     @PrePersist
     protected void onCreate() {
