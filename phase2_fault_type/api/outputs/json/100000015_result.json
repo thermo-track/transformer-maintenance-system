@@ -1,7 +1,7 @@
 {
   "images": {
-    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp5gfkksj0\\100000014_baseline.jpg",
-    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp5gfkksj0\\100000014_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp_b3lq34x\\100000015_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp_b3lq34x\\100000015_maintenance.jpg"
   },
   "params": {
     "work_size": [
@@ -62,7 +62,7 @@
   ],
   "detector_summary": {
     "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\phase2_fault_type\\api\\..\\weights\\best.pt",
-    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp5gfkksj0\\100000014_maintenance.jpg",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp_b3lq34x\\100000015_maintenance.jpg",
     "params": {
       "conf_thresh": 0.25,
       "iou_thresh": 0.7

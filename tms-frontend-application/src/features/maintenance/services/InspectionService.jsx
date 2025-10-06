@@ -212,6 +212,11 @@ async getInspectionWeatherCondition(inspectionId) {
     });
     
     if (!response.ok) {
+      // If the inspection doesn't have weather condition data (404), return null instead of throwing
+      if (response.status === 404) {
+        console.log('No weather condition found for inspection:', inspectionId);
+        return null;
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
@@ -221,6 +226,10 @@ async getInspectionWeatherCondition(inspectionId) {
     return data.weatherCondition || data.condition || 'sunny'; // Handle different response formats
   } catch (error) {
     console.error('Error fetching weather condition:', error);
+    // For network errors or other non-404 errors, still throw
+    if (error.message.includes('404')) {
+      return null;
+    }
     throw error;
   }
 }

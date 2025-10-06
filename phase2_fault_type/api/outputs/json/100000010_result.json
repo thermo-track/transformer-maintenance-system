@@ -1,7 +1,7 @@
 {
   "images": {
-    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp5gfkksj0\\100000014_baseline.jpg",
-    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp5gfkksj0\\100000014_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpcr57dewg\\100000010_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpcr57dewg\\100000010_maintenance.jpg"
   },
   "params": {
     "work_size": [
@@ -22,38 +22,55 @@
   "registration": {
     "ok": true,
     "method": "ORB_RANSAC",
-    "inliers": 12
+    "inliers": 10
   },
   "anomalies": [
     {
       "bbox": [
-        587,
-        66,
-        52,
-        84
+        367,
+        43,
+        167,
+        65
       ],
       "centroid": [
-        613.0,
-        108.0
+        450.5,
+        75.5
       ],
-      "area_px": 2153,
+      "area_px": 854,
       "fault_type": null,
       "fault_confidence": null,
       "detector_box": null,
-      "detector_iou": 0.0
+      "detector_iou": 0.02704167591344674
     },
     {
       "bbox": [
-        536,
-        85,
-        47,
-        73
+        329,
+        209,
+        63,
+        28
       ],
       "centroid": [
-        559.5,
-        121.5
+        360.5,
+        223.0
       ],
-      "area_px": 1962,
+      "area_px": 852,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.01703993099999884
+    },
+    {
+      "bbox": [
+        272,
+        482,
+        24,
+        157
+      ],
+      "centroid": [
+        284.0,
+        560.5
+      ],
+      "area_px": 826,
       "fault_type": null,
       "fault_confidence": null,
       "detector_box": null,
@@ -62,7 +79,7 @@
   ],
   "detector_summary": {
     "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\phase2_fault_type\\api\\..\\weights\\best.pt",
-    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp5gfkksj0\\100000014_maintenance.jpg",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpcr57dewg\\100000010_maintenance.jpg",
     "params": {
       "conf_thresh": 0.25,
       "iou_thresh": 0.7
