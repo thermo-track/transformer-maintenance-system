@@ -3,6 +3,7 @@ package com.powergrid.maintenance.tms_backend_application.inspection.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
@@ -63,6 +64,11 @@ public class InspectionAnomaly {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // Bidirectional relationship with anomaly notes - CASCADE DELETE
+    @OneToMany(mappedBy = "anomaly", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<AnomalyNote> notes;
 
     @PrePersist
     protected void onCreate() {

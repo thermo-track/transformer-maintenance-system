@@ -2,6 +2,7 @@ package com.powergrid.maintenance.tms_backend_application.transformer.service;
 
 import com.powergrid.maintenance.tms_backend_application.common.exception.ConflictException;
 import com.powergrid.maintenance.tms_backend_application.common.exception.NotFoundException;
+import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 import com.powergrid.maintenance.tms_backend_application.transformer.dto.*;
 import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
@@ -21,6 +22,7 @@ import java.util.Optional;
 public class TransformerService {
 
   private final TransformerRepository repo;
+  private final InspectionRepo inspectionRepo;
 
   public Transformer create(TransformerCreateRequest r) {
     repo.findByTransformerNo(r.transformerNo()).ifPresent(x -> {
@@ -119,7 +121,14 @@ public class TransformerService {
   }
 
   public void delete(String id) {
-    repo.delete(getEntity(id));
+    Transformer transformer = getEntity(id);
+    int inspectionCount = inspectionRepo.findByTransformerNo(transformer.getTransformerNo()).size();
+    
+    System.out.println("WARNING: Deleting transformer " + transformer.getTransformerNo() + 
+                      " will cascade delete " + inspectionCount + 
+                      " inspection(s) and all associated notes, anomalies, and metadata.");
+    
+    repo.delete(transformer);
   }
 
   public static TransformerResponse toResponse(Transformer t) {

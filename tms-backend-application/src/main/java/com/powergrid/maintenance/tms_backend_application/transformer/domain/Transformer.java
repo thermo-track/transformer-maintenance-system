@@ -1,11 +1,14 @@
 package com.powergrid.maintenance.tms_backend_application.transformer.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Entity
@@ -55,6 +58,16 @@ public class Transformer {
     
     @Column(name = "location_set_at")
     private Instant locationSetAt;
+    
+    // Bidirectional relationship with inspections - CASCADE DELETE
+    @OneToMany(mappedBy = "transformer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Inspection> inspections;
+    
+    // Bidirectional relationship with transformer images - CASCADE DELETE
+    @OneToMany(mappedBy = "transformer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<TransformerImage> transformerImages;
     
     
     @PreUpdate

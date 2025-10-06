@@ -8,14 +8,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.ForeignKey;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 
 import lombok.Data;
@@ -75,6 +80,16 @@ public class Inspection {
     
     @JsonBackReference
     private Transformer transformer;
+
+    // Bidirectional relationship with inspection anomalies - CASCADE DELETE
+    @OneToMany(mappedBy = "inspection", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<InspectionAnomaly> anomalies;
+
+    // Bidirectional relationship with inference metadata - CASCADE DELETE
+    @OneToOne(mappedBy = "inspection", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private InferenceMetadata inferenceMetadata;
 
     // Transient field to provide formatted string ID for API responses
     @Transient

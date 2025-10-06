@@ -1,7 +1,7 @@
 {
   "images": {
-    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpdse7gx69\\100000017_baseline.jpg",
-    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpdse7gx69\\100000017_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpzb_o94h_\\100000017_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpzb_o94h_\\100000017_maintenance.jpg"
   },
   "params": {
     "work_size": [
@@ -22,47 +22,47 @@
   "registration": {
     "ok": true,
     "method": "ORB_RANSAC",
-    "inliers": 42
+    "inliers": 35
   },
   "anomalies": [
     {
       "bbox": [
         1,
         1,
-        589,
-        4
-      ],
-      "centroid": [
-        295.5,
-        3.0
-      ],
-      "area_px": 1261,
-      "fault_type": null,
-      "fault_confidence": null,
-      "detector_box": null,
-      "detector_iou": 0.0
-    },
-    {
-      "bbox": [
-        1,
-        497,
         638,
-        12
+        492
       ],
       "centroid": [
         320.0,
-        503.0
+        247.0
       ],
-      "area_px": 5129,
+      "area_px": 5274,
       "fault_type": null,
       "fault_confidence": null,
       "detector_box": null,
-      "detector_iou": 0.0
+      "detector_iou": 0.06364718252018825
+    },
+    {
+      "bbox": [
+        106,
+        224,
+        14,
+        226
+      ],
+      "centroid": [
+        113.0,
+        337.0
+      ],
+      "area_px": 847,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.07316525340311063
     }
   ],
   "detector_summary": {
     "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\phase2_fault_type\\api\\..\\weights\\best.pt",
-    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpdse7gx69\\100000017_maintenance.jpg",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpzb_o94h_\\100000017_maintenance.jpg",
     "params": {
       "conf_thresh": 0.25,
       "iou_thresh": 0.35
@@ -70,52 +70,35 @@
     "detections": [
       {
         "bbox_xyxy": [
-          140.12367248535156,
-          75.22349548339844,
-          188.8167724609375,
-          166.71115112304688
+          272.7576904296875,
+          149.53916931152344,
+          368.14398193359375,
+          330.02899169921875
         ],
         "bbox_xywh": [
-          140.12367248535156,
-          75.22349548339844,
-          48.69309997558594,
-          91.48765563964844
+          272.7576904296875,
+          149.53916931152344,
+          95.38629150390625,
+          180.4898223876953
         ],
-        "conf": 0.8891125321388245,
+        "conf": 0.8783040046691895,
         "class_id": 4,
         "class_name": "normal"
       },
       {
         "bbox_xyxy": [
-          89.86524200439453,
-          76.91632080078125,
-          137.42440795898438,
-          169.81231689453125
+          65.32919311523438,
+          139.19078063964844,
+          166.4821319580078,
+          336.6995849609375
         ],
         "bbox_xywh": [
-          89.86524200439453,
-          76.91632080078125,
-          47.559165954589844,
-          92.89599609375
+          65.32919311523438,
+          139.19078063964844,
+          101.15293884277344,
+          197.50880432128906
         ],
-        "conf": 0.8883176445960999,
-        "class_id": 4,
-        "class_name": "normal"
-      },
-      {
-        "bbox_xyxy": [
-          36.08912658691406,
-          77.51872253417969,
-          86.03034210205078,
-          170.25682067871094
-        ],
-        "bbox_xywh": [
-          36.08912658691406,
-          77.51872253417969,
-          49.94121551513672,
-          92.73809814453125
-        ],
-        "conf": 0.7792229056358337,
+        "conf": 0.6621075868606567,
         "class_id": 1,
         "class_name": "Loose Joint -Faulty"
       }

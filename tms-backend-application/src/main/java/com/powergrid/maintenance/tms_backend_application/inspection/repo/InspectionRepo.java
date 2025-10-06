@@ -48,6 +48,12 @@ public interface InspectionRepo extends JpaRepository<Inspection, Long> {
                                                   @Param("inspectionDate") LocalDate inspectionDate);
     
     /**
+     * Check if any inspections exist for a transformer
+     */
+    @Query("SELECT COUNT(i) > 0 FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo")
+    boolean existsByTransformerNo(@Param("transformerNo") String transformerNo);
+    
+    /**
      * Find latest inspection by transformer No - UPDATED
      */
     @Query("SELECT i FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo ORDER BY i.inspectionTimestamp DESC LIMIT 1")
