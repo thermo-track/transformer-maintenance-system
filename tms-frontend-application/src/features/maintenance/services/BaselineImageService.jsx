@@ -47,8 +47,9 @@ class BaselineImageService {
       // If backend save failed but Cloudinary upload succeeded, clean up Cloudinary
       if (error.cloudinaryResult && error.cloudinaryResult.publicId) {
         try {
-          await this.deleteImageFromCloudinary(error.cloudinaryResult.publicId);
-          console.log('Cleaned up Cloudinary image after backend save failure');
+          // TODO: Implement cleanup through backend API if needed
+          // await this.deleteImageFromCloudinary(error.cloudinaryResult.publicId);
+          console.log('Cloudinary cleanup skipped - should be handled by backend if needed');
         } catch (cleanupError) {
           console.error('Failed to cleanup Cloudinary image:', cleanupError);
         }
@@ -258,15 +259,10 @@ class BaselineImageService {
         throw new Error(`Backend delete failed: ${response.status} ${response.statusText}`);
       }
 
-      // Then delete from Cloudinary if we have the public ID
+      // Backend deletion should handle both metadata and Cloudinary cleanup
       if (publicId) {
-        try {
-          await this.deleteImageFromCloudinary(publicId);
-          console.log('Successfully deleted image from Cloudinary');
-        } catch (cloudinaryError) {
-          console.error('Failed to delete from Cloudinary, but backend deletion succeeded:', cloudinaryError);
-          // Don't throw here since backend deletion succeeded
-        }
+        console.log('Backend should handle Cloudinary deletion for:', publicId);
+        // The backend deleteImage endpoint should handle Cloudinary cleanup
       }
 
       console.log('Baseline image deleted successfully');
@@ -313,7 +309,10 @@ class BaselineImageService {
    * Delete image from Cloudinary only
    * @param {string} publicId - Cloudinary public ID
    * @returns {Promise<boolean>} Success status
+   * 
+   * NOTE: This should be handled by the backend, not frontend
    */
+  /*
   async deleteImageFromCloudinary(publicId) {
     try {
       // For delete operations, you typically need to use the admin API with authentication
