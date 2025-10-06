@@ -1,7 +1,7 @@
 {
   "images": {
-    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpbmwuj9ut\\100000016_baseline.jpg",
-    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpbmwuj9ut\\100000016_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpx2bo5voc\\100000016_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpx2bo5voc\\100000016_maintenance.jpg"
   },
   "params": {
     "work_size": [
@@ -22,21 +22,21 @@
   "registration": {
     "ok": true,
     "method": "ORB_RANSAC",
-    "inliers": 42
+    "inliers": 18
   },
   "anomalies": [
     {
       "bbox": [
-        1,
-        1,
-        589,
-        4
+        360,
+        493,
+        245,
+        146
       ],
       "centroid": [
-        295.5,
-        3.0
+        482.5,
+        566.0
       ],
-      "area_px": 1261,
+      "area_px": 1307,
       "fault_type": null,
       "fault_confidence": null,
       "detector_box": null,
@@ -44,16 +44,16 @@
     },
     {
       "bbox": [
-        1,
-        497,
-        638,
-        12
+        276,
+        510,
+        170,
+        129
       ],
       "centroid": [
-        320.0,
-        503.0
+        361.0,
+        574.5
       ],
-      "area_px": 5129,
+      "area_px": 2622,
       "fault_type": null,
       "fault_confidence": null,
       "detector_box": null,
@@ -62,7 +62,7 @@
   ],
   "detector_summary": {
     "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\phase2_fault_type\\api\\..\\weights\\best.pt",
-    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpbmwuj9ut\\100000016_maintenance.jpg",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpx2bo5voc\\100000016_maintenance.jpg",
     "params": {
       "conf_thresh": 0.25,
       "iou_thresh": 0.35
@@ -70,52 +70,86 @@
     "detections": [
       {
         "bbox_xyxy": [
-          140.12367248535156,
-          75.22349548339844,
-          188.8167724609375,
-          166.71115112304688
+          140.06484985351562,
+          77.99740600585938,
+          190.656494140625,
+          172.21160888671875
         ],
         "bbox_xywh": [
-          140.12367248535156,
-          75.22349548339844,
-          48.69309997558594,
-          91.48765563964844
+          140.06484985351562,
+          77.99740600585938,
+          50.591644287109375,
+          94.21420288085938
         ],
-        "conf": 0.8891125321388245,
+        "conf": 0.8889760375022888,
         "class_id": 4,
         "class_name": "normal"
       },
       {
         "bbox_xyxy": [
-          89.86524200439453,
-          76.91632080078125,
-          137.42440795898438,
-          169.81231689453125
+          88.59402465820312,
+          51.8615837097168,
+          138.0070343017578,
+          172.2654266357422
         ],
         "bbox_xywh": [
-          89.86524200439453,
-          76.91632080078125,
-          47.559165954589844,
-          92.89599609375
+          88.59402465820312,
+          51.8615837097168,
+          49.41300964355469,
+          120.40384292602539
         ],
-        "conf": 0.8883176445960999,
-        "class_id": 4,
-        "class_name": "normal"
+        "conf": 0.6452683806419373,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
       },
       {
         "bbox_xyxy": [
-          36.08912658691406,
-          77.51872253417969,
-          86.03034210205078,
-          170.25682067871094
+          33.07270050048828,
+          54.32936477661133,
+          85.41425323486328,
+          174.2840576171875
         ],
         "bbox_xywh": [
-          36.08912658691406,
-          77.51872253417969,
-          49.94121551513672,
-          92.73809814453125
+          33.07270050048828,
+          54.32936477661133,
+          52.341552734375,
+          119.95469284057617
         ],
-        "conf": 0.7792229056358337,
+        "conf": 0.6260946989059448,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
+      },
+      {
+        "bbox_xyxy": [
+          29.27216148376465,
+          53.21287536621094,
+          178.3031768798828,
+          172.43287658691406
+        ],
+        "bbox_xywh": [
+          29.27216148376465,
+          53.21287536621094,
+          149.03101539611816,
+          119.22000122070312
+        ],
+        "conf": 0.36636582016944885,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
+      },
+      {
+        "bbox_xyxy": [
+          86.7170639038086,
+          75.9248275756836,
+          134.8708953857422,
+          160.62469482421875
+        ],
+        "bbox_xywh": [
+          86.7170639038086,
+          75.9248275756836,
+          48.153831481933594,
+          84.69986724853516
+        ],
+        "conf": 0.3231094777584076,
         "class_id": 1,
         "class_name": "Loose Joint -Faulty"
       }

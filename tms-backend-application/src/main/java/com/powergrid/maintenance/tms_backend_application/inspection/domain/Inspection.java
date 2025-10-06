@@ -72,6 +72,7 @@ public class Inspection {
         nullable = false,
         foreignKey = @ForeignKey(name = "fk_inspections_transformer_no")
     )
+    
     @JsonBackReference
     private Transformer transformer;
 

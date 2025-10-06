@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 
 @Repository
-public interface InspectionRepo extends JpaRepository<Inspection, String> {
+public interface InspectionRepo extends JpaRepository<Inspection, Long> {
     /**
      * Find inspections by branch
      */

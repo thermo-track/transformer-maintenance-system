@@ -90,7 +90,7 @@ public class ThermalInferenceService {
             Long inspectionId = Long.parseLong(inspectionIdStr);
 
             // 1. Load inspection and update only non-null fields (avoid clobbering on reruns)
-            Inspection inspection = inspectionRepository.findById(inspectionIdStr)
+            Inspection inspection = inspectionRepository.findById(inspectionId)
                     .orElseThrow(() -> new RuntimeException("Inspection not found: " + inspectionIdStr));
 
             if (imageMetadata.getCloudImageUrl() != null)
@@ -158,8 +158,8 @@ public class ThermalInferenceService {
             // Convert string ID to Long for database operations
             Long inspectionId = Long.parseLong(inspectionIdStr);
             
-            // Get existing inspection image URL
-            Inspection inspection = inspectionRepository.findById(inspectionIdStr)
+            // Get existing inspection image URL - use Long ID
+            Inspection inspection = inspectionRepository.findById(inspectionId)
                     .orElseThrow(() -> new RuntimeException("Inspection not found"));
 
             if (inspection.getCloudImageUrl() == null) {
