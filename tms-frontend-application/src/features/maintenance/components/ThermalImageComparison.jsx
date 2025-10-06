@@ -548,7 +548,6 @@ const ThermalImageComparison = ({
         )}
         <div className="anomalies-section">
           <h4 style={{color: "black"}}>Detected Faults</h4>
-          <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
             {detections.length > 0 ? (
               detections.map((detection, index) => (
