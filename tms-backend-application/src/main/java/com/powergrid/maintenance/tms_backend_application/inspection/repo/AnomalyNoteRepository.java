@@ -17,7 +17,7 @@ public interface AnomalyNoteRepository extends JpaRepository<AnomalyNote, Long> 
            "WHERE ia.inspectionId = :inspectionId AND an.anomalyId = :anomalyId " +
            "ORDER BY an.createdAt DESC")
     List<AnomalyNote> findByInspectionIdAndAnomalyIdOrderByCreatedAtDesc(
-        @Param("inspectionId") String inspectionId,
+        @Param("inspectionId") Long inspectionId,
         @Param("anomalyId") Long anomalyId
     );
 
@@ -33,13 +33,13 @@ public interface AnomalyNoteRepository extends JpaRepository<AnomalyNote, Long> 
     @Query("SELECT an FROM AnomalyNote an " +
            "JOIN an.anomaly ia " +
            "WHERE ia.inspectionId = :inspectionId")
-    List<AnomalyNote> findByInspectionId(@Param("inspectionId") String inspectionId);
+    List<AnomalyNote> findByInspectionId(@Param("inspectionId") Long inspectionId);
 
     @Query("SELECT COUNT(an) FROM AnomalyNote an " +
            "JOIN an.anomaly ia " +
            "WHERE ia.inspectionId = :inspectionId AND an.anomalyId = :anomalyId")
     long countByInspectionIdAndAnomalyId(
-        @Param("inspectionId") String inspectionId,
+        @Param("inspectionId") Long inspectionId,
         @Param("anomalyId") Long anomalyId
     );
 }

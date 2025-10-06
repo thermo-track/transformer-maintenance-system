@@ -37,7 +37,8 @@ public class AnomalyNoteService {
         // Verify that the anomaly exists
         verifyAnomalyExists(inspectionId, anomalyId);
         
-        List<AnomalyNote> notes = anomalyNoteRepository.findByInspectionIdAndAnomalyIdOrderByCreatedAtDesc(inspectionId, anomalyId);
+        Long inspectionIdLong = Long.parseLong(inspectionId);
+        List<AnomalyNote> notes = anomalyNoteRepository.findByInspectionIdAndAnomalyIdOrderByCreatedAtDesc(inspectionIdLong, anomalyId);
         
         return notes.stream()
                 .map(this::convertToResponseDTO)

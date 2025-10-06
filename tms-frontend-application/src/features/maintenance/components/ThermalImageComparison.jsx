@@ -133,9 +133,7 @@ const ThermalImageComparison = ({
     const canvas = canvasRef.current;
     const image = imageRef.current;
     const container = containerRef.current;
-    const container = containerRef.current;
     
-    if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
     if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
       return;
     }
@@ -430,17 +428,11 @@ const ThermalImageComparison = ({
         {image ? (
           <div 
             ref={type === 'current' ? containerRef : null}
-            ref={type === 'current' ? containerRef : null}
             className="draggable-container"
             onMouseDown={(e) => handleDragStart(type, e)}
             onMouseMove={(e) => handleDragMove(type, e)}
             onMouseUp={() => handleDragEnd(type)}
             onMouseLeave={() => handleDragEnd(type)}
-            style={{ 
-              cursor: isDragging[type] ? 'grabbing' : 'grab', 
-              position: 'relative',
-              overflow: 'hidden'
-            }}
             style={{ 
               cursor: isDragging[type] ? 'grabbing' : 'grab', 
               position: 'relative',
@@ -458,19 +450,13 @@ const ThermalImageComparison = ({
                 objectFit: 'cover',
                 width: '100%',
                 height: '100%'
-                transition: isDragging[type] ? 'none' : 'transform 0.3s ease',
-                objectFit: 'cover',
-                width: '100%',
-                height: '100%'
               }}
               onError={() => setError(`Failed to load ${type} image`)}
               onLoad={() => {
                 if (type === 'current' && detections.length > 0) {
-                if (type === 'current' && detections.length > 0) {
                   setTimeout(() => drawBoundingBoxes(), 100);
                 }
               }}
-              draggable={false}
               draggable={false}
             />
             {type === 'current' && (
@@ -480,9 +466,6 @@ const ThermalImageComparison = ({
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  width: '100%',
-                  height: '100%',
-                  pointerEvents: 'none'
                   width: '100%',
                   height: '100%',
                   pointerEvents: 'none'
@@ -504,19 +487,6 @@ const ThermalImageComparison = ({
       <div className="comparison-header">
         <h3 className="comparison-title">Thermal Image Comparison</h3>
         <div className="comparison-actions">
-          <button
-            disabled={isRerunLoading}
-            onClick={() => setShowSettingsModal(true)}
-            className="action-btnT settings-btnT"
-          >
-            <Settings size={16} />
-            Settings
-          </button>
-          <button
-            disabled={isRerunLoading}
-            onClick={handleRefreshClick}
-            className="action-btnT refresh-btnT"
-          >
           <button
             disabled={isRerunLoading}
             onClick={() => setShowSettingsModal(true)}

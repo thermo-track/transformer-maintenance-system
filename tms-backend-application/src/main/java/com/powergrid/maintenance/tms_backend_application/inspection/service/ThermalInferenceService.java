@@ -6,7 +6,6 @@ import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspe
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ImageMetadataDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.ThresholdConfigDTO;
-import com.powergrid.maintenance.tms_backend_application.inspection.dto.ThresholdConfigDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InferenceMetadataRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionAnomalyRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
@@ -48,14 +47,14 @@ public class ThermalInferenceService {
 
     /** Update ONLY the maintenance image URL for this inspection (create row if missing). */
     public void updateMaintenanceImageUrlOnly(String inspectionId, String maintenanceUrl) {
-        int updated = inferenceMetadataRepository.updateMaintenanceUrlOnly(inspectionId, maintenanceUrl);
+        int updated = inferenceMetadataRepository.updateMaintenanceUrlOnly(Long.parseLong(inspectionId), maintenanceUrl);
         if (updated > 0) {
             log.info("Updated maintenance image URL for inspection {} -> {}", inspectionId, maintenanceUrl);
             return;
         }
         // Row not found -> create the single record for this inspection
         InferenceMetadata meta = new InferenceMetadata();
-        meta.setInspectionId(inspectionId);
+        meta.setInspectionId(Long.parseLong(inspectionId));
         meta.setMaintenanceImageUrl(maintenanceUrl);
         meta.setCreatedAt(LocalDateTime.now());   // keep your existing createdAt usage
         inferenceMetadataRepository.save(meta);
@@ -270,13 +269,10 @@ public class ThermalInferenceService {
             log.info("Calling Python inference API: {}", url);
             log.info("Request: baseline={}, maintenance={}", baselineUrl, maintenanceUrl);
 
-            @SuppressWarnings("rawtypes")
+
             @SuppressWarnings("rawtypes")
             Map response = restTemplate.postForObject(url, entity, Map.class);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> result = (Map<String, Object>) response.get("inference_result");
-            return result;
             @SuppressWarnings("unchecked")
             Map<String, Object> result = (Map<String, Object>) response.get("inference_result");
             return result;
@@ -315,7 +311,6 @@ public class ThermalInferenceService {
             metadata.setMaintenanceImageUrl(maintenanceUrl);
 
             @SuppressWarnings("unchecked")
-            @SuppressWarnings("unchecked")
             Map<String, Object> registration = (Map<String, Object>) inferenceResult.get("registration");
             if (registration != null) {
                 metadata.setRegistrationOk((Boolean) registration.get("ok"));
@@ -339,7 +334,7 @@ public class ThermalInferenceService {
             Map<String, Object> detectorSummary = (Map<String, Object>) inferenceResult.get("detector_summary");
             if (detectorSummary != null) {
                 @SuppressWarnings("unchecked")
-                @SuppressWarnings("unchecked")
+
                 List<Map<String, Object>> detections = (List<Map<String, Object>>) detectorSummary.get("detections");
                 if (detections != null) {
                     int savedCount = 0;
