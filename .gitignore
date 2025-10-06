@@ -32,8 +32,8 @@ phase2_anomaly_pipeline/*
 phase2_fault_type/__pycache__/*
 phase2_fault_type/pipeline/__pycache__/*
 phase2_fault_type/yolo11s.pt
-
-
+phase2_fault_type/api/outputs/json/*
+phase2_fault_type/api/__pycache__/*
 .vscode/
 .idea/
 
