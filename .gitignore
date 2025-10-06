@@ -36,3 +36,5 @@ phase2_fault_type/yolo11s.pt
 
 .vscode/
 .idea/
+
+docker_cred.env

@@ -70,8 +70,9 @@ class CloudinaryService {
       // If backend save failed but Cloudinary upload succeeded, clean up Cloudinary
       if (error.cloudinaryResult && error.cloudinaryResult.publicId) {
         try {
-          await this.deleteImageFromCloudinary(error.cloudinaryResult.publicId);
-          console.log('Cleaned up Cloudinary image after backend save failure');
+          // TODO: Implement cleanup through backend API if needed
+          // await this.deleteImageFromCloudinary(error.cloudinaryResult.publicId);
+          console.log('Cloudinary cleanup skipped - should be handled by backend if needed');
         } catch (cleanupError) {
           console.error('Failed to cleanup Cloudinary image:', cleanupError);
         }
@@ -223,22 +224,14 @@ class CloudinaryService {
    */
   async deleteInspectionImage(inspectionId, publicId = null) {
     try {
-      // If publicId not provided, get it from backend first
-      if (!publicId) {
-        const imageUrl = await this.getCloudImageUrlFromBackend(inspectionId);
-        if (!imageUrl) {
-          throw new Error('No cloud image found for this inspection');
-        }
-        publicId = this.extractPublicIdFromUrl(imageUrl);
-      }
-
-      // Delete from Cloudinary first
-      const cloudinaryDeleted = await this.deleteImageFromCloudinary(publicId);
+      console.log('🗑️ Starting deleteInspectionImage:', { inspectionId, publicId });
       
-      // Then delete metadata from backend (this should also delete anomalies via CASCADE)
+      // Delete metadata from backend (this will handle everything including cleanup)
+      console.log('🗄️ Deleting metadata from backend...');
       const backendDeleted = await this.deleteImageMetadataFromBackend(inspectionId);
+      console.log('Backend deletion result:', backendDeleted);
       
-      return cloudinaryDeleted && backendDeleted;
+      return backendDeleted;
       
     } catch (error) {
       console.error('Image deletion failed:', error);
@@ -250,18 +243,24 @@ class CloudinaryService {
    * Delete image from Cloudinary only
    * @param {string} publicId - Cloudinary public ID
    * @returns {Promise<boolean>} Success status
+   * 
+   * NOTE: This endpoint doesn't exist in the backend yet.
+   * The backend deleteImageMetadata endpoint should handle Cloudinary deletion.
    */
+  /*
   async deleteImageFromCloudinary(publicId) {
     try {
+      console.log('🌩️ Making Cloudinary delete request:', publicId);
       // Note: This requires backend implementation for authenticated delete
       // For now, we'll call the backend to handle Cloudinary deletion
-      const response = await fetch(
-        `${this.backendApiUrl}/cloudinary/delete/${encodeURIComponent(publicId)}`,
-        {
-          method: 'DELETE'
-        }
-      );
+      const url = `${this.backendApiUrl}/cloudinary/delete/${encodeURIComponent(publicId)}`;
+      console.log('🌩️ DELETE URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'DELETE'
+      });
 
+      console.log('🌩️ Cloudinary delete response:', response.status, response.statusText);
       return response.ok;
       
     } catch (error) {
@@ -269,6 +268,7 @@ class CloudinaryService {
       throw error;
     }
   }
+  */
 
   /**
    * Delete image metadata from backend
@@ -277,13 +277,15 @@ class CloudinaryService {
    */
   async deleteImageMetadataFromBackend(inspectionId) {
     try {
-      const response = await fetch(
-        `${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`,
-        {
-          method: 'DELETE'
-        }
-      );
+      console.log('🗄️ Making backend metadata delete request:', inspectionId);
+      const url = `${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`;
+      console.log('🗄️ DELETE URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'DELETE'
+      });
 
+      console.log('🗄️ Backend delete response:', response.status, response.statusText);
       return response.ok;
       
     } catch (error) {

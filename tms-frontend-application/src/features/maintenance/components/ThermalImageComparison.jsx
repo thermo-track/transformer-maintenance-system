@@ -28,10 +28,10 @@ const ThermalImageComparison = ({
   const [selectedAnomaly, setSelectedAnomaly] = useState(null);
   const [showAnomalyModal, setShowAnomalyModal] = useState(false);
   const [showNotesView, setShowNotesView] = useState(false);
+  const [anomalyNotes, setAnomalyNotes] = useState([]);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingNoteText, setEditingNoteText] = useState('');
-  const [anomalyNotes, setAnomalyNotes] = useState([]);
-  const [currentUser, setCurrentUser] = useState('System User'); // TODO: Get from auth context
+  const [currentUser, setCurrentUser] = useState('System User');
 
   const navigate = useNavigate();
   
@@ -42,7 +42,7 @@ const ThermalImageComparison = ({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentThresholds, setCurrentThresholds] = useState({
     thresholdPct: 2.0,
-    iouThresh:7,
+    iouThresh: 0.35,
     confThresh: 0.25
   });
   const [isRerunLoading, setIsRerunLoading] = useState(false);
@@ -94,7 +94,6 @@ const ThermalImageComparison = ({
     }
   }, [inspectionId]);
 
-  // Redraw bounding boxes when detections, zoom, or position changes
   useEffect(() => {
     if (imageRef.current && canvasRef.current && detections.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -246,7 +245,6 @@ const ThermalImageComparison = ({
 
   const handleDragStart = (imageType, e) => {
     e.preventDefault();
-    e.preventDefault();
     setIsDragging(prev => ({ ...prev, [imageType]: true }));
   };
 
@@ -378,7 +376,7 @@ const ThermalImageComparison = ({
   };
 
   const handleDeleteNote = async (noteId) => {
-    if (!confirm('Are you sure you want to delete this note?')) {
+    if (!window.confirm('Are you sure you want to delete this note?')) {
       return;
     }
 
@@ -484,6 +482,36 @@ const ThermalImageComparison = ({
 
   return (
     <div className="thermal-comparison-container">
+      {error && (
+        <div className="error-banner" style={{
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fecaca',
+          borderRadius: '6px',
+          padding: '12px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: '#dc2626'
+        }}>
+          <AlertTriangle size={16} />
+          <span style={{ flex: 1 }}>{error}</span>
+          <button 
+            onClick={() => setError(null)} 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#dc2626',
+              cursor: 'pointer',
+              padding: '2px',
+              borderRadius: '2px'
+            }}
+            className="error-close"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
       <div className="comparison-header">
         <h3 className="comparison-title">Thermal Image Comparison</h3>
         <div className="comparison-actions">
@@ -503,10 +531,10 @@ const ThermalImageComparison = ({
             <RotateCcw size={16} />
             Refresh
           </button>
-          <button onClick={onUploadNew} className="action-btnT upload-new-btnT">
-            Upload New
+          <button onClick={onUploadNew} className="action-btnT upload-new-btnT" disabled={isLoading}>
+            {isLoading ? 'Processing...' : 'Upload New'}
           </button>
-          <button onClick={() => setShowDeleteConfirm(true)} className="action-btnT delete-btnT">
+          <button onClick={() => setShowDeleteConfirm(true)} className="action-btnT delete-btnT" disabled={isLoading}>
             <X size={16} />
             Delete
           </button>
@@ -526,8 +554,6 @@ const ThermalImageComparison = ({
         />
       </div>
 
-
-
       <div className="analysis-sections">
         {weatherLabel && (
           <div style={{ marginBottom: 8 }}>
@@ -542,12 +568,11 @@ const ThermalImageComparison = ({
                 fontWeight: 600,
               }}
             >
-              Weather Condition:   {weatherLabel}
+              Weather Condition: {weatherLabel}
             </span>
           </div>
         )}
         <div className="anomalies-section">
-          <h4 style={{color: "black"}}>Detected Faults</h4>
           <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
             {detections.length > 0 ? (
@@ -871,30 +896,17 @@ const ThermalImageComparison = ({
               <button onClick={() => setShowDeleteConfirm(false)} className="cancel-btn">
                 Cancel
               </button>
-              <button onClick={() => { onDelete?.(); setShowDeleteConfirm(false); }} className="confirm-delete-btn">
+              <button 
+                onClick={() => { 
+                  if (onDelete) onDelete(); 
+                  setShowDeleteConfirm(false); 
+                }} 
+                className="confirm-delete-btn" 
+                disabled={isLoading}
+              >
                 <X size={16} />
-                Delete
+                {isLoading ? 'Deleting...' : 'Delete'}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showSettingsModal && (
-        <ThresholdSettingsModal
-          onClose={() => setShowSettingsModal(false)}
-          onApply={handleApplyThresholds}
-          currentSettings={currentThresholds}
-        />
-      )}
-
-      {isRerunLoading && (
-        <div className="overlay loading-overlay">
-          <div className="loading-card">
-            <div className="spinner" />
-            <div className="loading-text">Re-running analysis…</div>
-            <div className="indeterminate-bar">
-              <div className="indeterminate-bar-inner" />
             </div>
           </div>
         </div>

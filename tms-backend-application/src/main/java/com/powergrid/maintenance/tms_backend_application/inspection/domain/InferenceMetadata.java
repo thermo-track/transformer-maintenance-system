@@ -58,7 +58,9 @@ public class InferenceMetadata {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
         if (inferenceRunAt == null) {
             inferenceRunAt = LocalDateTime.now();
         }

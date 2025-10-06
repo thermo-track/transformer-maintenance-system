@@ -290,23 +290,19 @@ public class ThermalInferenceService {
     private void saveInferenceResults(Long inspectionId, Map<String, Object> inferenceResult,
                                       String baselineUrl, String maintenanceUrl) {
         try {
-            // Check if metadata already exists and delete it
-            inferenceMetadataRepository.findByInspectionId(inspectionId)
-                    .ifPresent(existingMetadata -> {
-                        log.info("Deleting existing inference metadata for inspection {}", inspectionId);
-                        inferenceMetadataRepository.delete(existingMetadata);
-                    });
-
-            // Delete existing anomalies
+            // Delete existing anomalies first
             List<InspectionAnomaly> existingAnomalies = anomalyRepository.findByInspectionId(inspectionId);
             if (!existingAnomalies.isEmpty()) {
                 log.info("Deleting {} existing anomalies for inspection {}", existingAnomalies.size(), inspectionId);
                 anomalyRepository.deleteAll(existingAnomalies);
             }
 
-            // Now save new metadata
-            InferenceMetadata metadata = new InferenceMetadata();
-            metadata.setInspectionId(inspectionId);  // Now sets Long
+            // Find existing metadata or create new one
+            InferenceMetadata metadata = inferenceMetadataRepository.findByInspectionId(inspectionId)
+                    .orElse(new InferenceMetadata());
+            
+            // Set/update metadata fields
+            metadata.setInspectionId(inspectionId);  
             metadata.setBaselineImageUrl(baselineUrl);
             metadata.setMaintenanceImageUrl(maintenanceUrl);
 
@@ -325,9 +321,14 @@ public class ThermalInferenceService {
 
             metadata.setFullJsonResult(objectMapper.writeValueAsString(inferenceResult));
             metadata.setInferenceRunAt(LocalDateTime.now());
+            
+            // Set createdAt only if it's a new record
+            if (metadata.getCreatedAt() == null) {
+                metadata.setCreatedAt(LocalDateTime.now());
+            }
 
             inferenceMetadataRepository.save(metadata);
-            log.info("Upserted inference metadata for inspection {}", inspectionId);
+            log.info("Saved inference metadata for inspection {}", inspectionId);
 
             // Save detections from YOLO (supervised detections) - ONLY FAULTS
             @SuppressWarnings("unchecked")
@@ -377,7 +378,6 @@ public class ThermalInferenceService {
                         }
 
                         anomalyRepository.save(anomaly);
-                        savedCount++;
                         savedCount++;
                     }
 

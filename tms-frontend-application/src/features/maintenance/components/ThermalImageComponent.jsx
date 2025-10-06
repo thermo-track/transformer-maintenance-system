@@ -45,12 +45,29 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Fetching weather condition for inspection:', inspectionId);
+      console.log('Checking for existing images for inspection:', inspectionId);
       
+      // First check if there are any images before fetching weather condition
+      const hasImage = await cloudinaryService.hasCloudImage(inspectionId);
+      console.log('Has existing cloud image:', hasImage);
+      
+      if (!hasImage) {
+        // No images exist, so no need to fetch weather condition
+        console.log('No images found for inspection, skipping weather condition fetch');
+        setHasExistingImage(false);
+        setBaselineImage(null);
+        setCurrentImage(null);
+        setInspectionData(null);
+        setWeatherCondition('sunny'); // Set default weather condition
+        return;
+      }
+      
+      // Images exist, now fetch weather condition
       let finalWeatherCondition = 'sunny';
       
       try {
         setIsLoadingWeather(true);
+        console.log('Fetching weather condition for inspection:', inspectionId);
         const weatherFromDB = await inspectionService.getInspectionWeatherCondition(inspectionId);
         console.log('Weather condition from database:', weatherFromDB);
         
@@ -58,16 +75,18 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
           finalWeatherCondition = weatherFromDB.toLowerCase();
           setWeatherCondition(finalWeatherCondition);
         } else {
+          console.log('No weather condition found, using default');
           setWeatherCondition('sunny');
         }
       } catch (weatherError) {
         console.error('Error fetching weather condition:', weatherError);
+        console.log('Using default weather condition due to error');
         setWeatherCondition('sunny');
       } finally {
         setIsLoadingWeather(false);
       }
       
-      await checkAndLoadExistingCloudImage(finalWeatherCondition);
+      await loadExistingCloudImage(finalWeatherCondition);
       
     } catch (error) {
       console.error('Error in fetchWeatherConditionAndLoadImages:', error);
@@ -77,50 +96,39 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
     }
   };
 
-  const checkAndLoadExistingCloudImage = async (weatherConditionParam) => {
+  const loadExistingCloudImage = async (weatherConditionParam) => {
     try {
-      console.log('Checking for existing cloud image for inspection:', inspectionId);
+      console.log('Loading existing cloud image for inspection:', inspectionId);
       
-      const hasImage = await cloudinaryService.hasCloudImage(inspectionId);
-      console.log('Has existing cloud image:', hasImage);
+      setHasExistingImage(true);
       
-      if (hasImage) {
-        setHasExistingImage(true);
+      try {
+        const cloudImageUrl = await cloudinaryService.getCloudImageUrlFromBackend(inspectionId);
+        console.log('Loaded cloud image URL:', cloudImageUrl);
         
-        try {
-          const cloudImageUrl = await cloudinaryService.getCloudImageUrlFromBackend(inspectionId);
-          console.log('Loaded cloud image URL:', cloudImageUrl);
+        if (cloudImageUrl) {
+          const correctWeatherCondition = weatherConditionParam || weatherCondition || 'sunny';
           
-          if (cloudImageUrl) {
-            const correctWeatherCondition = weatherConditionParam || weatherCondition || 'sunny';
-            
-            setCurrentImage(cloudImageUrl);
-            setBaselineImage(cloudImageUrl);
-            
-            setInspectionData({
-              inspectionId: inspectionId,
-              imageUrl: cloudImageUrl,
-              uploadDate: new Date().toLocaleString(),
-              weatherCondition: correctWeatherCondition,
-              baselineDate: '1/9/2025 9:10:03 PM',
-              currentDate: new Date().toLocaleString()
-            });
-          }
-        } catch (imageLoadError) {
-          console.error('Error loading existing cloud image:', imageLoadError);
-          setError('Found existing cloud image but failed to load it');
-          setHasExistingImage(false);
+          setCurrentImage(cloudImageUrl);
+          setBaselineImage(cloudImageUrl);
+          
+          setInspectionData({
+            inspectionId: inspectionId,
+            imageUrl: cloudImageUrl,
+            uploadDate: new Date().toLocaleString(),
+            weatherCondition: correctWeatherCondition,
+            baselineDate: '1/9/2025 9:10:03 PM',
+            currentDate: new Date().toLocaleString()
+          });
         }
-      } else {
-        console.log('No existing cloud image found');
+      } catch (imageLoadError) {
+        console.error('Error loading existing cloud image:', imageLoadError);
+        setError('Found existing cloud image but failed to load it');
         setHasExistingImage(false);
-        setBaselineImage(null);
-        setCurrentImage(null);
-        setInspectionData(null);
       }
     } catch (error) {
-      console.error('Error checking existing cloud image:', error);
-      setError('Failed to check for existing cloud images');
+      console.error('Error loading existing cloud image:', error);
+      setError('Failed to load existing cloud images');
       setHasExistingImage(false);
     }
   };
@@ -191,7 +199,7 @@ const ThermalImageComponent = ({ inspectionId, onImageUpload, onImageDelete, tra
       
       setUploadProgress(100);
       
-      await checkAndLoadExistingCloudImage(weatherCondition);
+      await loadExistingCloudImage(weatherCondition);
       
       setTimeout(() => {
         setSelectedFile(null);
