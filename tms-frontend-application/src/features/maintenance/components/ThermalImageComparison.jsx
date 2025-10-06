@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from "react-router-dom";
-import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle } from 'lucide-react';
+import { useParams, useNavigate } from "react-router-dom";
+import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle, Settings } from 'lucide-react';
 import '../styles/thermal-image-comparison.css';
 import { baselineImageService } from '../services/BaselineImageService';
 import { cloudinaryService } from '../services/CloudinaryService';
+import AnomalyDetailsModal from './AnomalyDetailsModal';
+import ThresholdSettingsModal from './ThresholdSettingsModal';
 
 const ThermalImageComparison = ({ 
   transformerId,
@@ -20,12 +22,50 @@ const ThermalImageComparison = ({
   const [error, setError] = useState(null);
   const [weatherBasedBaselineImage, setWeatherBasedBaselineImage] = useState(null);
   const [notes, setNotes] = useState('');
-  const [anomalies, setAnomalies] = useState([]);
   const [detections, setDetections] = useState([]);
   const [inspectionId, setInspectionId] = useState(null);
+  const [selectedAnomaly, setSelectedAnomaly] = useState(null);
+  const [showAnomalyModal, setShowAnomalyModal] = useState(false);
+
+  const navigate = useNavigate();
   
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [currentThresholds, setCurrentThresholds] = useState({
+    thresholdPct: 2.0,
+    iouThresh:7,
+    confThresh: 0.25
+  });
+  const [isRerunLoading, setIsRerunLoading] = useState(false);
+
+  const weatherLabel =
+    inspectionData?.weatherCondition
+      ? inspectionData.weatherCondition.charAt(0).toUpperCase() +
+        inspectionData.weatherCondition.slice(1)
+      : null;
+
+  const handleApplyThresholds = async (newThresholds) => {
+    try {
+      setCurrentThresholds(newThresholds);
+      setIsRerunLoading(true);
+
+      await cloudinaryService.rerunInferenceWithThresholds(
+        inspectionId,
+        newThresholds
+      );
+      
+      if (inspectionId) {
+        await fetchAnomalies(inspectionId);
+      }
+    } catch (error) {
+      console.error('Error applying thresholds:', error);
+    } finally {
+      setIsRerunLoading(false);
+    }
+  };
 
   const [zoom, setZoom] = useState({ baseline: 1, current: 1 });
   const [position, setPosition] = useState({ 
@@ -36,43 +76,49 @@ const ThermalImageComparison = ({
 
   const displayCurrentImage = currentImage || baselineImage;
 
-  // Update inspectionId when inspectionData changes
   useEffect(() => {
     if (inspectionData?.inspectionId) {
-      console.log('Setting inspection ID:', inspectionData.inspectionId);
       setInspectionId(inspectionData.inspectionId);
     }
   }, [inspectionData]);
 
-  // Fetch anomalies when inspectionId changes
   useEffect(() => {
     if (inspectionId) {
-      console.log('Fetching anomalies for inspection:', inspectionId);
       fetchAnomalies(inspectionId);
     }
   }, [inspectionId]);
 
-  // Draw bounding boxes when anomalies or image changes
+  // Redraw bounding boxes when detections, zoom, or position changes
   useEffect(() => {
-    if (imageRef.current && canvasRef.current && (anomalies.length > 0 || detections.length > 0)) {
-      console.log('Drawing bounding boxes:', { anomalies: anomalies.length, detections: detections.length });
-      drawBoundingBoxes();
+    if (imageRef.current && canvasRef.current && detections.length > 0) {
+      const timeoutId = setTimeout(() => {
+        drawBoundingBoxes();
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [anomalies, detections, zoom.current, position.current]);
+  }, [detections, zoom.current, position.current]);
+
+  // Redraw on container resize
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver(() => {
+      if (detections.length > 0 && imageRef.current?.complete) {
+        requestAnimationFrame(() => drawBoundingBoxes());
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
+    return () => resizeObserver.disconnect();
+  }, [detections]);
 
   const fetchAnomalies = async (inspId) => {
     try {
-      console.log('Fetching anomalies from backend for:', inspId);
       const result = await cloudinaryService.getInspectionAnomalies(inspId);
-      console.log('Anomalies result:', result);
-      
-      setAnomalies(result.anomalies || []);
-      
       const detectionData = (result.anomalies || []).filter(a => a.faultType);
       setDetections(detectionData);
-      
-      console.log('Set anomalies:', result.anomalies?.length || 0, 'detections:', detectionData.length);
-      
     } catch (error) {
       console.error('Error fetching anomalies:', error);
     }
@@ -81,81 +127,127 @@ const ThermalImageComparison = ({
   const drawBoundingBoxes = () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
+    const container = containerRef.current;
     
-    if (!canvas || !image || !image.complete) {
-      console.log('Canvas or image not ready');
+    if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
       return;
     }
 
     const ctx = canvas.getContext('2d');
     
-    canvas.width = image.width;
-    canvas.height = image.height;
-    
+    // Set canvas size to match container
+    const containerRect = container.getBoundingClientRect();
+    canvas.width = containerRect.width;
+    canvas.height = containerRect.height;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    const scaleX = image.width / image.naturalWidth;
-    const scaleY = image.height / image.naturalHeight;
-    
-    console.log('Drawing boxes with scale:', { scaleX, scaleY, imageWidth: image.width, imageHeight: image.height });
-    
-    ctx.save();
-    ctx.scale(zoom.current, zoom.current);
-    ctx.translate(position.current.x / zoom.current, position.current.y / zoom.current);
 
-    // Draw unsupervised anomalies (yellow boxes)
-    anomalies.forEach((anomaly, index) => {
-      if (!anomaly.faultType && anomaly.bboxX !== null) {
-        const x = anomaly.bboxX * scaleX;
-        const y = anomaly.bboxY * scaleY;
-        const width = anomaly.bboxWidth * scaleX;
-        const height = anomaly.bboxHeight * scaleY;
-        
-        console.log(`Drawing anomaly ${index}:`, { x, y, width, height });
-        
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x, y, width, height);
-        
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
-        ctx.fillRect(x, y - 25, 120, 25);
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText(`Anomaly ${index + 1}`, x + 5, y - 8);
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+    const naturalWidth = image.naturalWidth;
+    const naturalHeight = image.naturalHeight;
+    
+    // Calculate how object-fit: cover displays the image
+    const containerAspect = containerWidth / containerHeight;
+    const imageAspect = naturalWidth / naturalHeight;
+    
+    let renderedWidth, renderedHeight, offsetX, offsetY;
+    
+    if (imageAspect > containerAspect) {
+      // Image is wider - height matches container, width overflows
+      renderedHeight = containerHeight;
+      renderedWidth = renderedHeight * imageAspect;
+      offsetX = (containerWidth - renderedWidth) / 2;
+      offsetY = 0;
+    } else {
+      // Image is taller - width matches container, height overflows
+      renderedWidth = containerWidth;
+      renderedHeight = renderedWidth / imageAspect;
+      offsetX = 0;
+      offsetY = (containerHeight - renderedHeight) / 2;
+    }
+    
+    // Apply zoom transformation
+    const currentZoom = zoom.current;
+    const zoomedWidth = renderedWidth * currentZoom;
+    const zoomedHeight = renderedHeight * currentZoom;
+    
+    // Calculate the position after zoom (zoom centers on the image)
+    const zoomOffsetX = (renderedWidth - zoomedWidth) / 2;
+    const zoomOffsetY = (renderedHeight - zoomedHeight) / 2;
+    
+    // Final position = base offset + zoom centering + user pan
+    const finalX = offsetX + zoomOffsetX + position.current.x;
+    const finalY = offsetY + zoomOffsetY + position.current.y;
+    
+    // Scale factor from original image coordinates to displayed coordinates
+    const scaleX = zoomedWidth / naturalWidth;
+    const scaleY = zoomedHeight / naturalHeight;
+
+    // Draw each detection
+    detections.forEach((detection) => {
+      if (detection.bboxX === null || detection.bboxY === null) return;
+      
+      // Transform bbox from original image space to displayed canvas space
+      const x = (detection.bboxX * scaleX) + finalX;
+      const y = (detection.bboxY * scaleY) + finalY;
+      const width = detection.bboxWidth * scaleX;
+      const height = detection.bboxHeight * scaleY;
+      
+      // Only draw if at least partially visible in viewport
+      if (x + width < 0 || y + height < 0 || 
+          x > containerWidth || y > containerHeight) {
+        return;
       }
-    });
-
-    // Draw YOLO detections (red boxes)
-    detections.forEach((detection, index) => {
-      if (detection.bboxX !== null) {
-        const x = detection.bboxX * scaleX;
-        const y = detection.bboxY * scaleY;
-        const width = detection.bboxWidth * scaleX;
-        const height = detection.bboxHeight * scaleY;
-        
-        console.log(`Drawing detection ${index}:`, detection.faultType, { x, y, width, height });
-        
-        const confidence = detection.faultConfidence || 0;
-        const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
-        
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x, y, width, height);
-        
-        const label = `${detection.faultType} (${(confidence * 100).toFixed(0)}%)`;
-        const textWidth = ctx.measureText(label).width + 10;
-        
-        ctx.fillStyle = `rgba(${confidence > 0.7 ? '255,0,0' : '255,165,0'}, 0.8)`;
-        ctx.fillRect(x, y - 25, textWidth, 25);
-        
-        ctx.fillStyle = '#FFF';
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText(label, x + 5, y - 8);
+      
+      const confidence = detection.faultConfidence || 0;
+      const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
+      
+      // Draw bounding box
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, Math.min(5, 3 * currentZoom));
+      ctx.strokeRect(x, y, width, height);
+      
+      // Calculate font size that scales with zoom but stays readable
+      const baseFontSize = Math.max(12, Math.min(18, Math.sqrt(width * height) / 20));
+      const fontSize = Math.max(10, Math.min(24, baseFontSize));
+      
+      const label = `${detection.faultType} (${(confidence * 100).toFixed(0)}%)`;
+      ctx.font = `bold ${fontSize}px Arial`;
+      const textMetrics = ctx.measureText(label);
+      const textWidth = textMetrics.width + 10;
+      const labelHeight = fontSize + 10;
+      
+      // Position label above the box, but keep within canvas bounds
+      let labelX = x;
+      let labelY = y;
+      
+      // Keep label within horizontal bounds
+      if (labelX + textWidth > containerWidth) {
+        labelX = containerWidth - textWidth - 4;
       }
+      if (labelX < 4) {
+        labelX = 4;
+      }
+      
+      // Put label above box if space available, otherwise below
+      if (labelY - labelHeight > 4) {
+        labelY = labelY - 2;
+      } else {
+        labelY = y + height + labelHeight - 2;
+      }
+      
+      // Draw label background
+      const bgAlpha = confidence > 0.7 ? 0.9 : 0.85;
+      ctx.fillStyle = confidence > 0.7 
+        ? `rgba(255, 0, 0, ${bgAlpha})` 
+        : `rgba(255, 165, 0, ${bgAlpha})`;
+      ctx.fillRect(labelX, labelY - labelHeight, textWidth, labelHeight);
+      
+      // Draw label text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textBaseline = 'top';
+      ctx.fillText(label, labelX + 5, labelY - labelHeight + 5);
     });
-
-    ctx.restore();
-    console.log('Finished drawing bounding boxes');
   };
 
   const handleZoom = (imageType, delta) => {
@@ -166,6 +258,7 @@ const ThermalImageComparison = ({
   };
 
   const handleDragStart = (imageType, e) => {
+    e.preventDefault();
     setIsDragging(prev => ({ ...prev, [imageType]: true }));
   };
 
@@ -194,19 +287,16 @@ const ThermalImageComparison = ({
     try {
       setIsLoading(true);
       setError(null);
-      
       const weatherCondition = inspectionData?.weatherCondition?.toLowerCase() || 'sunny';
       const imageUrl = await baselineImageService.getBaselineImage(transformerId, weatherCondition);
       
       if (imageUrl) {
         setWeatherBasedBaselineImage(imageUrl);
       } else {
-        setWeatherBasedBaselineImage(null);
         setError(`No baseline image available for ${weatherCondition} condition`);
       }
     } catch (error) {
       setError('Failed to load baseline image: ' + error.message);
-      setWeatherBasedBaselineImage(null);
     } finally {
       setIsLoading(false);
     }
@@ -219,13 +309,44 @@ const ThermalImageComparison = ({
   }, [transformerId, inspectionData?.weatherCondition]);
 
   const handleRefreshClick = () => {
-    console.log('Refresh clicked, fetching anomalies for:', inspectionId);
     if (inspectionId) {
       fetchAnomalies(inspectionId);
     }
     if (onRefresh) {
       onRefresh();
     }
+  };
+
+  const handleAnomalyClick = (anomaly) => {
+    setSelectedAnomaly(anomaly);
+    setShowAnomalyModal(true);
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedAnomaly || !notes) {
+      alert('Please select an anomaly and enter notes');
+      return;
+    }
+
+      try {
+          await cloudinaryService.updateAnomalyNotes(inspectionId, selectedAnomaly.id, notes);
+          setShowAnomalyModal(false);
+          // Refresh anomalies list
+          if (inspectionId) {
+              await fetchAnomalies(inspectionId);
+          }
+          // alert('Notes saved successfully');
+          navigate(-1); // Navigate back after successful save
+      } catch (error) {
+          console.error('Error saving notes:', error);
+          alert('Failed to save notes');
+      }
+  };
+
+  const handleCancelNotes = () => {
+    setNotes('');
+    setShowAnomalyModal(false);
+    navigate(-1);
   };
 
   const ImagePanel = ({ type, image, date }) => (
@@ -252,12 +373,17 @@ const ThermalImageComparison = ({
 
         {image ? (
           <div 
+            ref={type === 'current' ? containerRef : null}
             className="draggable-container"
             onMouseDown={(e) => handleDragStart(type, e)}
             onMouseMove={(e) => handleDragMove(type, e)}
             onMouseUp={() => handleDragEnd(type)}
             onMouseLeave={() => handleDragEnd(type)}
-            style={{ cursor: isDragging[type] ? 'grabbing' : 'grab', position: 'relative' }}
+            style={{ 
+              cursor: isDragging[type] ? 'grabbing' : 'grab', 
+              position: 'relative',
+              overflow: 'hidden'
+            }}
           >
             <img 
               ref={type === 'current' ? imageRef : null}
@@ -266,15 +392,18 @@ const ThermalImageComparison = ({
               className="thermal-image"
               style={{
                 transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
-                transition: isDragging[type] ? 'none' : 'transform 0.3s'
+                transition: isDragging[type] ? 'none' : 'transform 0.3s ease',
+                objectFit: 'cover',
+                width: '100%',
+                height: '100%'
               }}
               onError={() => setError(`Failed to load ${type} image`)}
               onLoad={() => {
-                console.log(`${type} image loaded`);
-                if (type === 'current') {
+                if (type === 'current' && detections.length > 0) {
                   setTimeout(() => drawBoundingBoxes(), 100);
                 }
               }}
+              draggable={false}
             />
             {type === 'current' && (
               <canvas
@@ -283,9 +412,9 @@ const ThermalImageComparison = ({
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  pointerEvents: 'none',
-                  transform: `translate(${position[type].x}px, ${position[type].y}px) scale(${zoom[type]})`,
-                  transition: isDragging[type] ? 'none' : 'transform 0.3s'
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none'
                 }}
               />
             )}
@@ -304,7 +433,19 @@ const ThermalImageComparison = ({
       <div className="comparison-header">
         <h3 className="comparison-title">Thermal Image Comparison</h3>
         <div className="comparison-actions">
-          <button onClick={handleRefreshClick} className="action-btnT refresh-btnT">
+          <button
+            disabled={isRerunLoading}
+            onClick={() => setShowSettingsModal(true)}
+            className="action-btnT settings-btnT"
+          >
+            <Settings size={16} />
+            Settings
+          </button>
+          <button
+            disabled={isRerunLoading}
+            onClick={handleRefreshClick}
+            className="action-btnT refresh-btnT"
+          >
             <RotateCcw size={16} />
             Refresh
           </button>
@@ -331,13 +472,37 @@ const ThermalImageComparison = ({
         />
       </div>
 
+
+
       <div className="analysis-sections">
+        {weatherLabel && (
+          <div style={{ marginBottom: 8 }}>
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '6px 10px',
+                borderRadius: 999,
+                background: '#e8f0fe',
+                color: '#1a56db',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Weather Condition:   {weatherLabel}
+            </span>
+          </div>
+        )}
         <div className="anomalies-section">
-          <h4 style={{color: "black"}}>Anomalies Detected</h4>
+          <h4 style={{color: "black"}}>Detected Faults</h4>
           <div className="anomaly-list">
             {detections.length > 0 ? (
               detections.map((detection, index) => (
-                <div key={index} className="anomaly-item">
+                <div 
+                  key={index} 
+                  className="anomaly-item clickable"
+                  onClick={() => handleAnomalyClick(detection)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="anomaly-location">{detection.faultType}</span>
                   <span className="anomaly-temp">{(detection.faultConfidence * 100).toFixed(0)}%</span>
                   <span className={`anomaly-severity ${detection.faultConfidence > 0.7 ? 'critical' : 'high'}`}>
@@ -346,7 +511,7 @@ const ThermalImageComparison = ({
                 </div>
               ))
             ) : (
-              <p>No anomalies detected</p>
+              <p>No faults detected</p>
             )}
           </div>
         </div>
@@ -361,15 +526,23 @@ const ThermalImageComparison = ({
             rows={4}
           />
           <div className="notes-actions">
-            <button className="cancel-btn" onClick={() => setNotes('')}>
+            <button className="cancel-btn" onClick={handleCancelNotes}>
               Cancel
             </button>
-            <button className="confirm-btn" onClick={() => console.log('Notes saved:', notes)}>
-              Save Notes
+            <button className="confirm-btn" onClick={handleSaveNotes}>
+              Save Changes
             </button>
           </div>
         </div>
       </div>
+
+      {showAnomalyModal && (
+        <AnomalyDetailsModal
+          anomaly={selectedAnomaly}
+          inspectionData={inspectionData}
+          onClose={() => setShowAnomalyModal(false)}
+        />
+      )}
 
       {showDeleteConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
@@ -387,6 +560,26 @@ const ThermalImageComparison = ({
                 <X size={16} />
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettingsModal && (
+        <ThresholdSettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          onApply={handleApplyThresholds}
+          currentSettings={currentThresholds}
+        />
+      )}
+
+      {isRerunLoading && (
+        <div className="overlay loading-overlay">
+          <div className="loading-card">
+            <div className="spinner" />
+            <div className="loading-text">Re-running analysis…</div>
+            <div className="indeterminate-bar">
+              <div className="indeterminate-bar-inner" />
             </div>
           </div>
         </div>

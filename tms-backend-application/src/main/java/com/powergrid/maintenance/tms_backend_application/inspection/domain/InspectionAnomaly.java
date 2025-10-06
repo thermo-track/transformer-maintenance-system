@@ -3,6 +3,7 @@ package com.powergrid.maintenance.tms_backend_application.inspection.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "inspection_anomalies")
@@ -10,14 +11,15 @@ import java.time.LocalDateTime;
 public class InspectionAnomaly {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Changed
+    private Long id;
 
     @Column(name = "inspection_id", nullable = false)
     private String inspectionId;
 
     @ManyToOne
     @JoinColumn(name = "inspection_id", referencedColumnName = "inspection_id", insertable = false, updatable = false)
+    @JsonIgnore
     private Inspection inspection;
 
     @Column(name = "bbox_x")
@@ -61,6 +63,9 @@ public class InspectionAnomaly {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
     @PrePersist
     protected void onCreate() {

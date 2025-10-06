@@ -81,6 +81,32 @@ class CloudinaryService {
     }
   }
 
+async updateAnomalyNotes(inspectionId, anomalyId, notes) {
+    try {
+        const response = await fetch(
+            `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ notes: notes })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to update notes: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating anomaly notes:', error);
+        throw error;
+    }
+}
+
+
+
   /**
    * Upload image to Cloudinary only
    * @param {File} file - Image file to upload
@@ -287,6 +313,42 @@ class CloudinaryService {
       
     } catch (error) {
       console.error('Backend metadata deletion error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Re-run inference with custom thresholds
+   * @param {string} inspectionId - Inspection ID
+   * @param {Object} thresholds - Custom threshold values
+   * @returns {Promise<Object>} Inference results
+   */
+  async rerunInferenceWithThresholds(inspectionId, thresholds) {
+    try {
+      const response = await fetch(
+        `${this.backendApiUrl}/inspections/${inspectionId}/rerun-inference`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            thresholdPct: thresholds.thresholdPct,
+            iouThresh: thresholds.iouThresh,
+            confThresh: thresholds.confThresh
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to re-run inference: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Inference re-run successful:', result);
+      return result;
+    } catch (error) {
+      console.error('Error re-running inference:', error);
       throw error;
     }
   }

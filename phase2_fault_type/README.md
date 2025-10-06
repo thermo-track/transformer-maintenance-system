@@ -47,7 +47,7 @@ python -m phase2_fault_type.pipeline.run_pair `
 	--out-json "outputs\json\t8_pair_fused.json" `
 	--out-viz "outputs\viz\t8_pair_overlay.png" `
 	--threshold-pct 2.0 `
-	--iou-thresh 0.35 `
+	--iou-thresh 0.7 `
 	--conf-thresh 0.25
 ```
 
@@ -62,7 +62,7 @@ Outputs:
 - `--out-json` (path): Output path for the fused results JSON. Parent folders are created automatically.
 - `--out-viz` (path, optional): Output path for an annotated overlay PNG. Parent folders are created automatically.
 - `--threshold-pct` (float, default 2.0): Unsupervised anomaly threshold as a percentile. Keeps the top N% of the fused anomaly map (lower value = stricter, fewer regions).
-- `--iou-thresh` (float, default 0.35): Minimum IoU to match a YOLO detection to an unsupervised region during fusion.
+- `--iou-thresh` (float, default 0.7): Minimum IoU to match a YOLO detection to an unsupervised region during fusion.
 
   IoU formula:
 
