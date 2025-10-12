@@ -1,0 +1,134 @@
+{
+  "images": {
+    "baseline": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpeni6gpme\\100000003_baseline.jpg",
+    "maintenance": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpeni6gpme\\100000003_maintenance.jpg"
+  },
+  "params": {
+    "work_size": [
+      640,
+      640
+    ],
+    "smooth_sigma": 1.0,
+    "thresholding": {
+      "mode": "percentile",
+      "value": 20.0,
+      "min_area_pct": 0.002
+    },
+    "fuse_weights": [
+      0.6,
+      0.4
+    ]
+  },
+  "registration": {
+    "ok": true,
+    "method": "ORB_RANSAC",
+    "inliers": 39
+  },
+  "anomalies": [
+    {
+      "bbox": [
+        1,
+        1,
+        638,
+        385
+      ],
+      "centroid": [
+        320.0,
+        193.5
+      ],
+      "area_px": 20338,
+      "fault_type": "Loose Joint -Faulty",
+      "fault_confidence": 0.7822273373603821,
+      "detector_box": [
+        106.3934326171875,
+        90.00784301757812,
+        410.28326416015625,
+        249.5213623046875
+      ],
+      "detector_iou": 0.41678312504026127
+    },
+    {
+      "bbox": [
+        586,
+        61,
+        53,
+        95
+      ],
+      "centroid": [
+        612.5,
+        108.5
+      ],
+      "area_px": 4343,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        114,
+        106,
+        434,
+        267
+      ],
+      "centroid": [
+        331.0,
+        239.5
+      ],
+      "area_px": 60912,
+      "fault_type": "Loose Joint -Faulty",
+      "fault_confidence": 0.7822273373603821,
+      "detector_box": [
+        106.3934326171875,
+        90.00784301757812,
+        410.28326416015625,
+        249.5213623046875
+      ],
+      "detector_iou": 0.7570443326235551
+    },
+    {
+      "bbox": [
+        586,
+        265,
+        53,
+        108
+      ],
+      "centroid": [
+        612.5,
+        319.0
+      ],
+      "area_px": 5172,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    }
+  ],
+  "detector_summary": {
+    "weights": "C:\\Users\\HPA02532Y\\Desktop\\SDC\\transformer-maintenance-system\\phase2_fault_type\\weights\\best.pt",
+    "image": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpeni6gpme\\100000003_maintenance.jpg",
+    "params": {
+      "conf_thresh": 0.25,
+      "iou_thresh": 0.35
+    },
+    "detections": [
+      {
+        "bbox_xyxy": [
+          106.3934326171875,
+          90.00784301757812,
+          516.6766967773438,
+          339.5292053222656
+        ],
+        "bbox_xywh": [
+          106.3934326171875,
+          90.00784301757812,
+          410.28326416015625,
+          249.5213623046875
+        ],
+        "conf": 0.7822273373603821,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
+      }
+    ]
+  }
+}

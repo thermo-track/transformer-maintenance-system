@@ -1,0 +1,243 @@
+{
+  "images": {
+    "baseline": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpn1gvpazb\\100000004_baseline.jpg",
+    "maintenance": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpn1gvpazb\\100000004_maintenance.jpg"
+  },
+  "params": {
+    "work_size": [
+      640,
+      640
+    ],
+    "smooth_sigma": 1.0,
+    "thresholding": {
+      "mode": "percentile",
+      "value": 20.0,
+      "min_area_pct": 0.002
+    },
+    "fuse_weights": [
+      0.6,
+      0.4
+    ]
+  },
+  "registration": {
+    "ok": true,
+    "method": "ORB_RANSAC",
+    "inliers": 20
+  },
+  "anomalies": [
+    {
+      "bbox": [
+        1,
+        1,
+        169,
+        44
+      ],
+      "centroid": [
+        85.5,
+        23.0
+      ],
+      "area_px": 4471,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        236,
+        1,
+        161,
+        61
+      ],
+      "centroid": [
+        316.5,
+        31.5
+      ],
+      "area_px": 5464,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        466,
+        1,
+        82,
+        397
+      ],
+      "centroid": [
+        507.0,
+        199.5
+      ],
+      "area_px": 12682,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        121,
+        86,
+        105,
+        139
+      ],
+      "centroid": [
+        173.5,
+        155.5
+      ],
+      "area_px": 5625,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        22,
+        102,
+        104,
+        140
+      ],
+      "centroid": [
+        74.0,
+        172.0
+      ],
+      "area_px": 7703,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        216,
+        107,
+        236,
+        250
+      ],
+      "centroid": [
+        334.0,
+        232.0
+      ],
+      "area_px": 37682,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        94,
+        239,
+        96,
+        57
+      ],
+      "centroid": [
+        142.0,
+        267.5
+      ],
+      "area_px": 3169,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        1,
+        240,
+        56,
+        48
+      ],
+      "centroid": [
+        29.0,
+        264.0
+      ],
+      "area_px": 1239,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        209,
+        289,
+        43,
+        36
+      ],
+      "centroid": [
+        230.5,
+        307.0
+      ],
+      "area_px": 851,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        47,
+        325,
+        86,
+        45
+      ],
+      "centroid": [
+        90.0,
+        347.5
+      ],
+      "area_px": 1311,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    }
+  ],
+  "detector_summary": {
+    "weights": "C:\\Users\\HPA02532Y\\Desktop\\SDC\\transformer-maintenance-system\\phase2_fault_type\\weights\\best.pt",
+    "image": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpn1gvpazb\\100000004_maintenance.jpg",
+    "params": {
+      "conf_thresh": 0.5,
+      "iou_thresh": 0.15
+    },
+    "detections": [
+      {
+        "bbox_xyxy": [
+          990.5481567382812,
+          824.3724975585938,
+          2339.323486328125,
+          1772.34326171875
+        ],
+        "bbox_xywh": [
+          990.5481567382812,
+          824.3724975585938,
+          1348.7753295898438,
+          947.9707641601562
+        ],
+        "conf": 0.7472524046897888,
+        "class_id": 2,
+        "class_name": "Loose Joint -Potential"
+      },
+      {
+        "bbox_xyxy": [
+          979.6270141601562,
+          442.5393981933594,
+          1740.5146484375,
+          790.2323608398438
+        ],
+        "bbox_xywh": [
+          979.6270141601562,
+          442.5393981933594,
+          760.8876342773438,
+          347.6929626464844
+        ],
+        "conf": 0.7271861433982849,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
+      }
+    ]
+  }
+}
