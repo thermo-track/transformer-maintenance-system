@@ -78,7 +78,7 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="username">Username</label>
             <input
               type="text"
@@ -92,9 +92,9 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="password">Password</label>
-            <div className="password-input-wrapper">
+            <div className="auth-password-input-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -107,7 +107,7 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="auth-password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
               >

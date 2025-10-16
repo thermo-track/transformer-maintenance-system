@@ -111,7 +111,7 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="username">Username</label>
             <input
               type="text"
@@ -126,7 +126,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="email">Email</label>
             <input
               type="email"
@@ -140,9 +140,9 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="password">Password</label>
-            <div className="password-input-wrapper">
+            <div className="auth-password-input-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -156,7 +156,7 @@ export default function RegisterPage() {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="auth-password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
               >
@@ -175,9 +175,9 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
-            <div className="password-input-wrapper">
+            <div className="auth-password-input-wrapper">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword"
@@ -190,7 +190,7 @@ export default function RegisterPage() {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="auth-password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 tabIndex={-1}
               >

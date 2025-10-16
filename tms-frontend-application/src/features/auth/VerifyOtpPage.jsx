@@ -110,7 +110,7 @@ export default function VerifyOtpPage() {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+          <div className="auth-form-group">
             <label htmlFor="otpCode">Verification Code</label>
             <input
               type="text"
@@ -122,10 +122,10 @@ export default function VerifyOtpPage() {
               disabled={isSubmitting}
               required
               maxLength={6}
-              className="otp-input"
+              className="auth-otp-input"
               autoComplete="off"
             />
-            <small className="form-hint">Code expires in 10 minutes</small>
+            <small className="auth-form-hint">Code expires in 10 minutes</small>
           </div>
 
           <button 
@@ -141,7 +141,7 @@ export default function VerifyOtpPage() {
           <button 
             onClick={handleResend}
             disabled={isResending}
-            className="resend-button"
+            className="auth-resend-button"
           >
             {isResending ? 'Resending...' : "Didn't receive code? Resend"}
           </button>

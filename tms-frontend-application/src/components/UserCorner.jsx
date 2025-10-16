@@ -11,7 +11,10 @@ function UserCorner() {
   const [profilePhoto, setProfilePhoto] = useState(null);
 
   useEffect(() => {
-    fetchUserProfile();
+    // Only fetch profile if user is authenticated
+    if (user) {
+      fetchUserProfile();
+    }
 
     // Listen for profile updates
     const handleProfileUpdate = (event) => {
@@ -28,16 +31,24 @@ function UserCorner() {
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate);
     };
-  }, []);
+  }, [user]);
 
   const fetchUserProfile = async () => {
+    // Don't fetch if user is not authenticated or localStorage is cleared
+    if (!user || !localStorage.getItem('user') || !localStorage.getItem('auth')) {
+      return;
+    }
+    
     try {
       const response = await authAPI.getUserProfile();
       if (response.data.profilePhotoUrl) {
         setProfilePhoto(response.data.profilePhotoUrl);
       }
     } catch (err) {
-      console.error('Failed to fetch user profile:', err);
+      // Silently handle errors - interceptor will handle 401
+      if (err.response?.status !== 401) {
+        console.error('Failed to fetch user profile:', err);
+      }
       // Keep default avatar if fetch fails
     }
   };

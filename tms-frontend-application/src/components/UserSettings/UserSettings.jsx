@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../config/api';
 import './UserSettings.css';
 
 const UserSettings = () => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -153,17 +155,46 @@ const UserSettings = () => {
     try {
       setSaving(true);
       setError('');
+      setSuccess('');
       
+      // Delete account from backend
       await authAPI.deleteAccount(deletePassword);
       
-      // Logout and redirect
-      logout();
-      onClose();
-      window.location.href = '/login';
+      // IMMEDIATELY clear auth data to prevent any further requests
+      localStorage.removeItem('auth');
+      localStorage.removeItem('user');
+      
+      // Show success message briefly
+      setSuccess('Account deleted successfully. Redirecting...');
+      
+      // Small delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Complete logout (this will clear context state)
+      await logout();
+      
+      // Redirect to login page
+      navigate('/login', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete account');
-    } finally {
+      // Handle different error types
+      let errorMessage = 'Failed to delete account';
+      
+      if (err.response) {
+        // Server responded with an error
+        if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.status === 400) {
+          errorMessage = 'Invalid password. Please try again.';
+        } else if (err.response.status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setSaving(false);
+      setSuccess('');
     }
   };
 
@@ -322,10 +353,21 @@ const UserSettings = () => {
           ) : (
             <div className="delete-confirm">
               <p><strong>Please enter your password to confirm account deletion:</strong></p>
+              
+              {error && (
+                <div className="alert alert-error" style={{ marginBottom: '12px' }}>
+                  {error}
+                </div>
+              )}
+              
               <input
                 type="password"
                 value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
+                onChange={(e) => {
+                  setDeletePassword(e.target.value);
+                  // Clear error when user types
+                  if (error) setError('');
+                }}
                 placeholder="Enter your password"
                 className="password-input"
               />

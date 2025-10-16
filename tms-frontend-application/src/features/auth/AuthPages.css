@@ -66,19 +66,19 @@
   gap: 20px;
 }
 
-.form-group {
+.auth-form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
+.auth-form-group label {
   font-size: 14px;
   font-weight: 600;
   color: #2d3748;
 }
 
-.form-group input {
+.auth-form-group input {
   padding: 12px 16px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
@@ -87,29 +87,29 @@
   outline: none;
 }
 
-.form-group input:focus {
+.auth-form-group input:focus {
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group input:disabled {
+.auth-form-group input:disabled {
   background-color: #f7fafc;
   cursor: not-allowed;
 }
 
 /* Password input wrapper for eye icon */
-.password-input-wrapper {
+.auth-password-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.password-input-wrapper input {
+.auth-password-input-wrapper input {
   width: 100%;
   padding-right: 45px; /* Make room for the icon */
 }
 
-.password-toggle {
+.auth-password-toggle {
   position: absolute;
   right: 12px;
   background: none;
@@ -124,15 +124,15 @@
   outline: none;
 }
 
-.password-toggle:hover {
+.auth-password-toggle:hover {
   color: #667eea;
 }
 
-.password-toggle:focus {
+.auth-password-toggle:focus {
   outline: none;
 }
 
-.password-toggle svg {
+.auth-password-toggle svg {
   width: 20px;
   height: 20px;
 }
@@ -184,14 +184,14 @@
 }
 
 /* OTP Page Specific Styles */
-.otp-input {
+.auth-otp-input {
   text-align: center;
   font-size: 24px;
   letter-spacing: 8px;
   font-weight: 600;
 }
 
-.form-hint {
+.auth-form-hint {
   font-size: 12px;
   color: #718096;
   margin-top: 4px;
@@ -203,7 +203,7 @@
   margin-top: 16px;
 }
 
-.resend-button {
+.auth-resend-button {
   background: none;
   border: none;
   color: #667eea;
@@ -214,12 +214,12 @@
   transition: all 0.2s;
 }
 
-.resend-button:hover:not(:disabled) {
+.auth-resend-button:hover:not(:disabled) {
   color: #764ba2;
   text-decoration: underline;
 }
 
-.resend-button:disabled {
+.auth-resend-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

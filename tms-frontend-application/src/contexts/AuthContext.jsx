@@ -47,10 +47,28 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         return { success: true };
       } else {
-        throw new Error(response.message || 'Login failed');
+        // Backend returned success: false
+        const errorMessage = response.message || 'Login failed';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || 'Login failed';
+      // Handle HTTP errors (401, 500, etc.)
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err.response) {
+        // Server responded with error status
+        if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.status === 401) {
+          errorMessage = 'Invalid username or password';
+        } else if (err.response.status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

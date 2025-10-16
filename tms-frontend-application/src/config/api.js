@@ -13,12 +13,36 @@ const apiClient = axios.create({
 // Add request interceptor to include auth credentials
 apiClient.interceptors.request.use(
   (config) => {
-    const auth = localStorage.getItem('auth');
-    if (auth) {
-      const { username, password } = JSON.parse(auth);
-      const credentials = btoa(`${username}:${password}`);
-      config.headers.Authorization = `Basic ${credentials}`;
+    // Skip auth for public endpoints
+    const publicEndpoints = ['/api/auth/login', '/api/auth/register', '/api/auth/verify-otp', '/api/auth/resend-otp'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
+    
+    if (isPublicEndpoint) {
+      return config;
     }
+    
+    // Only add auth header if we have valid auth data
+    const auth = localStorage.getItem('auth');
+    const user = localStorage.getItem('user');
+    const currentPath = window.location.pathname;
+    
+    // Skip auth header for public pages or if no user data
+    if (!user || !auth || currentPath === '/login' || currentPath === '/register') {
+      return config;
+    }
+    
+    try {
+      const { username, password } = JSON.parse(auth);
+      if (username && password) {
+        const credentials = btoa(`${username}:${password}`);
+        config.headers.Authorization = `Basic ${credentials}`;
+      }
+    } catch (e) {
+      // Invalid auth data, clear it
+      localStorage.removeItem('auth');
+      localStorage.removeItem('user');
+    }
+    
     return config;
   },
   (error) => {
@@ -31,12 +55,20 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth data on 401
-      localStorage.removeItem('auth');
-      localStorage.removeItem('user');
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const currentPath = window.location.pathname;
+      
+      // Only clear and redirect if we're not already on login/register pages
+      if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/verify-otp') {
+        // Clear auth data on 401
+        localStorage.removeItem('auth');
+        localStorage.removeItem('user');
+        
+        // Small delay to avoid race conditions
+        setTimeout(() => {
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }, 100);
       }
     }
     return Promise.reject(error);
