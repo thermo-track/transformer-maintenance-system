@@ -56,4 +56,30 @@ public class User {
 
     @Column(nullable = false)
     private boolean credentialsNonExpired = true;
+
+    /**
+     * Additional user profile fields
+     */
+    @Column(length = 50)
+    private String employeeId;
+
+    @Column(length = 100)
+    private String fullName;
+
+    @Column(length = 50)
+    private String department;
+
+    @Column(length = 20)
+    private String phoneNumber;
+
+    @Column(length = 500)
+    private String profilePhotoUrl;
+
+    @Column(updatable = false)
+    private java.time.Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = java.time.Instant.now();
+    }
 }

@@ -2,6 +2,8 @@ package com.powergrid.maintenance.tms_backend_application.user.service;
 
 import com.powergrid.maintenance.tms_backend_application.user.model.User;
 import com.powergrid.maintenance.tms_backend_application.user.repository.UserRepository;
+import com.powergrid.maintenance.tms_backend_application.user.repository.OtpRepository;
+import com.powergrid.maintenance.tms_backend_application.user.dto.UpdateUserProfileRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private OtpRepository otpRepository;
 
     /**
      * Register a new user with encrypted password (account disabled until email verification).
@@ -118,5 +123,60 @@ public class UserService {
      */
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
+    }
+
+    /**
+     * Update user profile information
+     */
+    @Transactional
+    public User updateUserProfile(String username, UpdateUserProfileRequest updateRequest) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        // Update fields if provided
+        if (updateRequest.getEmployeeId() != null) {
+            user.setEmployeeId(updateRequest.getEmployeeId());
+        }
+        if (updateRequest.getFullName() != null) {
+            user.setFullName(updateRequest.getFullName());
+        }
+        if (updateRequest.getDepartment() != null) {
+            user.setDepartment(updateRequest.getDepartment());
+        }
+        if (updateRequest.getPhoneNumber() != null) {
+            user.setPhoneNumber(updateRequest.getPhoneNumber());
+        }
+        if (updateRequest.getProfilePhotoUrl() != null) {
+            user.setProfilePhotoUrl(updateRequest.getProfilePhotoUrl());
+        }
+
+        User updatedUser = userRepository.save(user);
+        log.info("Profile updated for user: {}", username);
+        return updatedUser;
+    }
+
+    /**
+     * Delete user account after password verification
+     */
+    @Transactional
+    public boolean deleteAccount(String username, String password) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        // Verify password
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            log.warn("Invalid password provided for account deletion: {}", username);
+            return false;
+        }
+
+        // Delete OTP records if any
+        if (user.getEmail() != null) {
+            otpRepository.deleteByEmail(user.getEmail());
+        }
+
+        // Delete user
+        userRepository.delete(user);
+        log.info("Account deleted: {}", username);
+        return true;
     }
 }

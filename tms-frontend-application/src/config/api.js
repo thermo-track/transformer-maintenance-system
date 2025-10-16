@@ -94,4 +94,21 @@ export const authAPI = {
     const response = await apiClient.get('/api/auth/me');
     return response.data;
   },
+
+  getUserProfile: async () => {
+    const response = await apiClient.get('/api/auth/profile');
+    return response;
+  },
+
+  updateUserProfile: async (profileData) => {
+    const response = await apiClient.put('/api/auth/profile', profileData);
+    return response.data;
+  },
+
+  deleteAccount: async (password) => {
+    const response = await apiClient.delete('/api/auth/account', {
+      data: { password },
+    });
+    return response.data;
+  },
 };

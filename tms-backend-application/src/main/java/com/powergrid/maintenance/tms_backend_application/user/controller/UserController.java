@@ -4,6 +4,8 @@ import com.powergrid.maintenance.tms_backend_application.user.dto.LoginRequest;
 import com.powergrid.maintenance.tms_backend_application.user.dto.LoginResponse;
 import com.powergrid.maintenance.tms_backend_application.user.dto.RegisterRequest;
 import com.powergrid.maintenance.tms_backend_application.user.dto.VerifyOtpRequest;
+import com.powergrid.maintenance.tms_backend_application.user.dto.UpdateUserProfileRequest;
+import com.powergrid.maintenance.tms_backend_application.user.dto.UserProfileResponse;
 import com.powergrid.maintenance.tms_backend_application.user.model.User;
 import com.powergrid.maintenance.tms_backend_application.user.service.OtpService;
 import com.powergrid.maintenance.tms_backend_application.user.service.UserService;
@@ -250,6 +252,128 @@ public class UserController {
             log.error("Error getting current user: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     new LoginResponse(false, "Error getting user info")
+            );
+        }
+    }
+
+    /**
+     * Get user profile.
+     * GET /api/auth/profile
+     * Requires authentication.
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<?> getUserProfile() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            
+            User user = userService.getUserByUsername(username);
+            
+            UserProfileResponse response = 
+                new UserProfileResponse(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.isEnabled(),
+                    user.isEmailVerified(),
+                    user.getEmployeeId(),
+                    user.getFullName(),
+                    user.getDepartment(),
+                    user.getPhoneNumber(),
+                    user.getProfilePhotoUrl(),
+                    user.getCreatedAt()
+                );
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting user profile: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("success", false, "message", "Failed to get user profile")
+            );
+        }
+    }
+
+    /**
+     * Update user profile.
+     * PUT /api/auth/profile
+     * Requires authentication.
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateUserProfile(
+            @Valid @RequestBody UpdateUserProfileRequest updateRequest) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            
+            User updatedUser = userService.updateUserProfile(username, updateRequest);
+            
+            log.info("User profile updated: {}", username);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Profile updated successfully",
+                "user", new UserProfileResponse(
+                    updatedUser.getId(),
+                    updatedUser.getUsername(),
+                    updatedUser.getEmail(),
+                    updatedUser.getRole(),
+                    updatedUser.isEnabled(),
+                    updatedUser.isEmailVerified(),
+                    updatedUser.getEmployeeId(),
+                    updatedUser.getFullName(),
+                    updatedUser.getDepartment(),
+                    updatedUser.getPhoneNumber(),
+                    updatedUser.getProfilePhotoUrl(),
+                    updatedUser.getCreatedAt()
+                )
+            ));
+        } catch (Exception e) {
+            log.error("Error updating user profile: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("success", false, "message", "Failed to update profile: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Delete user account.
+     * DELETE /api/auth/account
+     * Requires authentication and password confirmation.
+     */
+    @DeleteMapping("/account")
+    public ResponseEntity<?> deleteAccount(@RequestBody Map<String, String> request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            String password = request.get("password");
+            
+            if (password == null || password.isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("success", false, "message", "Password is required to delete account")
+                );
+            }
+            
+            boolean deleted = userService.deleteAccount(username, password);
+            
+            if (deleted) {
+                // Clear security context
+                SecurityContextHolder.clearContext();
+                
+                log.info("Account deleted: {}", username);
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Account deleted successfully"
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(
+                    Map.of("success", false, "message", "Invalid password")
+                );
+            }
+        } catch (Exception e) {
+            log.error("Error deleting account: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Map.of("success", false, "message", "Failed to delete account: " + e.getMessage())
             );
         }
     }

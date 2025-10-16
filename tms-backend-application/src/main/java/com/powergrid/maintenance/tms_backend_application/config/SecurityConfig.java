@@ -5,8 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,8 +24,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity // Enables @PreAuthorize and other method-level security annotations
 public class SecurityConfig {
 
-    @Autowired
-    private MyUserDetailsService userDetailsService;
+    private final MyUserDetailsService userDetailsService;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    /**
+     * Constructor injection to avoid circular dependencies.
+     */
+    public SecurityConfig(MyUserDetailsService userDetailsService, BCryptPasswordEncoder passwordEncoder) {
+        this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     /**
      * Configure security filter chain.
@@ -50,6 +57,9 @@ public class SecurityConfig {
                         // Swagger/OpenAPI endpoints
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         
+                        // Profile endpoints require authentication (GET, PUT, DELETE)
+                        .requestMatchers("/api/auth/profile", "/api/auth/account", "/api/auth/me").authenticated()
+                        
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
@@ -65,31 +75,20 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 
-                // Set the authentication provider
-                .authenticationProvider(authenticationProvider())
+                // Use userDetailsService directly instead of deprecated AuthenticationProvider
+                .userDetailsService(userDetailsService)
                 
                 .build();
     }
 
     /**
-     * Configure the authentication provider.
-     * Uses our custom UserDetailsService and BCrypt password encoder.
+     * Configure authentication with UserDetailsService and PasswordEncoder.
+     * This is the modern Spring Security 6.x approach without deprecated APIs.
      */
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    /**
-     * BCrypt password encoder bean.
-     * Uses 12 rounds (2^12 iterations) for password hashing.
-     */
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService)
+            .passwordEncoder(passwordEncoder);
     }
 
     /**

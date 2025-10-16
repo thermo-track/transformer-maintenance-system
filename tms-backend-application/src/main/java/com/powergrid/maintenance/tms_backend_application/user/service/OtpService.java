@@ -27,10 +27,12 @@ public class OtpService {
     private static final SecureRandom random = new SecureRandom();
 
     /**
-     * Generate a random 6-digit OTP
+     * Generate a random 6-digit OTP based on OTP_LENGTH
      */
     private String generateOtpCode() {
-        int otp = 100000 + random.nextInt(900000); // Generates 6-digit number
+        int min = (int) Math.pow(10, OTP_LENGTH - 1); // For 6 digits: 100000
+        int max = (int) Math.pow(10, OTP_LENGTH) - 1;  // For 6 digits: 999999
+        int otp = min + random.nextInt(max - min + 1);
         return String.valueOf(otp);
     }
 

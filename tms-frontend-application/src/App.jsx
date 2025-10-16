@@ -13,6 +13,7 @@ import TransformerLocations from "./features/maintenance/pages/TransformerLocati
 import TransformerLocationPage from './features/transformers/components/TransformerLocationPage.jsx';
 import TransformerLocationWrapper from './features/transformers/components/TransformerLocationWrapper';
 import TransformersMapWrapper from './features/transformers/components/TransformersMapWrapper';
+import UserSettings from './components/UserSettings/UserSettings.jsx';
 
 import './App.css';
 
@@ -93,6 +94,14 @@ export default function App() {
         <PrivateRoute>
           <Layout>
             <TransformersMapWrapper />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/settings/user" element={
+        <PrivateRoute>
+          <Layout>
+            <UserSettings />
           </Layout>
         </PrivateRoute>
       } />
