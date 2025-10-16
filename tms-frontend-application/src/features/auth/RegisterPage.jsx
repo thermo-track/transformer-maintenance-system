@@ -9,6 +9,7 @@ export default function RegisterPage() {
   
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
     confirmPassword: '',
   });
@@ -31,13 +32,20 @@ export default function RegisterPage() {
   };
 
   const validateForm = () => {
-    if (!formData.username || !formData.password || !formData.confirmPassword) {
+    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields');
       return false;
     }
 
     if (formData.username.length < 3) {
       setError('Username must be at least 3 characters long');
+      return false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
       return false;
     }
 
@@ -65,10 +73,11 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     
     try {
-      const result = await register(formData.username, formData.password);
+      const result = await register(formData.username, formData.email, formData.password);
       
       if (result.success) {
-        navigate('/transformers');
+        // Redirect to OTP verification page
+        navigate('/verify-otp', { state: { email: formData.email } });
       } else {
         setError(result.error || 'Registration failed. Please try again.');
       }
@@ -114,6 +123,20 @@ export default function RegisterPage() {
               disabled={isSubmitting}
               required
               minLength={3}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email address"
+              disabled={isSubmitting}
+              required
             />
           </div>
 

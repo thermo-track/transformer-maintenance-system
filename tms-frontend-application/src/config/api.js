@@ -47,11 +47,27 @@ export default apiClient;
 
 // Auth API endpoints
 export const authAPI = {
-  register: async (username, password, role = 'ROLE_USER') => {
+  register: async (username, email, password, role = 'ROLE_USER') => {
     const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
       username,
+      email,
       password,
       role,
+    });
+    return response.data;
+  },
+
+  verifyOtp: async (email, otpCode) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
+      email,
+      otpCode,
+    });
+    return response.data;
+  },
+
+  resendOtp: async (email) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/resend-otp`, null, {
+      params: { email },
     });
     return response.data;
   },

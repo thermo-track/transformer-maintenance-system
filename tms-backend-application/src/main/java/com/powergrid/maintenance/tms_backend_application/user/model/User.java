@@ -23,8 +23,17 @@ public class User {
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
+    @Column(unique = true, nullable = false, length = 100)
+    private String email;
+
     @Column(nullable = false)
     private String password;
+
+    /**
+     * Email verification status
+     */
+    @Column(nullable = false)
+    private boolean emailVerified = false;
 
     /**
      * Role of the user (e.g., ROLE_USER, ROLE_ADMIN)
@@ -37,7 +46,7 @@ public class User {
      * Account status flags
      */
     @Column(nullable = false)
-    private boolean enabled = true;
+    private boolean enabled = false; // Changed to false by default until email is verified
 
     @Column(nullable = false)
     private boolean accountNonExpired = true;

@@ -58,21 +58,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (username, password, role = 'ROLE_USER') => {
+  const register = async (username, email, password, role = 'ROLE_USER') => {
     try {
       setError(null);
       setLoading(true);
       
-      const response = await authAPI.register(username, password, role);
+      const response = await authAPI.register(username, email, password, role);
       
       if (response.success) {
-        // Auto-login after registration
-        return await login(username, password);
+        // Don't auto-login - user needs to verify email first
+        return { success: true, email: response.email };
       } else {
         throw new Error(response.message || 'Registration failed');
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async (email, otpCode) => {
+    try {
+      setError(null);
+      setLoading(true);
+      
+      const response = await authAPI.verifyOtp(email, otpCode);
+      
+      if (response.success) {
+        return { success: true, message: response.message };
+      } else {
+        throw new Error(response.message || 'Verification failed');
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Verification failed';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -107,6 +128,7 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     register,
+    verifyOtp,
     logout,
     isAuthenticated,
     hasRole,

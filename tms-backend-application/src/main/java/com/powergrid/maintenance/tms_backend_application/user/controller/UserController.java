@@ -3,7 +3,9 @@ package com.powergrid.maintenance.tms_backend_application.user.controller;
 import com.powergrid.maintenance.tms_backend_application.user.dto.LoginRequest;
 import com.powergrid.maintenance.tms_backend_application.user.dto.LoginResponse;
 import com.powergrid.maintenance.tms_backend_application.user.dto.RegisterRequest;
+import com.powergrid.maintenance.tms_backend_application.user.dto.VerifyOtpRequest;
 import com.powergrid.maintenance.tms_backend_application.user.model.User;
+import com.powergrid.maintenance.tms_backend_application.user.service.OtpService;
 import com.powergrid.maintenance.tms_backend_application.user.service.UserService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -19,6 +21,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * REST Controller for user authentication and registration.
  */
@@ -30,6 +35,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private OtpService otpService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -47,31 +55,98 @@ public class UserController {
             // Create user entity from request
             User user = new User();
             user.setUsername(registerRequest.getUsername());
+            user.setEmail(registerRequest.getEmail());
             user.setPassword(registerRequest.getPassword());
             
             if (registerRequest.getRole() != null && !registerRequest.getRole().isEmpty()) {
                 user.setRole(registerRequest.getRole());
             }
 
-            // Register user (password will be encrypted in service)
+            // Register user (password will be encrypted in service, OTP will be sent)
             User savedUser = userService.registerUser(user);
 
-            log.info("User registered successfully: {}", savedUser.getUsername());
+            log.info("User registered successfully (pending email verification): {}", savedUser.getUsername());
             
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    new LoginResponse(true, "User registered successfully", savedUser.getUsername(), savedUser.getRole())
-            );
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Registration successful. Please check your email for verification code.");
+            response.put("email", savedUser.getEmail());
+            response.put("username", savedUser.getUsername());
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (IllegalArgumentException e) {
             log.error("Registration failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(
-                    new LoginResponse(false, e.getMessage())
-            );
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             log.error("Registration error: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new LoginResponse(false, "Registration failed: " + e.getMessage())
-            );
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Registration failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Verify email with OTP code.
+     * POST /api/auth/verify-otp
+     *
+     * @param verifyRequest the verification details (email and OTP code)
+     * @return ResponseEntity with verification result
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyRequest) {
+        try {
+            boolean verified = userService.verifyEmail(verifyRequest.getEmail(), verifyRequest.getOtpCode());
+            
+            if (verified) {
+                log.info("Email verified successfully: {}", verifyRequest.getEmail());
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Email verified successfully. You can now login.");
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("Invalid or expired OTP for email: {}", verifyRequest.getEmail());
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Invalid or expired verification code.");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+        } catch (Exception e) {
+            log.error("OTP verification error: ", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Verification failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Resend OTP to email.
+     * POST /api/auth/resend-otp
+     *
+     * @param email the email to resend OTP to
+     * @return ResponseEntity with result
+     */
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@RequestParam String email) {
+        try {
+            otpService.resendOtp(email);
+            log.info("OTP resent to: {}", email);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Verification code has been resent to your email.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error resending OTP: ", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Failed to resend verification code.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 

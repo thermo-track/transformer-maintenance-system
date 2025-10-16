@@ -44,7 +44,8 @@ public class SecurityConfig {
                 // Configure authorization rules - ORDER MATTERS!
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - no authentication required
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", 
+                                        "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
                         
                         // Swagger/OpenAPI endpoints
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

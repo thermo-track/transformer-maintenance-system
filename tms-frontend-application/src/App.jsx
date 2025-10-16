@@ -3,6 +3,7 @@ import Layout from './components/Layout.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import LoginPage from './features/auth/LoginPage.jsx';
 import RegisterPage from './features/auth/RegisterPage.jsx';
+import VerifyOtpPage from './features/auth/VerifyOtpPage.jsx';
 import Transformer from './features/transformers/pages/Transformer.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
@@ -21,6 +22,7 @@ export default function App() {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
       
       {/* Protected routes with Layout */}
       <Route path="/" element={
