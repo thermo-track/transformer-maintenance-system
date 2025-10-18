@@ -133,7 +133,7 @@ body {
   padding: 6px 14px;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
-  border-radius: 50px;
+  border-radius: 5px;
   border: 1px solid var(--glass-border);
   transition: var(--transition);
   margin: 5px;
@@ -174,16 +174,14 @@ body {
 
 
 .user-avatar {
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f59e0b, #ef4444);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: white;
-  font-size: 14px;
+  object-fit: cover;
+  display: block;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .user-info {
@@ -212,4 +210,19 @@ body {
   background: #34d399;
   border-radius: 50%;
   animation: pulse 2s infinite;
+}
+
+/* Settings Overlay */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
 }

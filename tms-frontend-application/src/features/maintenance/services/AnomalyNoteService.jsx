@@ -1,4 +1,6 @@
 // services/AnomalyNoteService.js
+import authFetch from '../../../lib/authFetch.js';
+
 class AnomalyNoteService {
   constructor() {
     const env = import.meta.env;
@@ -10,7 +12,7 @@ class AnomalyNoteService {
    */
   async getAnomalyNotes(inspectionId, anomalyId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes`,
         {
           method: 'GET',
@@ -37,7 +39,7 @@ class AnomalyNoteService {
    */
   async addAnomalyNote(inspectionId, anomalyId, noteText, createdBy = 'System User') {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes`,
         {
           method: 'POST',
@@ -68,7 +70,7 @@ class AnomalyNoteService {
    */
   async updateAnomalyNote(inspectionId, anomalyId, noteId, noteText) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes/${noteId}`,
         {
           method: 'PUT',
@@ -98,7 +100,7 @@ class AnomalyNoteService {
    */
   async deleteAnomalyNote(inspectionId, anomalyId, noteId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/anomalies/${anomalyId}/notes/${noteId}`,
         {
           method: 'DELETE',

@@ -1,17 +1,7 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../../config/env.js';
+import apiClient from '../../config/api.js';
 
-
-const http = axios.create({ baseURL: API_BASE_URL });
-
-
-http.interceptors.response.use(
-r => r,
-err => {
-const msg = err?.response?.data?.message || err.message || 'Request failed';
-return Promise.reject(new Error(msg));
-}
-);
+// Use the authenticated apiClient instead of creating a new axios instance
+const http = apiClient;
 
 
 export async function listTransformers({ page=0, size=10, by, q, range }) {

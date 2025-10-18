@@ -38,3 +38,4 @@ phase2_fault_type/api/__pycache__/*
 .idea/
 
 docker_cred.env
+OTP_IMPLEMENTATION.md
