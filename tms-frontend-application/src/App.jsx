@@ -1,5 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
+import PrivateRoute from './components/PrivateRoute.jsx';
+import LoginPage from './features/auth/LoginPage.jsx';
+import RegisterPage from './features/auth/RegisterPage.jsx';
+import VerifyOtpPage from './features/auth/VerifyOtpPage.jsx';
 import Transformer from './features/transformers/pages/Transformer.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
@@ -9,25 +13,101 @@ import TransformerLocations from "./features/maintenance/pages/TransformerLocati
 import TransformerLocationPage from './features/transformers/components/TransformerLocationPage.jsx';
 import TransformerLocationWrapper from './features/transformers/components/TransformerLocationWrapper';
 import TransformersMapWrapper from './features/transformers/components/TransformersMapWrapper';
-
+import UserSettings from './components/UserSettings/UserSettings.jsx';
 
 import './App.css';
 
 export default function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/transformers" replace />} />
-        <Route path="/transformers" element={<Transformer />} />
-        <Route path="/inspections" element={<InspectionsPage />} />
-        <Route path="/transformer/:transformerNo" element={<InspectionsST />} />
-        <Route path="*" element={<p>Not found</p>} />
-        <Route path="/transformer/:transformerNo/:inspectionId/image" element={<InspectionsSTImage />} />
-        <Route path="/transformer/:transformerId/baseimage" element={<BaselineImage />} />
-        <Route path="/transformers/locations" element={<TransformerLocations />} />
-        <Route path="/transformers/:transformerNo/location" element={<TransformerLocationWrapper />} />
-        <Route path="/transformers/map" element={<TransformersMapWrapper />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
+      
+      {/* Protected routes with Layout */}
+      <Route path="/" element={
+        <PrivateRoute>
+          <Layout>
+            <Navigate to="/transformers" replace />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformers" element={
+        <PrivateRoute>
+          <Layout>
+            <Transformer />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/inspections" element={
+        <PrivateRoute>
+          <Layout>
+            <InspectionsPage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformer/:transformerNo" element={
+        <PrivateRoute>
+          <Layout>
+            <InspectionsST />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformer/:transformerNo/:inspectionId/image" element={
+        <PrivateRoute>
+          <Layout>
+            <InspectionsSTImage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformer/:transformerId/baseimage" element={
+        <PrivateRoute>
+          <Layout>
+            <BaselineImage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformers/locations" element={
+        <PrivateRoute>
+          <Layout>
+            <TransformerLocations />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformers/:transformerNo/location" element={
+        <PrivateRoute>
+          <Layout>
+            <TransformerLocationWrapper />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/transformers/map" element={
+        <PrivateRoute>
+          <Layout>
+            <TransformersMapWrapper />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/settings/user" element={
+        <PrivateRoute>
+          <Layout>
+            <UserSettings />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      {/* 404 */}
+      <Route path="*" element={<p>Not found</p>} />
+    </Routes>
   );
 }

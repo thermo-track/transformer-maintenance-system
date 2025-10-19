@@ -1,4 +1,5 @@
 // services/LocationService.js - FIXED VERSION
+import authFetch from '../../../lib/authFetch.js';
 
 const API_BASE_URL = "/api/transformers";
 
@@ -18,7 +19,7 @@ export const locationService = {
       
       console.log('📤 Request body:', requestBody);
       
-      const response = await fetch(`${API_BASE_URL}/${transformerNo}/location`, {
+      const response = await authFetch(`${API_BASE_URL}/${transformerNo}/location`, {
         method: "PUT",
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +61,7 @@ export const locationService = {
     try {
       console.log('🗑️ Deleting transformer location for:', transformerNo);
       
-      const response = await fetch(`${API_BASE_URL}/${transformerNo}/location`, {
+      const response = await authFetch(`${API_BASE_URL}/${transformerNo}/location`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',

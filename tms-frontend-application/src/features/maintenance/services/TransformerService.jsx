@@ -1,7 +1,8 @@
 
 
-
 // services/TransformerService.js
+import authFetch from '../../../lib/authFetch.js';
+
 const API_BASE_URL = "/api/transformers";
 
 export const transformerService = {
@@ -12,7 +13,7 @@ export const transformerService = {
       const url = `${API_BASE_URL}?page=0&size=1&q=${encodeURIComponent(transformerNo)}&by=transformerNo`;
       console.log('📡 API URL:', url);
       
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: "GET",
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +59,7 @@ export const transformerService = {
       const url = `${API_BASE_URL}/${encodeURIComponent(transformerId)}`;
       console.log('API URL:', url);
       
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: "GET",
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export const transformerService = {
       const url = `${API_BASE_URL}?page=${page}&size=${size}&q=${encodeURIComponent(query)}&by=${searchBy}`;
       console.log('Search API URL:', url);
       
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: "GET",
         headers: {
           'Content-Type': 'application/json',

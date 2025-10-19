@@ -1,11 +1,12 @@
 // services/inspectionService.js
+import authFetch from '../../../lib/authFetch.js';
 
 const API_BASE_URL = 'http://localhost:8080/api/inspections';
 
 class InspectionService {
   async getAllInspections() {
     try {
-      const response = await fetch(API_BASE_URL);
+      const response = await authFetch(API_BASE_URL);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -19,7 +20,7 @@ class InspectionService {
 
   async getInspectionById(id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/${id}`);
+      const response = await authFetch(`${API_BASE_URL}/${id}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -32,7 +33,7 @@ class InspectionService {
   async getInspectionsByTransformer(transformerNo) {
     try {
       console.log("Fetching inspections for transformer No:", transformerNo);
-      const response = await fetch(`${API_BASE_URL}/transformer/${transformerNo}`, {
+      const response = await authFetch(`${API_BASE_URL}/transformer/${transformerNo}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -58,7 +59,7 @@ async createInspection(inspectionData) {
     // Log the data being sent
     console.log("Sending inspection data to backend:", inspectionData);
 
-    const response = await fetch(API_BASE_URL, {
+    const response = await authFetch(API_BASE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ async createInspection(inspectionData) {
 
   async updateInspection(id, inspectionData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
+      const response = await authFetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ async createInspection(inspectionData) {
 
   async deleteInspection(id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
+      const response = await authFetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE'
       });
       
@@ -129,7 +130,7 @@ async createInspection(inspectionData) {
 
   async getInspectionsByBranch(branch) {
     try {
-      const response = await fetch(`${API_BASE_URL}/branch/${encodeURIComponent(branch)}`);
+      const response = await authFetch(`${API_BASE_URL}/branch/${encodeURIComponent(branch)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -148,7 +149,7 @@ async createInspection(inspectionData) {
         endDate: endDate
       });
       
-      const response = await fetch(`${API_BASE_URL}/date-range?${params}`);
+      const response = await authFetch(`${API_BASE_URL}/date-range?${params}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -163,7 +164,7 @@ async createInspection(inspectionData) {
 
   async getEnvironmentalConditions() {
     try {
-      const response = await fetch(`${API_BASE_URL}/environmental-conditions`, {
+      const response = await authFetch(`${API_BASE_URL}/environmental-conditions`, {
         method: 'GET',
       });
       
@@ -181,7 +182,7 @@ async createInspection(inspectionData) {
 
   async getInspectionsByEnvironmentalCondition(condition) {
     try {
-      const response = await fetch(`${API_BASE_URL}/by-condition/${condition}`, {
+      const response = await authFetch(`${API_BASE_URL}/by-condition/${condition}`, {
         method: 'GET',
       });
       
@@ -204,7 +205,7 @@ async getInspectionWeatherCondition(inspectionId) {
   try {
     console.log(`Fetching weather condition for inspection: ${inspectionId}`);
     
-    const response = await fetch(`${API_BASE_URL}/${inspectionId}/weather-condition`, {
+    const response = await authFetch(`${API_BASE_URL}/${inspectionId}/weather-condition`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -236,7 +237,7 @@ async getInspectionWeatherCondition(inspectionId) {
 
 async getLatestInspectionPerTransformer() {
   try {
-    const response = await fetch(`${API_BASE_URL}/latest-per-transformer`);
+    const response = await authFetch(`${API_BASE_URL}/latest-per-transformer`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -259,7 +260,7 @@ async updateInspectionStatus(inspectionId, status) {
   try {
     console.log(`Updating inspection ${inspectionId} status to: ${status}`);
     
-    const response = await fetch(`${API_BASE_URL}/${inspectionId}/status`, {
+    const response = await authFetch(`${API_BASE_URL}/${inspectionId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -291,7 +292,7 @@ async getInspectionStatus(inspectionId) {
   try {
     console.log(`Fetching status for inspection: ${inspectionId}`);
     
-    const response = await fetch(`${API_BASE_URL}/${inspectionId}`, {
+    const response = await authFetch(`${API_BASE_URL}/${inspectionId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
