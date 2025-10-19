@@ -4,7 +4,7 @@ import authFetch from '../../../lib/authFetch.js';
 class AnomalyNoteService {
   constructor() {
     const env = import.meta.env;
-    this.backendApiUrl = env.VITE_BACKEND_API_URL || 'http://localhost:8080/api';
+    this.backendApiUrl = env.VITE_BACKEND_API_URL || '/api';  // Use relative path as fallback
   }
 
   /**

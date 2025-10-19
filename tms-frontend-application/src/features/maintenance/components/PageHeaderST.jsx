@@ -26,7 +26,12 @@ const PageHeaderST = ({
 
   useEffect(() => {
     const fetchLastUpdatedInfo = async () => {
-      if (!transformerNo) return;
+      // Validate that we have the required transformerId before making API call
+      if (!transformerId) {
+        console.warn('PageHeaderST: transformerId is undefined, skipping last updated fetch');
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -42,7 +47,7 @@ const PageHeaderST = ({
     };
 
     fetchLastUpdatedInfo();
-  }, [transformerNo]); // Remove transformerService from dependencies
+  }, [transformerId]); // Use transformerId in dependency array since that's what we're using in the API call
 
   const handleBaselineImagesClick = () => {
     navigate(`/transformer/${transformerId}/baseimage`);

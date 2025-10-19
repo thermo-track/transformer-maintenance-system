@@ -1,4 +1,6 @@
 // services/BaselineImageService.js
+import authFetch from '../../../lib/authFetch.js';
+
 class BaselineImageService {
   constructor() {
     const env = import.meta.env;
@@ -136,12 +138,10 @@ class BaselineImageService {
         adminUserId: 'SYSTEM' // You might want to get this from auth context
       };
 
-      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/image`, {
+      const response = await authFetch(`${this.backendApiUrl}/transformers/${transformerId}/image`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify(imageMetadata)
       });
@@ -171,12 +171,8 @@ class BaselineImageService {
    */
   async getBaselineImage(transformerId, weatherCondition) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/image/${weatherCondition}`, {
+      const response = await authFetch(`${this.backendApiUrl}/transformers/${transformerId}/image/${weatherCondition}`, {
         method: 'GET',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
-        }
       });
 
       if (!response.ok) {
@@ -247,12 +243,8 @@ class BaselineImageService {
       }
 
       // Delete from backend first
-      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/image/${weatherCondition}`, {
+      const response = await authFetch(`${this.backendApiUrl}/transformers/${transformerId}/image/${weatherCondition}`, {
         method: 'DELETE',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
-        }
       });
 
       if (!response.ok) {
@@ -281,12 +273,8 @@ class BaselineImageService {
    */
   async getTransformerImagesInfo(transformerId) {
     try {
-      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/images/info`, {
+      const response = await authFetch(`${this.backendApiUrl}/transformers/${transformerId}/images/info`, {
         method: 'GET',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
-        }
       });
 
       if (!response.ok) {
@@ -342,12 +330,8 @@ class BaselineImageService {
     try {
       console.log('Getting last updated time for transformer:', transformerId);
       
-      const response = await fetch(`${this.backendApiUrl}/transformers/${transformerId}/last-updated`, {
+      const response = await authFetch(`${this.backendApiUrl}/transformers/${transformerId}/last-updated`, {
         method: 'GET',
-        headers: {
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`
-        }
       });
 
       if (!response.ok) {
