@@ -80,7 +80,7 @@ export default apiClient;
 // Auth API endpoints
 export const authAPI = {
   register: async (username, email, password, role = 'ROLE_USER') => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
+    const response = await axios.post('/api/auth/register', {
       username,
       email,
       password,
@@ -90,7 +90,7 @@ export const authAPI = {
   },
 
   verifyOtp: async (email, otpCode) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
+    const response = await axios.post('/api/auth/verify-otp', {
       email,
       otpCode,
     });
@@ -98,14 +98,14 @@ export const authAPI = {
   },
 
   resendOtp: async (email) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/resend-otp`, null, {
+    const response = await axios.post('/api/auth/resend-otp', null, {
       params: { email },
     });
     return response.data;
   },
 
   login: async (username, password) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+    const response = await axios.post('/api/auth/login', {
       username,
       password,
     });
