@@ -104,10 +104,13 @@ def fuse_regions_with_detections(regions: List[Dict[str, Any]], detections: List
     # Modifies regions in place, attaching best-match detection info
     det_used = [False] * len(detections)
     for r in regions:
-        bbox = r.get('bbox') or r.get('bbox_xywh')  # expect [x, y, w, h]
-        if not bbox:
+        bbox_xyxy = r.get('bbox_original_xyxy') or r.get('bbox_xyxy')
+        bbox_xywh = r.get('bbox_original_xywh') or r.get('bbox') or r.get('bbox_xywh')
+        if not bbox_xyxy and bbox_xywh:
+            bbox_xyxy = xywh_to_xyxy(bbox_xywh)
+        if not bbox_xyxy:
             continue
-        r_xyxy = xywh_to_xyxy(bbox)
+        r_xyxy = tuple(bbox_xyxy)
         best_idx, best_iou = -1, 0.0
         for i, d in enumerate(detections):
             d_xyxy = tuple(d['bbox_xyxy'])
@@ -120,6 +123,7 @@ def fuse_regions_with_detections(regions: List[Dict[str, Any]], detections: List
             r['fault_type'] = d['class_name']
             r['fault_confidence'] = d['conf']
             r['detector_box'] = d['bbox_xywh']
+            r['detector_box_xyxy'] = d['bbox_xyxy']
             r['detector_iou'] = best_iou
             det_used[best_idx] = True
         else:
@@ -214,9 +218,10 @@ def draw_viz(image_path: Path, regions: List[Dict[str, Any]], detections: List[D
         used_label_rects.append(rect)
     # Draw regions (green) and matched info
     for r in regions:
-        if not r.get('bbox') and not r.get('bbox_xywh'):
+        if not r.get('bbox') and not r.get('bbox_xywh') and not r.get('bbox_original_xywh'):
             continue
-        x, y, w, h = map(int, r.get('bbox') or r.get('bbox_xywh'))
+        bbox = r.get('bbox_original_xywh') or r.get('bbox') or r.get('bbox_xywh')
+        x, y, w, h = map(int, bbox)
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 200, 0), 2)
         if r.get('fault_type'):
             lbl = r['fault_type']
