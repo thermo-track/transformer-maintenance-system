@@ -43,6 +43,7 @@ public class OtpService {
     public void generateAndSendOtp(String email) {
         // Delete any existing OTP for this email
         otpRepository.deleteByEmail(email);
+        otpRepository.flush();  // Force flush to ensure delete completes before save
 
         // Generate new OTP
         String otpCode = generateOtpCode();

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { TimePicker } from 'antd';
 import dayjs from 'dayjs';
+import authFetch from '../../../lib/authFetch.js';
 import '../styles/modal.css';
 
 const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit, onClose }) => {
@@ -154,7 +155,7 @@ const InspectionModal = ({ title, inspection, branches, transformerNo, onSubmit,
       try {
         setLoadingTransformers(true);
         const qs = formData.branch ? `?region=${encodeURIComponent(formData.branch)}` : '';
-        const res = await fetch(`/api/transformers/numbers${qs}`);
+        const res = await authFetch(`/api/transformers/numbers${qs}`);
         if (!res.ok) throw new Error('Failed to load transformer numbers');
         const data = await res.json();
         let options = Array.isArray(data) ? data : [];

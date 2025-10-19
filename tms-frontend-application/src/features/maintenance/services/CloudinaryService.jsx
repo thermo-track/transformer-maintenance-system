@@ -1,11 +1,13 @@
 // services/CloudinaryService.js
+import authFetch from '../../../lib/authFetch.js';
+
 class CloudinaryService {
   constructor() {
     const env = import.meta.env;
 
     this.cloudName = env.VITE_CLOUDINARY_CLOUD_NAME;
     this.uploadPreset = env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    this.backendApiUrl = env.VITE_BACKEND_API_URL || 'http://localhost:8080/api';
+    this.backendApiUrl = env.VITE_BACKEND_API_URL || '/api';  // Use relative path as fallback
 
     if (!this.cloudName || !this.uploadPreset) {
       console.error('Cloudinary configuration missing. Please set environment variables for cloud name and upload preset');
@@ -160,7 +162,7 @@ class CloudinaryService {
       };
 
       // Call the backend endpoint that saves metadata AND triggers inference
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/upload-thermal-with-inference`,
         {
           method: 'POST',
@@ -195,7 +197,7 @@ class CloudinaryService {
    */
   async getInspectionAnomalies(inspectionId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/anomalies`,
         {
           method: 'GET',
@@ -302,7 +304,7 @@ class CloudinaryService {
    */
   async rerunInferenceWithThresholds(inspectionId, thresholds) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/rerun-inference`,
         {
           method: 'POST',
@@ -337,7 +339,7 @@ class CloudinaryService {
    */
   async hasCloudImage(inspectionId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/images/has-cloud-image`,
         {
           method: 'GET'
@@ -364,7 +366,7 @@ class CloudinaryService {
    */
   async getCloudImageUrlFromBackend(inspectionId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/images/cloud-image-url`,
         {
           method: 'GET'

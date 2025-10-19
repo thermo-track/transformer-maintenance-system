@@ -30,12 +30,22 @@ outputs/*
 __pycache__/*
 phase2_anomaly_pipeline/*
 phase2_fault_type/__pycache__/*
+phase2_fault_type/__pycache__
 phase2_fault_type/pipeline/__pycache__/*
 phase2_fault_type/yolo11s.pt
-phase2_fault_type/api/outputs/json/*
 phase2_fault_type/api/__pycache__/*
+phase2_fault_type/api/__pycache__
+phase2_fault_type/api/venv
+phase2_fault_type/api/venv/*
+
+
 .vscode/
 .idea/
 
 docker_cred.env
 OTP_IMPLEMENTATION.md
+
+
+
+phase2_fault_type/docker-build.ps1
+phase2_fault_type/DOCKER_README.md
