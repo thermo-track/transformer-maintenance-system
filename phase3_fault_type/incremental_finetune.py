@@ -20,6 +20,51 @@ from .utils import link_file, sample_original_dataset
 from . import config
 
 
+def _resolve_device(requested: str, logger: logging.Logger) -> str:
+    """Validate the requested device and gracefully fall back to CPU if needed."""
+    try:
+        import torch  # type: ignore
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        logger.warning("PyTorch unavailable (%s); using CPU.", exc)
+        return "cpu"
+
+    if requested in (None, "", "auto"):
+        if torch.cuda.is_available():
+            return "0"
+        logger.warning("CUDA not available; using CPU instead of auto-detected GPU.")
+        return "cpu"
+
+    if requested.lower() == "cpu":
+        return "cpu"
+
+    # Support comma-separated GPU list (e.g., "0" or "0,1")
+    devices = [item.strip() for item in str(requested).split(",") if item.strip()]
+    if not devices:
+        logger.warning("No valid CUDA devices specified; using CPU.")
+        return "cpu"
+
+    if not torch.cuda.is_available():
+        logger.warning("CUDA not available (torch.cuda.is_available() is False); using CPU instead of '%s'.", requested)
+        return "cpu"
+
+    available = torch.cuda.device_count()
+    try:
+        for dev in devices:
+            idx = int(dev)
+            if idx < 0 or idx >= available:
+                logger.warning(
+                    "Requested CUDA device '%s' unavailable (device_count=%d); using CPU instead.",
+                    dev,
+                    available,
+                )
+                return "cpu"
+    except ValueError as exc:
+        logger.warning("Invalid CUDA device specification '%s' (%s); using CPU.", requested, exc)
+        return "cpu"
+
+    return ",".join(devices)
+
+
 def _setup_logger(run_name: str) -> tuple[logging.Logger, Path]:
     logs_dir = config.RUNS_DIR / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
@@ -166,6 +211,11 @@ def main() -> None:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_name = args.name or f"finetune_{image_id}_{timestamp}"
     logger, log_path = _setup_logger(run_name)
+
+    resolved_device = _resolve_device(args.device, logger)
+    if resolved_device != args.device:
+        logger.warning("Device override: requested '%s', using '%s' instead.", args.device, resolved_device)
+    args.device = resolved_device
 
     logger.info("Starting incremental fine-tune")
     logger.info("RUN_NAME: %s", run_name)
