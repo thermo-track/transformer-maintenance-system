@@ -176,13 +176,17 @@ class BaselineImageService {
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          return null; // No image found
-        }
         throw new Error(`Failed to get baseline image: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      
+      // Backend now returns 200 with imageUrl=null if not found
+      if (!result.imageUrl) {
+        console.log(`ℹ️ No ${weatherCondition} baseline image uploaded yet for transformer ${transformerId}`);
+        return null;
+      }
+      
       return result.imageUrl;
       
     } catch (error) {

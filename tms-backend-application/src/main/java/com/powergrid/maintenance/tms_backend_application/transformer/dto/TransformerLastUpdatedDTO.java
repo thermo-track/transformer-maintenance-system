@@ -14,4 +14,6 @@ public class TransformerLastUpdatedDTO {
     private Instant lastImageUpdatedAt;
     private String lastUpdatedCondition;
     private String lastUploadedBy;
+    private Instant transformerUpdatedAt;  // Fallback: transformer's updated_at
+    private Instant transformerCreatedAt;  // Fallback: transformer's created_at
 }

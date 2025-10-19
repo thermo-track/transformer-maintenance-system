@@ -57,11 +57,20 @@ const PageHeaderIns = ({
       return "Unable to fetch last updated date";
     }
 
-    if (!lastUpdatedInfo || !lastUpdatedInfo.lastImageUpdatedAt) {
-      return "No images uploaded yet";
+    if (!lastUpdatedInfo) {
+      return "No update information available";
     }
 
-    const date = new Date(lastUpdatedInfo.lastImageUpdatedAt);
+    // Use lastImageUpdatedAt if available, otherwise fall back to transformerUpdatedAt, then transformerCreatedAt
+    const dateToUse = lastUpdatedInfo.lastImageUpdatedAt 
+      || lastUpdatedInfo.transformerUpdatedAt 
+      || lastUpdatedInfo.transformerCreatedAt;
+
+    if (!dateToUse) {
+      return "No date information available";
+    }
+
+    const date = new Date(dateToUse);
     const formattedDate = date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -70,10 +79,16 @@ const PageHeaderIns = ({
       minute: '2-digit'
     });
 
-    const weatherCondition = lastUpdatedInfo.lastUpdatedWeatherCondition?.toLowerCase() || '';
-    const uploadedBy = lastUpdatedInfo.lastImageUploadedBy || 'Unknown';
+    // If we have image data, show full details
+    if (lastUpdatedInfo.lastImageUpdatedAt) {
+      const weatherCondition = lastUpdatedInfo.lastUpdatedCondition?.toLowerCase() || '';
+      const uploadedBy = lastUpdatedInfo.lastUploadedBy || 'Unknown';
+      return `Last updated: ${formattedDate} (${weatherCondition}) by ${uploadedBy}`;
+    }
 
-    return `${formattedDate}`;
+    // Otherwise, just show when the transformer was last updated/created
+    const source = lastUpdatedInfo.transformerUpdatedAt ? 'Transformer updated' : 'Transformer created';
+    return `${source}: ${formattedDate}`;
   };
 
   return (

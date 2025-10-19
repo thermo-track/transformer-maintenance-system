@@ -363,6 +363,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
         <PageHeaderIns 
           onNewInspection={() => setShowCreateModal(true)}
           transformerNo={transformerNo}
+          transformerId={transformer?.id}
         />
         <div className="loading-container">
           <div className="loading-spinner"></div>
