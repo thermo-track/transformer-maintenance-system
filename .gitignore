@@ -39,3 +39,9 @@ phase2_fault_type/api/__pycache__/*
 
 docker_cred.env
 OTP_IMPLEMENTATION.md
+anom/*
+ano/*
+phase3_fault_type/__pycache__/*
+phase3_fault_type/annotations/*
+phase3_fault_type/feedback_dataset/*
+phase3_fault_type/yolo11n.pt
