@@ -54,6 +54,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", 
                                         "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
                         
+                        // Health check endpoint for Docker
+                        .requestMatchers("/actuator/health").permitAll()
+                        
                         // Swagger/OpenAPI endpoints
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         

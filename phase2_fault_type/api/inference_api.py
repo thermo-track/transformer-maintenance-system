@@ -18,7 +18,7 @@ class InferenceRequest(BaseModel):
     baseline_url: str
     maintenance_url: str
     inspection_id: str
-    weights_path: str = "../weights/best.pt"  # Remove the leading slash
+    weights_path: str = "weights/best.pt"  # Path relative to /app working directory in Docker
     threshold_pct: float = 2.0
     iou_thresh: float = 0.7
     conf_thresh: float = 0.25
@@ -54,13 +54,20 @@ async def run_inference(request: InferenceRequest):
     temp_dir = Path(tempfile.mkdtemp())
     
     try:
-        # Check if weights file exists
+        # Check if weights file exists - try both paths for compatibility
         weights_path = Path(request.weights_path)
         if not weights_path.exists():
-            raise HTTPException(
-                status_code=404, 
-                detail=f"Weights file not found: {weights_path}"
-            )
+            # Try alternative path (for Docker compatibility)
+            alt_weights_path = Path("../weights/best.pt") if request.weights_path == "weights/best.pt" else Path("weights/best.pt")
+            if alt_weights_path.exists():
+                weights_path = alt_weights_path
+                print(f"Using alternative weights path: {weights_path}")
+            else:
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Weights file not found at {request.weights_path} or {alt_weights_path}"
+                )
+        
         print(f"Weights file found: {weights_path}")
         
         # Download images
