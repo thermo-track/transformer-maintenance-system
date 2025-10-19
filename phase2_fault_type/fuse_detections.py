@@ -220,29 +220,29 @@ def draw_viz(image_path: Path, regions: List[Dict[str, Any]], detections: List[D
     for r in regions:
         if not r.get('bbox') and not r.get('bbox_xywh') and not r.get('bbox_original_xywh'):
             continue
+        if not r.get('fault_type'):
+            continue
         bbox = r.get('bbox_original_xywh') or r.get('bbox') or r.get('bbox_xywh')
         x, y, w, h = map(int, bbox)
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 200, 0), 2)
-        if r.get('fault_type'):
-            lbl = r['fault_type']
-            if lbl:
-                lbl = _abbrev(lbl)
-            if r.get('fault_confidence') is not None:
-                lbl = f"{lbl} {r['fault_confidence']:.2f}"
-            # Place inside the box top-left if possible, otherwise just above
-            ty = y + 14 if (y + 20) < img.shape[0] else max(0, y - 2)
-            rect = _put_label_with_bg(
-                img,
-                lbl,
-                x,
-                ty,
-                fg=(255, 255, 255),
-                bg=(20, 160, 60),
-                scale=0.5,
-                thickness=1,
-                used=used_label_rects,
-            )
-            used_label_rects.append(rect)
+        lbl = r['fault_type']
+        if lbl:
+            lbl = _abbrev(lbl)
+        if r.get('fault_confidence') is not None:
+            lbl = f"{lbl} {r['fault_confidence']:.2f}"
+        ty = y + 14 if (y + 20) < img.shape[0] else max(0, y - 2)
+        rect = _put_label_with_bg(
+            img,
+            lbl,
+            x,
+            ty,
+            fg=(255, 255, 255),
+            bg=(20, 160, 60),
+            scale=0.5,
+            thickness=1,
+            used=used_label_rects,
+        )
+        used_label_rects.append(rect)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(out_path), img)
 
