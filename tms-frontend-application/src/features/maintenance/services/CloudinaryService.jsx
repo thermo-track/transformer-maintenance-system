@@ -5,7 +5,7 @@ class CloudinaryService {
 
     this.cloudName = env.VITE_CLOUDINARY_CLOUD_NAME;
     this.uploadPreset = env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    this.backendApiUrl = env.VITE_BACKEND_API_URL || 'http://localhost:8080/api';
+    this.backendApiUrl = env.VITE_BACKEND_API_URL || '/api';  // Use relative path as fallback
 
     if (!this.cloudName || !this.uploadPreset) {
       console.error('Cloudinary configuration missing. Please set environment variables for cloud name and upload preset');

@@ -121,7 +121,9 @@ FROM public.transformers t
 JOIN public.transformer_images ti ON t.id = ti.transformer_id
 ORDER BY t.transformer_no, ti.weather_condition;
 
-ALTER SEQUENCE inspection_id_sequence RESTART WITH 100000016;
+-- Ensure the inspection_id_sequence is in sync with the current data to avoid
+-- duplicate key errors when the DB already contains inspection rows (eg. persistent volumes).
+SELECT setval('inspection_id_sequence', COALESCE((SELECT MAX(inspection_id) FROM inspections), 0), true);
 
 -- Create inference_metadata table to store inference run information
 CREATE TABLE IF NOT EXISTS public.inference_metadata (

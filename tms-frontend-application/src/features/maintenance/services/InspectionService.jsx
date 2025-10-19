@@ -1,7 +1,7 @@
 // services/inspectionService.js
 import authFetch from '../../../lib/authFetch.js';
 
-const API_BASE_URL = 'http://localhost:8080/api/inspections';
+const API_BASE_URL = '/api/inspections';
 
 class InspectionService {
   async getAllInspections() {
