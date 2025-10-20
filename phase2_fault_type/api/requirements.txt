@@ -12,3 +12,8 @@ torch==2.6.0+cpu
 torchvision==0.21.0+cpu
 # Then install ultralytics (will use the CPU PyTorch we just installed)
 ultralytics==8.3.204
+
+
+
+# torch==2.5.1+cpu
+# torchvision==0.20.1+cpu

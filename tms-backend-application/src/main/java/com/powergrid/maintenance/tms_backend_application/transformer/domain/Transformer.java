@@ -1,6 +1,7 @@
 package com.powergrid.maintenance.tms_backend_application.transformer.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -18,6 +19,7 @@ import java.util.List;
         @Index(name = "ux_transformer_no", columnList = "transformer_no", unique = true)
     }
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "inspections", "transformerImages"})
 public class Transformer {
     
     @Id

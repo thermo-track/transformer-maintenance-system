@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 
 import lombok.Data;
@@ -28,6 +29,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "inspections")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Inspection {
 
     @Id
@@ -68,6 +70,10 @@ public class Inspection {
 
     @Column(name = "cloud_uploaded_at")
     private ZonedDateTime cloudUploadedAt;
+
+    // Store transformer_no directly to avoid lazy loading
+    @Column(name = "transformer_no", insertable = false, updatable = false)
+    private String transformerNo;
 
     // Fixed relationship - now properly manages the transformer_no column
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -116,21 +122,8 @@ public class Inspection {
         return cloudImageUrl != null && !cloudImageUrl.isEmpty();
     }
 
-    // Helper method to get transformer number when needed
-    public String getTransformerNo() {
-        return transformer != null ? transformer.getTransformerNo() : null;
-    }
-
-    // Helper method to set transformer by transformer number (useful for API operations)
-    public void setTransformerNo(String transformerNo) {
-        if (transformerNo != null) {
-            Transformer t = new Transformer();
-            t.setTransformerNo(transformerNo);
-            this.transformer = t;
-        } else {
-            this.transformer = null;
-        }
-    }
+    // Lombok will generate getTransformerNo() and setTransformerNo() for the field
+    // No need for helper methods that access the transformer relationship
 
     // Important: Override equals and hashCode for proper collection handling
     @Override

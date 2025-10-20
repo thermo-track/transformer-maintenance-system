@@ -26,7 +26,6 @@ replay_pid*
 In21-EN3350-Project Outline.md
 SDP/*
 additional/*
-outputs/*
 __pycache__/*
 phase2_anomaly_pipeline/*
 phase2_fault_type/__pycache__/*
@@ -37,6 +36,20 @@ phase2_fault_type/api/__pycache__/*
 phase2_fault_type/api/__pycache__
 phase2_fault_type/api/venv
 phase2_fault_type/api/venv/*
+
+# Ignore all phase2 outputs except json folder
+phase2_fault_type/api/outputs/viz/*
+phase2_fault_type/api/outputs/
+
+# Ignore all JSON output files
+phase2_fault_type/api/outputs/json/*
+
+!phase2_fault_type/api/outputs/json/100000001_result.json
+!phase2_fault_type/api/outputs/json/100000002_result.json
+!phase2_fault_type/api/outputs/json/100000003_result.json
+!phase2_fault_type/api/outputs/json/100000004_result.json
+!phase2_fault_type/api/outputs/json/100000005_result.json
+!phase2_fault_type/api/outputs/json/100000006_result.json
 
 
 .vscode/

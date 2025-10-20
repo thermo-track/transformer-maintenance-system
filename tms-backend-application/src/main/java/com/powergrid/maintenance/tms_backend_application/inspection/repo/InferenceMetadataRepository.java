@@ -15,6 +15,8 @@ public interface InferenceMetadataRepository extends JpaRepository<InferenceMeta
 
     Optional<InferenceMetadata> findByInspectionId(Long inspectionId);
 
+    @Transactional
+    @Modifying
     void deleteByInspectionId(Long inspectionId);
 
     /**

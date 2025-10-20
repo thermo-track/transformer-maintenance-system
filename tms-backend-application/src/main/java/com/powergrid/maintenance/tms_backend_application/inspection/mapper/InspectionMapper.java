@@ -62,13 +62,18 @@ public class InspectionMapper {
         dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
         dto.setStatus(inspection.getStatus());
 
-
-        if (inspection.getTransformer() != null) {
-        dto.setPoleNo(inspection.getTransformer().getPoleNo());
-        dto.setRegion(inspection.getTransformer().getRegion());
-        dto.setType(inspection.getTransformer().getType());
-        dto.setLocationDetails(inspection.getTransformer().getLocationDetails());
-    }
+        // Safely access transformer properties
+        try {
+            if (inspection.getTransformer() != null) {
+                dto.setPoleNo(inspection.getTransformer().getPoleNo());
+                dto.setRegion(inspection.getTransformer().getRegion());
+                dto.setType(inspection.getTransformer().getType());
+                dto.setLocationDetails(inspection.getTransformer().getLocationDetails());
+            }
+        } catch (Exception e) {
+            // If transformer is not loaded or causes issues, just skip it
+            // The transformerNo is already set above
+        }
         
         return dto;
     }

@@ -5,6 +5,7 @@ import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/baseline-image-page.css';
 import { transformerService } from '../services/TransformerService';
 import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
+import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 
 const BaselineImagePage = () => {
   // Changed from transformerNo to transformerId
@@ -21,6 +22,7 @@ const BaselineImagePage = () => {
   const [uploadingCondition, setUploadingCondition] = useState(null);
   const [transformer, setTransformer] = useState(null);
   const [isLoadingTransformer, setIsLoadingTransformer] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, weatherCondition: null });
 
   const weatherConditions = [
     { value: 'sunny', label: 'Sunny', icon: '☀️', color: '#FFA500' },
@@ -125,9 +127,13 @@ const BaselineImagePage = () => {
   };
 
   const handleDeleteImage = async (weatherCondition) => {
-    if (!window.confirm(`Are you sure you want to delete the ${weatherCondition} baseline image?`)) {
-      return;
-    }
+    // Show custom confirmation dialog
+    setDeleteConfirm({ isOpen: true, weatherCondition });
+  };
+
+  const confirmDelete = async () => {
+    const { weatherCondition } = deleteConfirm;
+    setDeleteConfirm({ isOpen: false, weatherCondition: null });
 
     try {
       setIsLoading(true);
@@ -150,6 +156,10 @@ const BaselineImagePage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ isOpen: false, weatherCondition: null });
   };
 
   const renderWeatherBox = (condition) => {
@@ -315,6 +325,19 @@ const BaselineImagePage = () => {
         )}
         
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        title="Delete Baseline Image"
+        message={`Are you sure you want to delete the ${deleteConfirm.weatherCondition} baseline image? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonClass="danger"
+        icon="🗑️"
+      />
     </div>
   );
 };

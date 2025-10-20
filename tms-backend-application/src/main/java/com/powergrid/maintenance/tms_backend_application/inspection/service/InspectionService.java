@@ -43,6 +43,9 @@ public class InspectionService {
     @Autowired
     private TransformerRepository transformerRepo;
 
+    @Autowired
+    private com.powergrid.maintenance.tms_backend_application.inspection.repo.InferenceMetadataRepository inferenceMetadataRepository;
+
     /**
      * Create a new inspection with proper transformer relationship management
      */
@@ -235,6 +238,10 @@ public class InspectionService {
         try {
             log.info("Retrieving inspections for transformer ID: {}", transformerId);
             
+            // Fetch transformer separately to avoid lazy loading issues
+            Transformer transformer = transformerRepo.findByTransformerNo(transformerId)
+                .orElse(null);
+            
             List<Inspection> inspections = inspectionRepo.findByTransformerNo(transformerId);
             
             if (inspections.isEmpty()) {
@@ -242,7 +249,27 @@ public class InspectionService {
                 return ResponseEntity.ok(new ArrayList<>());
             }
             
-            List<InspectionResponseDTO> responseDTOs = inspectionMapper.toResponseDTOList(inspections);
+            // Map inspections to DTOs without accessing transformer relationship
+            List<InspectionResponseDTO> responseDTOs = inspections.stream()
+                .map(inspection -> {
+                    InspectionResponseDTO dto = new InspectionResponseDTO();
+                    dto.setInspectionId(inspection.getInspectionId());
+                    dto.setBranch(inspection.getBranch());
+                    dto.setTransformerNo(inspection.getTransformerNo());
+                    dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
+                    dto.setStatus(inspection.getStatus());
+                    
+                    // Set transformer details from the fetched transformer
+                    if (transformer != null) {
+                        dto.setPoleNo(transformer.getPoleNo());
+                        dto.setRegion(transformer.getRegion());
+                        dto.setType(transformer.getType());
+                        dto.setLocationDetails(transformer.getLocationDetails());
+                    }
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
             
             log.info("Found {} inspections for transformer ID: {}", inspections.size(), transformerId);
             return ResponseEntity.ok(responseDTOs);
@@ -355,25 +382,65 @@ public class InspectionService {
     }
 
     /**
-     * Delete image metadata
+     * Delete image metadata - clears cloud image metadata and deletes inference metadata
      */
+    @Transactional
     public boolean deleteImageMetadata(String inspectionId) {
+        log.info("=== Starting deleteImageMetadata for inspection: {} ===", inspectionId);
         try {
             // Parse string ID to Long
             Long id = Long.parseLong(inspectionId);
+            log.info("Parsed inspection ID to Long: {}", id);
+            
             Optional<Inspection> optionalInspection = inspectionRepo.findById(id);
             
             if (optionalInspection.isPresent()) {
                 Inspection inspection = optionalInspection.get();
+                log.info("Found inspection with ID: {}", id);
+                
+                // Check if inference metadata exists BEFORE deletion
+                Optional<com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata> existingMetadata = 
+                    inferenceMetadataRepository.findByInspectionId(id);
+                log.info("Inference metadata exists before deletion: {}", existingMetadata.isPresent());
+                if (existingMetadata.isPresent()) {
+                    log.info("Existing inference metadata ID: {}", existingMetadata.get().getId());
+                }
+                
+                // Clear cloud image metadata from inspection
+                log.info("Clearing cloud image metadata from inspection table...");
                 CloudImageUploadDTO empty = new CloudImageUploadDTO();
                 inspectionMapper.updateInspectionWithDTO(inspection, empty);
-                inspectionRepo.save(inspection);
+                Inspection savedInspection = inspectionRepo.save(inspection);
+                log.info("Saved inspection with cleared metadata. Cloud URL now: {}", savedInspection.getCloudImageUrl());
+                
+                // Delete associated inference metadata if it exists
+                log.info("About to call deleteByInspectionId for inspection ID: {}", id);
+                inferenceMetadataRepository.deleteByInspectionId(id);
+                log.info("Called deleteByInspectionId - checking if actually deleted...");
+                
+                // Verify deletion
+                Optional<com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata> verifyDeleted = 
+                    inferenceMetadataRepository.findByInspectionId(id);
+                log.info("Inference metadata exists AFTER deletion: {}", verifyDeleted.isPresent());
+                
+                if (verifyDeleted.isPresent()) {
+                    log.error("DELETION FAILED! Inference metadata still exists with ID: {}", verifyDeleted.get().getId());
+                } else {
+                    log.info("DELETION SUCCESSFUL! Inference metadata was removed.");
+                }
+                
+                log.info("=== Completed deleteImageMetadata for inspection: {} ===", inspectionId);
                 return true;
             }
+            log.warn("Inspection not found for ID: {}", inspectionId);
             return false;
             
         } catch (NumberFormatException e) {
-            log.error("Invalid inspection ID format: {}", inspectionId);
+            log.error("Invalid inspection ID format: {}", inspectionId, e);
+            return false;
+        } catch (Exception e) {
+            log.error("Error deleting image metadata for inspection: {}", inspectionId, e);
+            log.error("Exception details: ", e);
             return false;
         }
     }
