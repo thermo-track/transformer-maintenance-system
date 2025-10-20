@@ -11,8 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/transformers")
+@CrossOrigin(origins = "http://localhost:5173")
 public class TransformerImageController {
 
     @Autowired
@@ -42,16 +45,14 @@ public class TransformerImageController {
             @PathVariable String weatherCondition) {
         try {
             String imageUrl = transformerImageService.getImageUrl(transformerId, weatherCondition);
-            if (imageUrl == null) {
-                return ResponseEntity.notFound().build();
-            }
             
-            // Return JSON with image URL instead of binary data
+            // Always return 200 OK with imageUrl (null if not found)
+            // This prevents browser console from showing 404 errors
             return ResponseEntity.ok()
                     .body(new ImageUrlResponse(imageUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error retrieving image: " + e.getMessage());
+                    .body(Map.of("error", "Error retrieving image: " + e.getMessage()));
         }
     }
 
@@ -93,18 +94,16 @@ public class TransformerImageController {
         try {
             TransformerLastUpdatedDTO lastUpdatedInfo = transformerImageService.getTransformerLastUpdatedTime(transformerId);
             
-            if (lastUpdatedInfo.getLastImageUpdatedAt() == null) {
-                return ResponseEntity.ok()
-                    .body("No images have been uploaded for transformer: " + transformerId);
-            }
-            
+            // Always return JSON, never plain text
+            // If no images uploaded, the DTO will have null lastImageUpdatedAt 
+            // but will include transformerUpdatedAt and transformerCreatedAt as fallbacks
             return ResponseEntity.ok(lastUpdatedInfo);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(e.getMessage());
+                    .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error retrieving last updated time: " + e.getMessage());
+                    .body(Map.of("error", "Error retrieving last updated time: " + e.getMessage()));
         }
     }
     

@@ -1,11 +1,13 @@
 // services/CloudinaryService.js
+import authFetch from '../../../lib/authFetch.js';
+
 class CloudinaryService {
   constructor() {
     const env = import.meta.env;
 
     this.cloudName = env.VITE_CLOUDINARY_CLOUD_NAME;
     this.uploadPreset = env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    this.backendApiUrl = env.VITE_BACKEND_API_URL || 'http://localhost:8080/api';
+    this.backendApiUrl = env.VITE_BACKEND_API_URL || '/api';  // Use relative path as fallback
 
     if (!this.cloudName || !this.uploadPreset) {
       console.error('Cloudinary configuration missing. Please set environment variables for cloud name and upload preset');
@@ -54,15 +56,33 @@ class CloudinaryService {
         environmentalCondition
       );
       
-      return {
+      // Handle response - image is always saved, inference might fail
+      const response = {
         cloudinary: cloudinaryResult,
         backend: backendResponse.metadata,
-        inference: backendResponse.inference,
-        anomalies: backendResponse.inference?.anomalies || [],
-        detections: backendResponse.inference?.detectorSummary?.detections || [],
-        visualizationUrl: backendResponse.inference?.visualizationUrl,
+        imageUpdated: backendResponse.imageUpdated || true,
+        inferenceStatus: backendResponse.inferenceStatus,
         success: true
       };
+
+      // Add inference data if successful
+      if (backendResponse.inference) {
+        response.inference = backendResponse.inference;
+        response.anomalies = backendResponse.inference.anomalies || [];
+        response.detections = backendResponse.inference.detector_summary?.detections || [];
+        response.visualizationUrl = backendResponse.visualizationUrl;
+      } else {
+        // Inference failed or skipped
+        response.anomalies = [];
+        response.detections = [];
+        response.inferenceMessage = backendResponse.inferenceMessage || 'Inference not completed';
+        if (backendResponse.inferenceError) {
+          response.inferenceError = backendResponse.inferenceError;
+          console.warn('Inference failed but image was saved:', backendResponse.inferenceError);
+        }
+      }
+      
+      return response;
       
     } catch (error) {
       console.error('Image upload process failed:', error);
@@ -160,7 +180,7 @@ class CloudinaryService {
       };
 
       // Call the backend endpoint that saves metadata AND triggers inference
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/upload-thermal-with-inference`,
         {
           method: 'POST',
@@ -195,7 +215,7 @@ class CloudinaryService {
    */
   async getInspectionAnomalies(inspectionId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/anomalies`,
         {
           method: 'GET',
@@ -281,7 +301,7 @@ class CloudinaryService {
       const url = `${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`;
       console.log('🗄️ DELETE URL:', url);
       
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: 'DELETE'
       });
 
@@ -302,7 +322,7 @@ class CloudinaryService {
    */
   async rerunInferenceWithThresholds(inspectionId, thresholds) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/rerun-inference`,
         {
           method: 'POST',
@@ -337,7 +357,7 @@ class CloudinaryService {
    */
   async hasCloudImage(inspectionId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/images/has-cloud-image`,
         {
           method: 'GET'
@@ -364,7 +384,7 @@ class CloudinaryService {
    */
   async getCloudImageUrlFromBackend(inspectionId) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${this.backendApiUrl}/inspections/${inspectionId}/images/cloud-image-url`,
         {
           method: 'GET'

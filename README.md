@@ -218,7 +218,25 @@ Cloudinary stores and manages all images including transformer thermal images (b
 - Profile photos: Stored in `profile_photos/` folder
 - Automatic URL generation and CDN delivery
 
-### 4. Development
+
+### 4. Email OTP Verification Implementation
+
+Complete implementation of email-based OTP (One-Time Password) verification for user registration.
+
+Create Gmail App Password (see EMAIL_SETUP.md for detailed steps):
+1. Enable 2-Step Verification in your Google Account
+2. Go to App Passwords: https://myaccount.google.com/apppasswords
+3. Generate password for "Mail" app
+4. Copy the 16-character password
+
+Edit tms-backend-application\.env file:
+```
+MAIL_USERNAME = "your-email@gmail.com"
+MAIL_PASSWORD = "your-16-char-app-password"
+```
+
+
+### 5. Development
 
 **Backend (Spring Boot)**
 ```bash

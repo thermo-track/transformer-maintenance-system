@@ -24,6 +24,7 @@ function InspectionsSTImage() {
   const [error, setError] = useState(null);
   const [hasCloudImage, setHasCloudImage] = useState(false);
   const [cloudImageUrl, setCloudImageUrl] = useState(null);
+  const [inferenceStatus, setInferenceStatus] = useState(null); // Track inference status: SUCCESS, FAILED, SKIPPED
 
   const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
 
@@ -69,14 +70,17 @@ function InspectionsSTImage() {
         const imageUrl = await cloudinaryService.getCloudImageUrlFromBackend(inspectionId);
         setCloudImageUrl(imageUrl);
         console.log('Cloud image URL:', imageUrl);
+        // TODO: Also fetch inference status from backend if needed
       } else {
         console.log('No cloud image found for inspection:', inspectionId);
         setCloudImageUrl(null);
+        setInferenceStatus(null); // Clear inference status when no image
       }
     } catch (error) {
       console.error('Error checking cloud image:', error);
       setHasCloudImage(false);
       setCloudImageUrl(null);
+      setInferenceStatus(null); // Clear inference status on error
     } finally {
       setImageCheckLoading(false);
     }
@@ -275,23 +279,42 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
 
     console.log('Cloud upload successful:', result);
     
-    // Update local state
+    // Update local state with the uploaded image
     setHasCloudImage(true);
     setCloudImageUrl(result.cloudinary.url);
+    setInferenceStatus(result.inferenceStatus); // Store inference status
     
-    setUploadStatus({ 
-      type: 'success', 
-      message: 'Thermal image uploaded to cloud and analysis completed successfully!' 
-    });
+    // Check inference status and show appropriate message
+    if (result.inferenceStatus === 'SUCCESS') {
+      setUploadStatus({ 
+        type: 'success', 
+        message: 'Thermal image uploaded to cloud and analysis completed successfully!' 
+      });
+    } else if (result.inferenceStatus === 'FAILED') {
+      setUploadStatus({ 
+        type: 'warning', 
+        message: `Image uploaded successfully, but analysis failed: ${result.inferenceMessage || result.inferenceError}. You can retry analysis later.` 
+      });
+    } else if (result.inferenceStatus === 'SKIPPED') {
+      setUploadStatus({ 
+        type: 'warning', 
+        message: `Image uploaded successfully, but analysis was skipped: ${result.inferenceMessage}` 
+      });
+    } else {
+      setUploadStatus({ 
+        type: 'success', 
+        message: 'Thermal image uploaded to cloud successfully!' 
+      });
+    }
     
-    // Refresh inspection data
+    // Refresh inspection data to show the new image
     await fetchInspectionsByTransformer(transformerNo);
     
     // Check cloud image status again to ensure UI is updated
     await checkExistingCloudImage(currentInspection.inspectionId);
     
-    // Clear success message after 3 seconds
-    setTimeout(() => setUploadStatus(null), 3000);
+    // Clear message after 5 seconds (longer for warnings)
+    setTimeout(() => setUploadStatus(null), 5000);
   } catch (error) {
     console.error('❌ Error uploading image to cloud:', error);
     console.error('Error details:', {
@@ -325,6 +348,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
       // Update local state
       setHasCloudImage(false);
       setCloudImageUrl(null);
+      setInferenceStatus(null); // Clear inference status when image is deleted
       
       setUploadStatus({ 
         type: 'success', 
@@ -363,6 +387,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
         <PageHeaderIns 
           onNewInspection={() => setShowCreateModal(true)}
           transformerNo={transformerNo}
+          transformerId={transformer?.id}
         />
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -409,6 +434,37 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
         {/* Thermal Image Component */}
         {currentInspection ? (
           <div className="thermal-section">
+            {/* Show red warning if inference failed - now at the top */}
+            {hasCloudImage && (inferenceStatus === 'FAILED' || inferenceStatus === 'SKIPPED') && (
+              <div style={{
+                marginTop: '0',
+                marginBottom: '15px',
+                padding: '12px 20px',
+                backgroundColor: '#fff5f5',
+                border: '2px solid #ff4444',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <p style={{
+                  color: '#cc0000',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  margin: 0
+                }}>
+                  ⚠️ Anomaly Detection {inferenceStatus === 'FAILED' ? 'Failed' : 'Skipped'}
+                </p>
+                <p style={{
+                  color: '#666',
+                  fontSize: '14px',
+                  marginTop: '8px',
+                  marginBottom: 0
+                }}>
+                  {inferenceStatus === 'FAILED' 
+                    ? 'The thermal image was uploaded successfully, but anomaly detection encountered an error. Check whether the python endpoint is reachable.'
+                    : 'The thermal image was uploaded successfully, but anomaly detection was skipped. Please ensure a baseline image exists.'}
+                </p>
+              </div>
+            )}
             {imageCheckLoading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
@@ -422,7 +478,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
                 onImageDelete={handleImageDelete}
                 hasExistingImage={hasCloudImage}
                 existingImageUrl={cloudImageUrl}
-                key={currentInspection.inspectionId} // Force re-render when inspection changes
+                key={currentInspection.inspectionId}
               />
             )}
           </div>
