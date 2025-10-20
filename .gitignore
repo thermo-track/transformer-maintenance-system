@@ -39,7 +39,7 @@ tms-fault-detection-model/api/venv/*
 
 # Ignore all phase2 outputs except json folder
 tms-fault-detection-model/api/outputs/viz/*
-# tms-fault-detection-model/api/outputs/
+tms-fault-detection-model/api/outputs/
 
 # Ignore all JSON output files
 # tms-fault-detection-model/api/outputs/json/*

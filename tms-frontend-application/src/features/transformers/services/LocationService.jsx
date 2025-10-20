@@ -385,6 +385,18 @@ export const transformerService = {
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
+      // Check content type to handle non-JSON responses (like empty data messages)
+      const contentType = response.headers.get('content-type');
+      
+      if (!contentType || !contentType.includes('application/json')) {
+        // Backend returned plain text (likely "No transformers found")
+        const text = await response.text();
+        console.log('📝 Map response (text):', text);
+        
+        // Return empty array - UI will show "no locations" message
+        return [];
+      }
+
       const data = await response.json();
       console.log('✅ Map locations fetched successfully:', {
         count: Array.isArray(data) ? data.length : 0,

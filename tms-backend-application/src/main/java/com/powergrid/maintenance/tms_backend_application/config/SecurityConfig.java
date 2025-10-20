@@ -54,6 +54,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", 
                                         "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
                         
+                        // Admin registration endpoints - public (require admin secret key instead)
+                        .requestMatchers("/api/admin/auth/register", "/api/admin/auth/verify-otp").permitAll()
+                        
                         // Health check endpoint for Docker
                         .requestMatchers("/actuator/health").permitAll()
                         

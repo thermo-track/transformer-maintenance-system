@@ -79,10 +79,15 @@ export default function TransformersMapView({ transformerService }) {
       setTransformers(data);
       
       if (data.length === 0) {
-        setError('No transformers with location data found');
+        setError('No transformer locations have been added yet. Please add location data to transformers to view them on the map.');
       }
     } catch (error) {
-      setError(error.message || 'Failed to load transformer locations');
+      // Check if it's a JSON parsing error (likely means no data from backend)
+      if (error.message && error.message.includes('JSON')) {
+        setError('No transformer locations have been added yet. Please add location data to transformers to view them on the map.');
+      } else {
+        setError(error.message || 'Failed to load transformer locations');
+      }
     } finally {
       setLoadingTransformers(false);
     }
@@ -397,19 +402,31 @@ export default function TransformersMapView({ transformerService }) {
   }
 
   if (error) {
+    const isNoDataError = error.includes('No transformer locations');
+    
     return (
       <div className="map-transformers-container">
         <div className="map-error-container">
-          <p>❌ {error}</p>
-          <button onClick={loadTransformers} className="map-btn-primary">
-            Retry
-          </button>
-          <button 
-            onClick={() => navigate('/transformers')} 
-            className="map-btn-secondary"
-          >
-            Back to Transformers
-          </button>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+            {isNoDataError ? '🗺️' : '❌'}
+          </div>
+          <h2 style={{ marginBottom: '1rem', color: isNoDataError ? '#666' : '#e74c3c' }}>
+            {isNoDataError ? 'No Locations Yet' : 'Error'}
+          </h2>
+          <p style={{ marginBottom: '1.5rem', color: '#666' }}>{error}</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            {!isNoDataError && (
+              <button onClick={loadTransformers} className="map-btn-primary">
+                Retry
+              </button>
+            )}
+            <button 
+              onClick={() => navigate('/transformers')} 
+              className="map-btn-secondary"
+            >
+              {isNoDataError ? 'Go to Transformers' : 'Back to Transformers'}
+            </button>
+          </div>
         </div>
       </div>
     );

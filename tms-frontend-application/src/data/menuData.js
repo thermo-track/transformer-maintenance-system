@@ -1,4 +1,4 @@
-import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye} from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 
 const menuData = [
   {
@@ -18,6 +18,17 @@ const menuData = [
         path: "/transformers/map",
         label: "Transformer Map",
         icon: faClipboardCheck,
+      },
+    ],
+  },
+  {
+    label: "User Management",  // Admin-only section
+    adminOnly: true,  // Only visible to admins
+    subMenu: [
+      {
+        path: "/admin/approvals",
+        label: "Admin Approvals",
+        icon: faUserCheck,
       },
     ],
   },
