@@ -18,7 +18,7 @@ class InferenceRequest(BaseModel):
     baseline_url: str
     maintenance_url: str
     inspection_id: str
-    weights_path: str = "weights/best.pt"  # Path relative to /app working directory in Docker
+    weights_path: str = "weights/best.pt"
     threshold_pct: float = 2.0
     iou_thresh: float = 0.7
     conf_thresh: float = 0.25
@@ -54,19 +54,18 @@ async def run_inference(request: InferenceRequest):
     temp_dir = Path(tempfile.mkdtemp())
     
     try:
-        # Check if weights file exists - try both paths for compatibility
+        api_dir = Path(__file__).parent.absolute()
+        parent_dir = api_dir.parent
+        
         weights_path = Path(request.weights_path)
+        if not weights_path.is_absolute():
+            weights_path = parent_dir / weights_path
+        
         if not weights_path.exists():
-            # Try alternative path (for Docker compatibility)
-            alt_weights_path = Path("../weights/best.pt") if request.weights_path == "weights/best.pt" else Path("weights/best.pt")
-            if alt_weights_path.exists():
-                weights_path = alt_weights_path
-                print(f"Using alternative weights path: {weights_path}")
-            else:
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"Weights file not found at {request.weights_path} or {alt_weights_path}"
-                )
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Weights file not found at {weights_path}"
+            )
         
         print(f"Weights file found: {weights_path}")
         
@@ -86,13 +85,14 @@ async def run_inference(request: InferenceRequest):
         print(f"Baseline size: {baseline_path.stat().st_size} bytes")
         print(f"Maintenance size: {maintenance_path.stat().st_size} bytes")
         
-        # Output paths
-        output_dir = Path("outputs")
+        # Output paths - create inside api/outputs/
+        output_dir = api_dir / "outputs"
         output_json = output_dir / "json" / f"{request.inspection_id}_result.json"
         output_viz = output_dir / "viz" / f"{request.inspection_id}_overlay.png"
         
         output_json.parent.mkdir(parents=True, exist_ok=True)
         output_viz.parent.mkdir(parents=True, exist_ok=True)
+        
         
         # Run inference pipeline
         cmd = [
@@ -112,7 +112,11 @@ async def run_inference(request: InferenceRequest):
         print()
 
         # Set working directory to phase2_fault_type (parent of api)
-        parent_dir = Path(os.getcwd()).parent
+        # Get the absolute path to the phase2_fault_type directory
+        api_dir = Path(__file__).parent.absolute()  # api directory
+        parent_dir = api_dir.parent  # phase2_fault_type directory
+        
+        print(f"Working directory: {parent_dir}")
 
         result = subprocess.run(
             cmd, 
@@ -172,17 +176,28 @@ async def run_inference(request: InferenceRequest):
 
 @app.get("/health")
 async def health_check():
-    weights_exist = Path("weights/best.pt").exists()
+    api_dir = Path(__file__).parent.absolute()
+    parent_dir = api_dir.parent
+    weights_path = parent_dir / "weights" / "best.pt"
+    
     return {
         "status": "healthy",
         "service": "thermal-inference-api",
-        "weights_file_exists": weights_exist,
-        "cwd": os.getcwd()
+        "weights_file_exists": weights_path.exists(),
+        "cwd": os.getcwd(),
+        "weights_path": str(weights_path)
     }
 
 if __name__ == "__main__":
     import uvicorn
+    api_dir = Path(__file__).parent.absolute()
+    parent_dir = api_dir.parent
+    weights_path = parent_dir / "weights" / "best.pt"
+    
     print(f"Starting inference API...")
     print(f"Current working directory: {os.getcwd()}")
-    print(f"Weights path: {Path('weights/best.pt').absolute()}")
+    print(f"API directory: {api_dir}")
+    print(f"Phase2 directory: {parent_dir}")
+    print(f"Weights path: {weights_path.absolute()}")
+    print(f"Weights exists: {weights_path.exists()}")
     uvicorn.run(app, host="0.0.0.0", port=8001)
