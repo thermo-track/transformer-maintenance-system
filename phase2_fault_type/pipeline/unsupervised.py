@@ -140,7 +140,10 @@ def regions_from_mask(mask: np.ndarray) -> List[Dict[str, Any]]:
 def overlay_regions_on_image(img: np.ndarray, regions: List[Dict[str, Any]], alpha: float = 0.4) -> np.ndarray:
     overlay = img.copy()
     for r in regions:
-        x, y, w, h = map(int, r['bbox'])
+        bbox = r.get('bbox_original_xywh') or r.get('bbox') or r.get('bbox_xywh')
+        if not bbox:
+            continue
+        x, y, w, h = map(int, bbox)
         cv2.rectangle(overlay, (x, y), (x + w, y + h), (0, 0, 255), 2)
     return cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0)
 
@@ -179,6 +182,37 @@ def run_unsupervised_pair(baseline_path: Path, maintenance_path: Path, config: D
     mask = postprocess_mask(mask, min_area_pct)
     regions = regions_from_mask(mask)
 
+    maint_h, maint_w = maint.shape[:2]
+    if maint_w == 0 or maint_h == 0:
+        scale = 1.0
+    else:
+        scale = min(work_w / maint_w, work_h / maint_h)
+    inv_scale = 1.0 / scale if scale > 0 else 1.0
+    for region in regions:
+        bbox_resized = region.get('bbox')
+        if not bbox_resized:
+            continue
+        rx, ry, rw, rh = bbox_resized
+        x1 = int(round(rx * inv_scale))
+        y1 = int(round(ry * inv_scale))
+        x2 = int(round((rx + rw) * inv_scale))
+        y2 = int(round((ry + rh) * inv_scale))
+        x1 = int(np.clip(x1, 0, maint_w - 1))
+        y1 = int(np.clip(y1, 0, maint_h - 1))
+        x2 = int(np.clip(x2, 1, maint_w))
+        y2 = int(np.clip(y2, 1, maint_h))
+        if x2 <= x1:
+            x2 = min(maint_w, x1 + 1)
+        if y2 <= y1:
+            y2 = min(maint_h, y1 + 1)
+        bbox_original = [x1, y1, max(1, x2 - x1), max(1, y2 - y1)]
+    region['bbox_resized'] = bbox_resized
+    region['bbox'] = bbox_original
+    region['bbox_xywh'] = bbox_original
+    region['bbox_xyxy'] = [x1, y1, x2, y2]
+    region['bbox_original_xywh'] = bbox_original
+    region['bbox_original_xyxy'] = [x1, y1, x2, y2]
+
     result = {
         'images': {
             'baseline': str(baseline_path),
@@ -194,6 +228,11 @@ def run_unsupervised_pair(baseline_path: Path, maintenance_path: Path, config: D
             'ok': reg_res.ok if reg_res else False,
             'method': reg_res.method if reg_res else None,
             'inliers': reg_res.inliers if reg_res else None,
+        },
+        'resize': {
+            'work_size': [work_w, work_h],
+            'original_size': [maint_w, maint_h],
+            'scale': scale,
         },
         'anomalies': regions,
     }

@@ -38,10 +38,12 @@ def main():
     # 3) Fuse
     regions = result.get('anomalies', [])
     fuse_regions_with_detections(regions, detections, args.iou_thresh)
+    regions = [r for r in regions if r.get('fault_type')]
+    result['anomalies'] = regions
     result['detector_summary'] = {
         'weights': str(args.weights),
         'image': str(args.maintenance),
-    'params': {'conf_thresh': args.conf_thresh, 'iou_thresh': args.iou_thresh},
+        'params': {'conf_thresh': args.conf_thresh, 'iou_thresh': args.iou_thresh},
         'detections': detections,
     }
 
