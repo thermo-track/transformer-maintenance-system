@@ -1,5 +1,7 @@
 package com.powergrid.maintenance.tms_backend_application.inspection.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -7,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "inference_metadata")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "inspection"})
 public class InferenceMetadata {
 
     @Id
@@ -18,6 +21,7 @@ public class InferenceMetadata {
 
     @OneToOne
     @JoinColumn(name = "inspection_id", referencedColumnName = "inspection_id", insertable = false, updatable = false)
+    @JsonIgnore  // Prevent circular reference with Inspection
     private Inspection inspection;
 
     @Column(name = "baseline_image_url", length = 500)

@@ -301,7 +301,7 @@ class CloudinaryService {
       const url = `${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`;
       console.log('🗄️ DELETE URL:', url);
       
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: 'DELETE'
       });
 

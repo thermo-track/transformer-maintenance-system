@@ -20,9 +20,9 @@ public interface InspectionRepo extends JpaRepository<Inspection, Long> {
     List<Inspection> findByBranch(String branch);
     
     /**
-     * Find inspections by transformer No - UPDATED to use relationship
+     * Find inspections by transformer No - UPDATED to use relationship with JOIN FETCH
      */
-    @Query("SELECT i FROM Inspection i WHERE i.transformer.transformerNo = :transformerNo")
+    @Query("SELECT i FROM Inspection i LEFT JOIN FETCH i.transformer WHERE i.transformer.transformerNo = :transformerNo")
     List<Inspection> findByTransformerNo(@Param("transformerNo") String transformerNo);
     
     /**
