@@ -56,15 +56,33 @@ class CloudinaryService {
         environmentalCondition
       );
       
-      return {
+      // Handle response - image is always saved, inference might fail
+      const response = {
         cloudinary: cloudinaryResult,
         backend: backendResponse.metadata,
-        inference: backendResponse.inference,
-        anomalies: backendResponse.inference?.anomalies || [],
-        detections: backendResponse.inference?.detectorSummary?.detections || [],
-        visualizationUrl: backendResponse.inference?.visualizationUrl,
+        imageUpdated: backendResponse.imageUpdated || true,
+        inferenceStatus: backendResponse.inferenceStatus,
         success: true
       };
+
+      // Add inference data if successful
+      if (backendResponse.inference) {
+        response.inference = backendResponse.inference;
+        response.anomalies = backendResponse.inference.anomalies || [];
+        response.detections = backendResponse.inference.detector_summary?.detections || [];
+        response.visualizationUrl = backendResponse.visualizationUrl;
+      } else {
+        // Inference failed or skipped
+        response.anomalies = [];
+        response.detections = [];
+        response.inferenceMessage = backendResponse.inferenceMessage || 'Inference not completed';
+        if (backendResponse.inferenceError) {
+          response.inferenceError = backendResponse.inferenceError;
+          console.warn('Inference failed but image was saved:', backendResponse.inferenceError);
+        }
+      }
+      
+      return response;
       
     } catch (error) {
       console.error('Image upload process failed:', error);

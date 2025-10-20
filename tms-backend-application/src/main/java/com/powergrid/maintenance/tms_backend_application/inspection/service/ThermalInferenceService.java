@@ -125,36 +125,75 @@ public class ThermalInferenceService {
             inspectionRepository.save(inspection);
             log.info("Updated inspection {} with cloud image metadata", inspectionIdStr);
 
-            // 2. Determine env (prefer DTO, else persisted inspection) and fetch baseline URL
-            String env = imageMetadata.getEnvironmentalCondition() != null
-                    ? imageMetadata.getEnvironmentalCondition()
-                    : inspection.getEnvironmentalCondition();
-
-            String baselineUrl = getBaselineImageUrl(inspection.getTransformerNo(), env);
-
-            if (baselineUrl == null) {
-                throw new RuntimeException("No baseline image found for transformer " +
-                        inspection.getTransformerNo() + " with condition " + env);
+            // CRITICAL: Delete old inference data before attempting new inference
+            // This prevents stale detection data from being shown with the new image
+            log.info("Deleting old inference data for inspection {}", inspectionIdStr);
+            
+            // Delete existing anomalies
+            List<InspectionAnomaly> existingAnomalies = anomalyRepository.findByInspectionId(inspectionId);
+            if (!existingAnomalies.isEmpty()) {
+                log.info("Deleting {} existing anomalies", existingAnomalies.size());
+                anomalyRepository.deleteAll(existingAnomalies);
             }
+            
+            // Delete existing inference metadata
+            inferenceMetadataRepository.findByInspectionId(inspectionId)
+                    .ifPresent(metadata -> {
+                        log.info("Deleting existing inference metadata");
+                        inferenceMetadataRepository.delete(metadata);
+                    });
+            
+            log.info("Old inference data cleared successfully");
 
-            // 3. Call Python inference API with thresholds (DTO values or defaults)
-            // Note: Python API can still receive string ID if needed
-            Map<String, Object> inferenceResult = callPythonInference(
-                    baselineUrl,
-                    imageMetadata.getCloudImageUrl(),
-                    inspectionIdStr,  // Send as string to Python API
-                    imageMetadata.getThresholdPct(),
-                    imageMetadata.getIouThresh(),
-                    imageMetadata.getConfThresh()
-            );
-
-            // 4. Save inference results to database using Long ID
-            saveInferenceResults(inspectionId, inferenceResult, baselineUrl, imageMetadata.getCloudImageUrl());
-
-            // 5. Return combined response
+            // Prepare response with metadata (always included)
             Map<String, Object> response = new HashMap<>();
             response.put("metadata", imageMetadata);
-            response.put("inference", inferenceResult);
+            response.put("imageUpdated", true);
+
+            // 2. Try to run inference - but don't fail if it doesn't work
+            try {
+                // Determine env (prefer DTO, else persisted inspection) and fetch baseline URL
+                String env = imageMetadata.getEnvironmentalCondition() != null
+                        ? imageMetadata.getEnvironmentalCondition()
+                        : inspection.getEnvironmentalCondition();
+
+                String baselineUrl = getBaselineImageUrl(inspection.getTransformerNo(), env);
+
+                if (baselineUrl == null) {
+                    log.warn("No baseline image found for transformer {} with condition {}", 
+                            inspection.getTransformerNo(), env);
+                    response.put("inferenceStatus", "SKIPPED");
+                    response.put("inferenceMessage", "No baseline image available");
+                    return response;
+                }
+
+                // 3. Call Python inference API with thresholds (DTO values or defaults)
+                Map<String, Object> inferenceResult = callPythonInference(
+                        baselineUrl,
+                        imageMetadata.getCloudImageUrl(),
+                        inspectionIdStr,  // Send as string to Python API
+                        imageMetadata.getThresholdPct(),
+                        imageMetadata.getIouThresh(),
+                        imageMetadata.getConfThresh()
+                );
+
+                // 4. Save inference results to database using Long ID
+                saveInferenceResults(inspectionId, inferenceResult, baselineUrl, imageMetadata.getCloudImageUrl());
+
+                // 5. Add inference results to response
+                response.put("inference", inferenceResult);
+                response.put("inferenceStatus", "SUCCESS");
+                log.info("Inference completed successfully for inspection {}", inspectionIdStr);
+
+            } catch (Exception inferenceError) {
+                // Log the error but don't fail the entire request
+                log.error("Inference failed for inspection {} but image was saved: {}", 
+                        inspectionIdStr, inferenceError.getMessage());
+                response.put("inferenceStatus", "FAILED");
+                response.put("inferenceError", inferenceError.getMessage());
+                response.put("inferenceMessage", "Image saved successfully, but inference failed. You can retry later.");
+            }
+
             return response;
             
         } catch (NumberFormatException e) {
@@ -290,13 +329,9 @@ public class ThermalInferenceService {
     private void saveInferenceResults(Long inspectionId, Map<String, Object> inferenceResult,
                                       String baselineUrl, String maintenanceUrl) {
         try {
-            // Delete existing anomalies first
-            List<InspectionAnomaly> existingAnomalies = anomalyRepository.findByInspectionId(inspectionId);
-            if (!existingAnomalies.isEmpty()) {
-                log.info("Deleting {} existing anomalies for inspection {}", existingAnomalies.size(), inspectionId);
-                anomalyRepository.deleteAll(existingAnomalies);
-            }
-
+            // Note: Old anomalies and metadata are already deleted in processAndInfer()
+            // This method only creates new inference data
+            
             // Find existing metadata or create new one
             InferenceMetadata metadata = inferenceMetadataRepository.findByInspectionId(inspectionId)
                     .orElse(new InferenceMetadata());
