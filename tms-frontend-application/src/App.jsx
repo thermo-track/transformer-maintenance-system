@@ -6,6 +6,7 @@ import RegisterPage from './features/auth/RegisterPage.jsx';
 import VerifyOtpPage from './features/auth/VerifyOtpPage.jsx';
 import AdminRegisterPage from './features/auth/AdminRegisterPage.jsx';
 import AdminApprovalsPage from './features/admin/AdminApprovalsPage.jsx';
+import ModelRetrainingPage from './features/admin/ModelRetrainingPage.jsx';
 import Transformer from './features/transformers/pages/Transformer.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
@@ -117,6 +118,14 @@ export default function App() {
         <PrivateRoute>
           <Layout>
             <AdminApprovalsPage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/admin/model-retraining" element={
+        <PrivateRoute>
+          <Layout>
+            <ModelRetrainingPage />
           </Layout>
         </PrivateRoute>
       } />

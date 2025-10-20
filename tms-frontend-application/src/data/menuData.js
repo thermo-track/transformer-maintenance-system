@@ -1,4 +1,4 @@
-import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck, faBrain, faRobot } from '@fortawesome/free-solid-svg-icons';
 
 const menuData = [
   {
@@ -29,6 +29,17 @@ const menuData = [
         path: "/admin/approvals",
         label: "Admin Approvals",
         icon: faUserCheck,
+      },
+    ],
+  },
+  {
+    label: "Model Management",  // Admin-only AI/ML section
+    adminOnly: true,  // Only visible to admins
+    subMenu: [
+      {
+        path: "/admin/model-retraining",
+        label: "Model Retraining",
+        icon: faBrain,
       },
     ],
   },
