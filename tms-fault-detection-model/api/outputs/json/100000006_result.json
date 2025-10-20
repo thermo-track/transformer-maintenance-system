@@ -1,0 +1,141 @@
+{
+  "images": {
+    "baseline": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmp6cat6bzh\\100000006_baseline.jpg",
+    "maintenance": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmp6cat6bzh\\100000006_maintenance.jpg"
+  },
+  "params": {
+    "work_size": [
+      640,
+      640
+    ],
+    "smooth_sigma": 1.0,
+    "thresholding": {
+      "mode": "percentile",
+      "value": 10.0,
+      "min_area_pct": 0.002
+    },
+    "fuse_weights": [
+      0.6,
+      0.4
+    ]
+  },
+  "registration": {
+    "ok": true,
+    "method": "ORB_RANSAC",
+    "inliers": 156
+  },
+  "anomalies": [
+    {
+      "bbox": [
+        1,
+        1,
+        530,
+        400
+      ],
+      "centroid": [
+        266.0,
+        201.0
+      ],
+      "area_px": 28329,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        520,
+        105,
+        17,
+        284
+      ],
+      "centroid": [
+        528.5,
+        247.0
+      ],
+      "area_px": 1976,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        148,
+        120,
+        45,
+        36
+      ],
+      "centroid": [
+        170.5,
+        138.0
+      ],
+      "area_px": 1316,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        402,
+        237,
+        119,
+        48
+      ],
+      "centroid": [
+        461.5,
+        261.0
+      ],
+      "area_px": 1182,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    },
+    {
+      "bbox": [
+        192,
+        371,
+        143,
+        18
+      ],
+      "centroid": [
+        263.5,
+        380.0
+      ],
+      "area_px": 2209,
+      "fault_type": null,
+      "fault_confidence": null,
+      "detector_box": null,
+      "detector_iou": 0.0
+    }
+  ],
+  "detector_summary": {
+    "weights": "C:\\Users\\HPA02532Y\\Desktop\\SDC\\transformer-maintenance-system\\phase2_fault_type\\weights\\best.pt",
+    "image": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmp6cat6bzh\\100000006_maintenance.jpg",
+    "params": {
+      "conf_thresh": 0.25,
+      "iou_thresh": 0.35
+    },
+    "detections": [
+      {
+        "bbox_xyxy": [
+          1229.5556640625,
+          779.8004150390625,
+          1327.390380859375,
+          865.3860473632812
+        ],
+        "bbox_xywh": [
+          1229.5556640625,
+          779.8004150390625,
+          97.834716796875,
+          85.58563232421875
+        ],
+        "conf": 0.4166150689125061,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
+      }
+    ]
+  }
+}

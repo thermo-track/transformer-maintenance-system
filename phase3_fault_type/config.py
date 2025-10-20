@@ -21,7 +21,7 @@ WEIGHTS_DIR: Path = PHASE3_ROOT / "weights"
 RUNS_DIR: Path = PHASE3_ROOT / "runs"
 RUN_HISTORY_PATH: Path = RUNS_DIR / "history.jsonl"
 
-PHASE2_WEIGHTS_PATH: Path = _REPO_ROOT / "phase2_fault_type" / "weights" / "best.pt"
+PHASE2_WEIGHTS_PATH: Path = _REPO_ROOT / "tms-fault-detection-model" / "weights" / "best.pt"
 ANNOTATED_DATASET_DIR: Path = _REPO_ROOT / "Annotated_dataset"
 
 # Cached class names from phase 2 data yaml
