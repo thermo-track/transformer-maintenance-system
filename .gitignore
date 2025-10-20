@@ -71,6 +71,3 @@ phase3_fault_type/yolo11n.pt
 phase3_fault_type/runs/
 phase3_fault_type/weights/
 tms-fault-detection-model/inference_playground.ipynb
-
-# Model weight files (.pt files)
-tms-fault-detection-model/weights/best_overfit.pt

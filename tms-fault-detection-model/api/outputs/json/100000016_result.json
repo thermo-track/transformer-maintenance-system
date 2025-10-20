@@ -1,0 +1,66 @@
+{
+  "images": {
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpoo864kmm\\100000016_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpoo864kmm\\100000016_maintenance.jpg"
+  },
+  "params": {
+    "work_size": [
+      640,
+      640
+    ],
+    "smooth_sigma": 1.0,
+    "thresholding": {
+      "mode": "percentile",
+      "value": 2.0,
+      "min_area_pct": 0.002
+    },
+    "fuse_weights": [
+      0.6,
+      0.4
+    ]
+  },
+  "registration": {
+    "ok": true,
+    "method": "ORB_RANSAC",
+    "inliers": 20
+  },
+  "resize": {
+    "work_size": [
+      640,
+      640
+    ],
+    "original_size": [
+      616,
+      362
+    ],
+    "scale": 1.0389610389610389
+  },
+  "anomalies": [],
+  "detector_summary": {
+    "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\tms-fault-detection-model\\weights\\best.pt",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpoo864kmm\\100000016_maintenance.jpg",
+    "params": {
+      "conf_thresh": 0.25,
+      "iou_thresh": 0.7
+    },
+    "detections": [
+      {
+        "bbox_xyxy": [
+          107.92060852050781,
+          88.2708969116211,
+          519.6423950195312,
+          339.7065734863281
+        ],
+        "bbox_xywh": [
+          107.92060852050781,
+          88.2708969116211,
+          411.72178649902344,
+          251.43567657470703
+        ],
+        "conf": 0.8482799530029297,
+        "class_id": 1,
+        "class_name": "Loose Joint -Faulty"
+      }
+    ]
+  }
+}
