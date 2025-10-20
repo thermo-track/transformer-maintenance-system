@@ -12,6 +12,8 @@ build/
 venv/
 env/
 ENV/
+api/venv/
+**/venv/
 
 # IDE
 .vscode/
@@ -25,8 +27,9 @@ ENV/
 Thumbs.db
 
 # Outputs (these will be generated in container)
-outputs/json/*
 outputs/viz/*
+outputs/json/*
+api/outputs/
 
 # Git
 .git/
@@ -39,3 +42,18 @@ outputs/viz/*
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Docker files (no need to copy into image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker-build.ps1
+DOCKER_README.md
+
+# Documentation and configs not needed in container
+*.md
+!requirements.txt
+
+# Large model files (will be mounted as volume)
+*.pt
+!weights/best.pt

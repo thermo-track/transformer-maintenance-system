@@ -43,7 +43,6 @@ phase2_fault_type/api/venv/*
 .idea/
 
 docker_cred.env
-OTP_IMPLEMENTATION.md
 
 
 

@@ -13,7 +13,17 @@ DOCKER_IMAGES = [
     {
         "context": "./tms-frontend-application",
         "dockerfile": "Dockerfile",
-        "tag": f"{DOCKER_USERNAME}/tms-frontend-application:v1",
+        "tag": f"{DOCKER_USERNAME}/tms-frontend:latest",
+    },
+    {
+        "context": "./tms-backend-application",
+        "dockerfile": "Dockerfile",
+        "tag": f"{DOCKER_USERNAME}/tms-backend:latest",
+    },
+    {
+        "context": "./phase2_fault_type",
+        "dockerfile": "Dockerfile",
+        "tag": f"{DOCKER_USERNAME}/tms-inference-api:latest",
     },
 ]
 

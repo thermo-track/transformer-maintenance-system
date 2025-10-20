@@ -99,11 +99,14 @@ public class TransformerImageMapper {
         }
 
         if (latestImage == null) {
+            // No images uploaded yet - return transformer's own timestamps as fallback
             return new TransformerLastUpdatedDTO(
                 transformer.getTransformerNo(),
-                null,
-                null,
-                null
+                null,  // lastImageUpdatedAt
+                null,  // lastUpdatedCondition
+                null,  // lastUploadedBy
+                transformer.getUpdatedAt(),  // transformerUpdatedAt
+                transformer.getCreatedAt()   // transformerCreatedAt
             );
         }
 
@@ -111,7 +114,9 @@ public class TransformerImageMapper {
             transformer.getTransformerNo(),
             latestImage.getBaseImageUploadedAt().toInstant(),
             latestImage.getWeatherCondition().name(),
-            latestImage.getUploadedBy()
+            latestImage.getUploadedBy(),
+            transformer.getUpdatedAt(),  // transformerUpdatedAt
+            transformer.getCreatedAt()   // transformerCreatedAt
         );
     }
 }
