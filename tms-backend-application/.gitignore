@@ -34,5 +34,4 @@ build/
 .env
 
 
-add_email_columns.sql
 DATABASE_MIGRATION.md
