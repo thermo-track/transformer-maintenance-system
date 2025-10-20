@@ -7,6 +7,7 @@ import { cloudinaryService } from '../services/CloudinaryService';
 import anomalyNoteService from '../services/AnomalyNoteService';
 import AnomalyDetailsModal from './AnomalyDetailsModal';
 import ThresholdSettingsModal from './ThresholdSettingsModal';
+import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 
 const ThermalImageComparison = ({ 
   transformerId,
@@ -32,6 +33,7 @@ const ThermalImageComparison = ({
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingNoteText, setEditingNoteText] = useState('');
   const [currentUser, setCurrentUser] = useState('System User');
+  const [deleteNoteConfirm, setDeleteNoteConfirm] = useState({ isOpen: false, noteId: null });
 
   const navigate = useNavigate();
   
@@ -375,10 +377,13 @@ const ThermalImageComparison = ({
     setNotes('');
   };
 
-  const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Are you sure you want to delete this note?')) {
-      return;
-    }
+  const handleDeleteNote = (noteId) => {
+    setDeleteNoteConfirm({ isOpen: true, noteId });
+  };
+
+  const confirmDeleteNote = async () => {
+    const { noteId } = deleteNoteConfirm;
+    setDeleteNoteConfirm({ isOpen: false, noteId: null });
 
     try {
       await anomalyNoteService.deleteAnomalyNote(inspectionId, selectedAnomaly.id, noteId);
@@ -389,6 +394,10 @@ const ThermalImageComparison = ({
       console.error('Error deleting note:', error);
       alert('Failed to delete note: ' + (error.message || 'Unknown error'));
     }
+  };
+
+  const cancelDeleteNote = () => {
+    setDeleteNoteConfirm({ isOpen: false, noteId: null });
   };
 
   const handleCancelNotes = () => {
@@ -931,6 +940,19 @@ const ThermalImageComparison = ({
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog for Note Deletion */}
+      <ConfirmDialog
+        isOpen={deleteNoteConfirm.isOpen}
+        onConfirm={confirmDeleteNote}
+        onCancel={cancelDeleteNote}
+        title="Delete Note"
+        message="Are you sure you want to delete this note? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonClass="danger"
+        icon="🗑️"
+      />
     </div>
   );
 };
