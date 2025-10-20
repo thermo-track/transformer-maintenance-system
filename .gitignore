@@ -45,3 +45,6 @@ phase3_fault_type/__pycache__/*
 phase3_fault_type/annotations/*
 phase3_fault_type/feedback_dataset/*
 phase3_fault_type/yolo11n.pt
+phase3_fault_type/runs/
+phase3_fault_type/weights/
+phase2_fault_type/inference_playground.ipynb
