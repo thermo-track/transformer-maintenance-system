@@ -58,13 +58,22 @@ tms-fault-detection-model/docker-build.ps1
 tms-fault-detection-model/DOCKER_README.md
 anom/*
 ano/*
-phase3_fault_type/__pycache__/*
-phase3_fault_type/annotations/*
-phase3_fault_type/feedback_dataset/*
-phase3_fault_type/yolo11n.pt
-phase3_fault_type/runs/
-phase3_fault_type/weights/
+tms-model-finetune/__pycache__/*
+tms-model-finetune/workdir/
+tms-model-finetune/feedback_cache/
+tms-model-finetune/runs/
+tms-model-finetune/logs/
+tms-model-finetune/finetune_weight/*.pt
+tms-model-finetune/finetune_weight/*.json
 tms-fault-detection-model/inference_playground.ipynb
+
+phase2_fault_type/inference_playground.ipynb
+**/__pycache__/**
+tune/*
+
+phase2_fault_type/inference_playground.ipynb
+**/__pycache__/**
+tune/*
 
 
 ANNOTATION_IMPLEMENTATION_GUIDE.md
