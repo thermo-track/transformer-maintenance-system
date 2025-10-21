@@ -392,8 +392,6 @@ public class ThermalInferenceService {
                     try { metadata.setRegistrationInliers(Integer.parseInt(inliers.toString())); } catch (Exception ignore) {}
                 }
             }
-
-            metadata.setFullJsonResult(objectMapper.writeValueAsString(inferenceResult));
             metadata.setInferenceRunAt(LocalDateTime.now());
             
             // Set createdAt only if it's a new record

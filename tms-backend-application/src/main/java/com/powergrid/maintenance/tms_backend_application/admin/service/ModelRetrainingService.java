@@ -4,8 +4,6 @@ import com.powergrid.maintenance.tms_backend_application.admin.dto.RetrainingReq
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -58,8 +56,6 @@ public class ModelRetrainingService {
      */
     public String triggerRetraining(RetrainingRequest request) {
         String jobId = UUID.randomUUID().toString();
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        
         log.info("Starting retraining job: {}", jobId);
         
         // Create job status entry

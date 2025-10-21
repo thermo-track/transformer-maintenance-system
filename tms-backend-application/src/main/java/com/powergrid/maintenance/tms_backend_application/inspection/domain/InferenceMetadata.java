@@ -50,9 +50,6 @@ public class InferenceMetadata {
     @Column(name = "conf_thresh")
     private Double confThresh;
 
-    @Column(name = "full_json_result", columnDefinition = "TEXT")
-    private String fullJsonResult;
-
     @Column(name = "inference_run_at")
     private LocalDateTime inferenceRunAt;
 

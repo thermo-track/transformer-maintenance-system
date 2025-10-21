@@ -1,8 +1,11 @@
+-- ============================================================
+-- Table: users (Admin Bootstrap)
+-- Description: Creates the initial admin user account
+-- ============================================================
 -- Bootstrap First Admin Account
--- Run this SQL script in your PostgreSQL database to create the first admin user
+-- This SQL script creates the first admin user
 -- 
--- IMPORTANT: This script contains hardcoded credentials for initial setup only.
--- The actual credentials are stored in .env file as environment variables:
+-- IMPORTANT: This script uses environment variables for credentials:
 -- - ADMIN_USERNAME
 -- - ADMIN_EMAIL  
 -- - ADMIN_PASSWORD_HASH
