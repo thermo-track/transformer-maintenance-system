@@ -65,3 +65,8 @@ phase3_fault_type/yolo11n.pt
 phase3_fault_type/runs/
 phase3_fault_type/weights/
 tms-fault-detection-model/inference_playground.ipynb
+
+
+ANNOTATION_IMPLEMENTATION_GUIDE.md
+IMPLEMENTATION_SUMMARY.md
+PHASE3_ARCHITECTURE_PLAN.md

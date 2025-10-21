@@ -415,6 +415,10 @@ public class ThermalInferenceService {
                         InspectionAnomaly anomaly = new InspectionAnomaly();
                         anomaly.setInspectionId(inspectionId);  // Now sets Long
                         anomaly.setFaultType(className);
+                        
+                        // Mark as AI-generated and active
+                        anomaly.setSource(com.powergrid.maintenance.tms_backend_application.inspection.model.AnomalySource.AI_GENERATED);
+                        anomaly.setIsActive(true);
 
                         Object conf = detection.get("conf");
                         if (conf instanceof Number) {
