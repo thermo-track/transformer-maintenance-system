@@ -1,7 +1,7 @@
 {
   "images": {
-    "baseline": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpeqxl72ur\\100000002_baseline.jpg",
-    "maintenance": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpeqxl72ur\\100000002_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpe5nkymic\\100000002_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpe5nkymic\\100000002_maintenance.jpg"
   },
   "params": {
     "work_size": [
@@ -11,7 +11,7 @@
     "smooth_sigma": 1.0,
     "thresholding": {
       "mode": "percentile",
-      "value": 10.0,
+      "value": 2.0,
       "min_area_pct": 0.002
     },
     "fuse_weights": [
@@ -22,102 +22,61 @@
   "registration": {
     "ok": true,
     "method": "ORB_RANSAC",
-    "inliers": 42
+    "inliers": 68
   },
-  "anomalies": [
-    {
-      "bbox": [
-        1,
-        1,
-        638,
-        510
-      ],
-      "centroid": [
-        320.0,
-        256.0
-      ],
-      "area_px": 18788,
-      "fault_type": null,
-      "fault_confidence": null,
-      "detector_box": null,
-      "detector_iou": 0.01423398286890928
-    },
-    {
-      "bbox": [
-        107,
-        212,
-        127,
-        257
-      ],
-      "centroid": [
-        170.5,
-        340.5
-      ],
-      "area_px": 30293,
-      "fault_type": null,
-      "fault_confidence": null,
-      "detector_box": null,
-      "detector_iou": 0.0
-    }
-  ],
+  "resize": {
+    "work_size": [
+      640,
+      640
+    ],
+    "original_size": [
+      3077,
+      1920
+    ],
+    "scale": 0.20799480012999674
+  },
+  "anomalies": [],
   "detector_summary": {
-    "weights": "C:\\Users\\HPA02532Y\\Desktop\\SDC\\transformer-maintenance-system\\phase2_fault_type\\weights\\best.pt",
-    "image": "C:\\Users\\HPA02532Y\\AppData\\Local\\Temp\\tmpeqxl72ur\\100000002_maintenance.jpg",
+    "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\tms-fault-detection-model\\weights\\best.pt",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpe5nkymic\\100000002_maintenance.jpg",
     "params": {
       "conf_thresh": 0.25,
-      "iou_thresh": 0.35
+      "iou_thresh": 0.7
     },
     "detections": [
       {
         "bbox_xyxy": [
-          140.12367248535156,
-          75.22349548339844,
-          188.8167724609375,
-          166.71115112304688
+          552.9041748046875,
+          778.07861328125,
+          1668.313232421875,
+          1362.9449462890625
         ],
         "bbox_xywh": [
-          140.12367248535156,
-          75.22349548339844,
-          48.69309997558594,
-          91.48765563964844
+          552.9041748046875,
+          778.07861328125,
+          1115.4090576171875,
+          584.8663330078125
         ],
-        "conf": 0.8891125321388245,
-        "class_id": 4,
-        "class_name": "normal"
+        "conf": 0.5801141262054443,
+        "class_id": 0,
+        "class_name": "Full wire overload"
       },
       {
         "bbox_xyxy": [
-          89.86524200439453,
-          76.91632080078125,
-          137.42440795898438,
-          169.81231689453125
+          276.0774230957031,
+          1069.9598388671875,
+          2584.521728515625,
+          1920.0
         ],
         "bbox_xywh": [
-          89.86524200439453,
-          76.91632080078125,
-          47.559165954589844,
-          92.89599609375
+          276.0774230957031,
+          1069.9598388671875,
+          2308.444305419922,
+          850.0401611328125
         ],
-        "conf": 0.8883176445960999,
+        "conf": 0.4276868999004364,
         "class_id": 4,
         "class_name": "normal"
-      },
-      {
-        "bbox_xyxy": [
-          36.08912658691406,
-          77.51872253417969,
-          86.03034210205078,
-          170.25682067871094
-        ],
-        "bbox_xywh": [
-          36.08912658691406,
-          77.51872253417969,
-          49.94121551513672,
-          92.73809814453125
-        ],
-        "conf": 0.7792229056358337,
-        "class_id": 1,
-        "class_name": "Loose Joint -Faulty"
       }
     ]
   }

@@ -125,13 +125,12 @@ ORDER BY t.transformer_no, ti.weather_condition;
 -- duplicate key errors when the DB already contains inspection rows (eg. persistent volumes).
 SELECT setval('inspection_id_sequence', COALESCE((SELECT MAX(inspection_id) FROM inspections), 0), true);
 
--- Create inference_metadata table to store inference run information
-CREATE TABLE IF NOT EXISTS public.inference_metadata (
+-- Create inspection_anomalies table to store inference run information
+CREATE TABLE IF NOT EXISTS public.inspection_anomalies (
                                                          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     inspection_id BIGINT UNIQUE NOT NULL,
     baseline_image_url VARCHAR(500),
     maintenance_image_url VARCHAR(500),
-    visualization_image_url VARCHAR(500),
     registration_ok BOOLEAN,
     registration_method VARCHAR(50),
     registration_inliers INTEGER,
@@ -144,8 +143,8 @@ CREATE TABLE IF NOT EXISTS public.inference_metadata (
     FOREIGN KEY (inspection_id) REFERENCES public.inspections(inspection_id) ON DELETE CASCADE
     );
 
--- Create inspection_anomalies table to store detected anomalies
-CREATE TABLE IF NOT EXISTS public.inspection_anomalies (
+-- Create inference_metadata table to store detected anomalies
+CREATE TABLE IF NOT EXISTS public.inference_metadata (
                                                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     inspection_id VARCHAR(50) NOT NULL,
 
@@ -177,19 +176,19 @@ CREATE TABLE IF NOT EXISTS public.inspection_anomalies (
     );
 
 -- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_inspection_anomalies_inspection_id
+    ON public.inspection_anomalies(inspection_id);
+
 CREATE INDEX IF NOT EXISTS idx_inference_metadata_inspection_id
     ON public.inference_metadata(inspection_id);
 
-CREATE INDEX IF NOT EXISTS idx_anomalies_inspection_id
-    ON public.inspection_anomalies(inspection_id);
+CREATE INDEX IF NOT EXISTS idx_inference_metadata_fault_type
+    ON public.inference_metadata(fault_type);
 
-CREATE INDEX IF NOT EXISTS idx_anomalies_fault_type
-    ON public.inspection_anomalies(fault_type);
-
-CREATE INDEX IF NOT EXISTS idx_anomalies_detected_at
-    ON public.inspection_anomalies(detected_at);
+CREATE INDEX IF NOT EXISTS idx_inference_metadata_detected_at
+    ON public.inference_metadata(detected_at);
 
 -- Add comments for documentation
 COMMENT ON TABLE public.inference_metadata IS 'Stores metadata about inference pipeline runs for each inspection';
 COMMENT ON TABLE public.inspection_anomalies IS 'Stores detected anomalies and faults from thermal image analysis';
-COMMENT ON COLUMN public.inspection_anomalies.detector_box IS 'JSON string containing full bounding box data from YOLO detector';
+COMMENT ON COLUMN public.inference_metadata.detector_box IS 'JSON string containing full bounding box data from YOLO detector';
