@@ -5,9 +5,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.powergrid.maintenance.tms_backend_application.inspection.model.AnomalySource;
 
 @Entity
-@Table(name = "inference_metadata")
+@Table(name = "inspection_anomalies")
 @Data
 public class InspectionAnomaly {
 
@@ -62,16 +63,44 @@ public class InspectionAnomaly {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // NEW FIELDS FOR ANNOTATION FEEDBACK
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", length = 20)
+    private AnomalySource source = AnomalySource.AI_GENERATED;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @Column(name = "superseded_by")
+    private Long supersededBy;
+
+    @Column(name = "superseded_at")
+    private LocalDateTime supersededAt;
+
+    @Column(name = "created_by", length = 50)
+    private String createdBy;
+
     // Bidirectional relationship with anomaly notes - CASCADE DELETE
     @OneToMany(mappedBy = "anomaly", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<AnomalyNote> notes;
+
+    // Bidirectional relationship with annotation actions - CASCADE DELETE
+    @OneToMany(mappedBy = "anomaly", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<AnnotationAction> actions;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (detectedAt == null) {
             detectedAt = LocalDateTime.now();
+        }
+        if (source == null) {
+            source = AnomalySource.AI_GENERATED;
+        }
+        if (isActive == null) {
+            isActive = true;
         }
     }
 }

@@ -4,9 +4,9 @@ import '../styles/threshold-settings-modal.css';
 
 const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
   const [thresholds, setThresholds] = useState({
-    thresholdPct: currentSettings?.thresholdPct || 2.0,
-    iouThresh: currentSettings?.iouThresh || 0.35,
-    confThresh: currentSettings?.confThresh || 0.25
+    thresholdPct: currentSettings?.thresholdPct || 5.0,
+    iouThresh: currentSettings?.iouThresh || 1.0,
+    confThresh: currentSettings?.confThresh || 0.50
   });
 
   const handleChange = (field, value) => {
@@ -57,9 +57,9 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
   const handleApply = () => {
     // Ensure all values are valid before applying
     const validatedThresholds = {
-      thresholdPct: thresholds.thresholdPct === '' ? 2.0 : thresholds.thresholdPct,
-      iouThresh: thresholds.iouThresh === '' ? 0.35 : thresholds.iouThresh,
-      confThresh: thresholds.confThresh === '' ? 0.25 : thresholds.confThresh
+      thresholdPct: thresholds.thresholdPct === '' ? 5.0 : thresholds.thresholdPct,
+      iouThresh: thresholds.iouThresh === '' ? 1.0 : thresholds.iouThresh,
+      confThresh: thresholds.confThresh === '' ? 0.50 : thresholds.confThresh
     };
     
     onApply(validatedThresholds);
@@ -68,9 +68,9 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
 
   const handleReset = () => {
     setThresholds({
-      thresholdPct: 2.0,
-      iouThresh: 0.35,
-      confThresh: 0.25
+      thresholdPct: 5.0,
+      iouThresh: 1.0,
+      confThresh: 0.50
     });
   };
 
@@ -114,7 +114,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
               />
               <span className="input-suffix">%</span>
             </div>
-            <span className="range-info">Range: 0-100% (Default: 2.0%)</span>
+            <span className="range-info">Range: 0-100% (Default: 5.0%)</span>
           </div>
 
           <div className="threshold-group">
@@ -137,7 +137,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
                 className="threshold-input"
               />
             </div>
-            <span className="range-info">Range: 0-1 (Default: 0.35)</span>
+            <span className="range-info">Range: 0-1 (Default: 1.0)</span>
           </div>
 
           <div className="threshold-group">
@@ -160,7 +160,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
                 className="threshold-input"
               />
             </div>
-            <span className="range-info">Range: 0-1 (Default: 0.25)</span>
+            <span className="range-info">Range: 0-1 (Default: 0.50)</span>
           </div>
         </div>
 

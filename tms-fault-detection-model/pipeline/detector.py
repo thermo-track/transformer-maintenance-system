@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple
 
 from ultralytics import YOLO
 try:
-    import torch  # type: ignore
+    import torch
 except Exception:
     torch = None
 

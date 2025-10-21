@@ -42,26 +42,20 @@ tms-fault-detection-model/api/outputs/viz/*
 tms-fault-detection-model/api/outputs/
 
 # Ignore all JSON output files
-# tms-fault-detection-model/api/outputs/json/*
+tms-fault-detection-model/api/outputs/json/*
 
-!tms-fault-detection-model/api/outputs/json/100000001_result.json
-!tms-fault-detection-model/api/outputs/json/100000002_result.json
-!tms-fault-detection-model/api/outputs/json/100000003_result.json
-!tms-fault-detection-model/api/outputs/json/100000004_result.json
-!tms-fault-detection-model/api/outputs/json/100000005_result.json
-!tms-fault-detection-model/api/outputs/json/100000006_result.json
 
 
 .vscode/
 .idea/
 
 docker_cred.env
+.env
 
 
 
 tms-fault-detection-model/docker-build.ps1
 tms-fault-detection-model/DOCKER_README.md
-OTP_IMPLEMENTATION.md
 anom/*
 ano/*
 tms-model-finetune/__pycache__/*
@@ -76,3 +70,12 @@ tms-fault-detection-model/inference_playground.ipynb
 phase2_fault_type/inference_playground.ipynb
 **/__pycache__/**
 tune/*
+
+phase2_fault_type/inference_playground.ipynb
+**/__pycache__/**
+tune/*
+
+
+ANNOTATION_IMPLEMENTATION_GUIDE.md
+IMPLEMENTATION_SUMMARY.md
+PHASE3_ARCHITECTURE_PLAN.md

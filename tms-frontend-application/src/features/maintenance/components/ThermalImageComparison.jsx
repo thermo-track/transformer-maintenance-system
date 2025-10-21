@@ -43,9 +43,9 @@ const ThermalImageComparison = ({
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentThresholds, setCurrentThresholds] = useState({
-    thresholdPct: 2.0,
-    iouThresh: 0.35,
-    confThresh: 0.25
+    thresholdPct: 5.0,
+    iouThresh: 1.0,
+    confThresh: 0.50
   });
   const [isRerunLoading, setIsRerunLoading] = useState(false);
 
@@ -195,7 +195,15 @@ const ThermalImageComparison = ({
       }
       
       const confidence = detection.faultConfidence || 0;
-      const color = confidence > 0.7 ? '#FF0000' : '#FFA500';
+      const faultType = detection.faultType || '';
+      
+      // Determine color based on fault type and confidence
+      let color;
+      if (faultType.toLowerCase().includes('normal')) {
+        color = '#28a745'; // Green for normal detections
+      } else {
+        color = confidence > 0.7 ? '#FF0000' : '#FFA500'; // Red/Orange for faults
+      }
       
       ctx.strokeStyle = color;
       ctx.lineWidth = Math.max(2, Math.min(5, 3 * currentZoom));
@@ -226,10 +234,15 @@ const ThermalImageComparison = ({
         labelY = y + height + labelHeight - 2;
       }
       
-      const bgAlpha = confidence > 0.7 ? 0.9 : 0.85;
-      ctx.fillStyle = confidence > 0.7 
-        ? `rgba(255, 0, 0, ${bgAlpha})` 
-        : `rgba(255, 165, 0, ${bgAlpha})`;
+      // Background color for label - match the detection type
+      const bgAlpha = 0.9;
+      if (faultType.toLowerCase().includes('normal')) {
+        ctx.fillStyle = `rgba(40, 167, 69, ${bgAlpha})`; // Green background for normal
+      } else {
+        ctx.fillStyle = confidence > 0.7 
+          ? `rgba(255, 0, 0, ${bgAlpha})` 
+          : `rgba(255, 165, 0, ${bgAlpha})`;
+      }
       ctx.fillRect(labelX, labelY - labelHeight, textWidth, labelHeight);
       
       ctx.fillStyle = '#FFFFFF';
@@ -610,8 +623,32 @@ const ThermalImageComparison = ({
                     >
                       <span className="anomaly-location">{detection.faultType}</span>
                       <span className="anomaly-temp">{(detection.faultConfidence * 100).toFixed(0)}%</span>
-                      <span className={`anomaly-severity ${detection.faultConfidence > 0.7 ? 'critical' : 'high'}`}>
-                        {detection.faultConfidence > 0.7 ? 'Critical' : 'High'}
+                      <span 
+                        className={`anomaly-severity ${
+                          detection.faultType.toLowerCase().includes('normal') 
+                            ? 'normal' 
+                            : detection.faultConfidence > 0.7 
+                              ? 'critical' 
+                              : 'high'
+                        }`}
+                        style={{
+                          backgroundColor: detection.faultType.toLowerCase().includes('normal') 
+                            ? '#28a745' 
+                            : detection.faultConfidence > 0.7 
+                              ? '#dc3545' 
+                              : '#fd7e14',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}
+                      >
+                        {detection.faultType.toLowerCase().includes('normal') 
+                          ? 'Normal' 
+                          : detection.faultConfidence > 0.7 
+                            ? 'Critical' 
+                            : 'High'}
                       </span>
                     </div>
                     <button

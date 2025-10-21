@@ -244,17 +244,29 @@ class CloudinaryService {
    */
   async deleteInspectionImage(inspectionId, publicId = null) {
     try {
-      console.log('🗑️ Starting deleteInspectionImage:', { inspectionId, publicId });
+      console.log('🗑️ ========================================');
+      console.log('🗑️ CloudinaryService.deleteInspectionImage CALLED');
+      console.log('🗑️ Input - inspectionId:', inspectionId);
+      console.log('🗑️ Input - publicId:', publicId);
+      console.log('🗑️ Timestamp:', new Date().toISOString());
+      console.log('🗑️ ========================================');
       
       // Delete metadata from backend (this will handle everything including cleanup)
-      console.log('🗄️ Deleting metadata from backend...');
+      console.log('🗄️ CloudinaryService: Calling deleteImageMetadataFromBackend...');
       const backendDeleted = await this.deleteImageMetadataFromBackend(inspectionId);
-      console.log('Backend deletion result:', backendDeleted);
+      console.log('🗄️ CloudinaryService: Backend deletion completed');
+      console.log('🗄️ Backend deletion result:', backendDeleted);
+      console.log('🗑️ ========================================');
       
       return backendDeleted;
       
     } catch (error) {
-      console.error('Image deletion failed:', error);
+      console.error('🗑️ ❌ CloudinaryService ERROR - Image deletion failed:', error);
+      console.error('🗑️ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        inspectionId
+      });
       throw error;
     }
   }
@@ -297,19 +309,35 @@ class CloudinaryService {
    */
   async deleteImageMetadataFromBackend(inspectionId) {
     try {
-      console.log('🗄️ Making backend metadata delete request:', inspectionId);
+      console.log('🗄️ =========================================');
+      console.log('🗄️ deleteImageMetadataFromBackend CALLED');
+      console.log('🗄️ Inspection ID:', inspectionId);
       const url = `${this.backendApiUrl}/inspections/${inspectionId}/images/image-metadata`;
-      console.log('🗄️ DELETE URL:', url);
+      console.log('🗄️ Full DELETE URL:', url);
+      console.log('🗄️ HTTP Method: DELETE');
+      console.log('🗄️ Making request at:', new Date().toISOString());
+      console.log('🗄️ =========================================');
       
       const response = await authFetch(url, {
         method: 'DELETE'
       });
 
-      console.log('🗄️ Backend delete response:', response.status, response.statusText);
+      console.log('🗄️ =========================================');
+      console.log('🗄️ BACKEND RESPONSE RECEIVED');
+      console.log('🗄️ Response status:', response.status);
+      console.log('🗄️ Response statusText:', response.statusText);
+      console.log('🗄️ Response ok:', response.ok);
+      console.log('🗄️ Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🗄️ Received at:', new Date().toISOString());
+      console.log('🗄️ =========================================');
+      
       return response.ok;
       
     } catch (error) {
-      console.error('Backend metadata deletion error:', error);
+      console.error('🗄️ ❌ Backend metadata deletion ERROR:', error);
+      console.error('🗄️ Error type:', error.constructor.name);
+      console.error('🗄️ Error message:', error.message);
+      console.error('🗄️ Error stack:', error.stack);
       throw error;
     }
   }

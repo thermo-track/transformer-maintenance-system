@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inspection_anomalies")
+@Table(name = "inference_metadata")
 @Data
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "inspection"})
 public class InferenceMetadata {
@@ -49,9 +49,6 @@ public class InferenceMetadata {
 
     @Column(name = "conf_thresh")
     private Double confThresh;
-
-    @Column(name = "full_json_result", columnDefinition = "TEXT")
-    private String fullJsonResult;
 
     @Column(name = "inference_run_at")
     private LocalDateTime inferenceRunAt;
