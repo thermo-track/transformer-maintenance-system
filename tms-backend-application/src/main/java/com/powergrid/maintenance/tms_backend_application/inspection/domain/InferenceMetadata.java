@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inference_metadata")
+@Table(name = "inspection_anomalies")
 @Data
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "inspection"})
 public class InferenceMetadata {
@@ -30,8 +30,7 @@ public class InferenceMetadata {
     @Column(name = "maintenance_image_url", length = 500)
     private String maintenanceImageUrl;
 
-    @Column(name = "visualization_image_url", length = 500)
-    private String visualizationImageUrl;
+
 
     @Column(name = "registration_ok")
     private Boolean registrationOk;

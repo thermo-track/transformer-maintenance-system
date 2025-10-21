@@ -337,9 +337,42 @@ public class ThermalInferenceService {
                     .orElse(new InferenceMetadata());
             
             // Set/update metadata fields
-            metadata.setInspectionId(inspectionId);  
+            metadata.setInspectionId(inspectionId);
             metadata.setBaselineImageUrl(baselineUrl);
             metadata.setMaintenanceImageUrl(maintenanceUrl);
+
+            // Extract threshold values from the JSON result
+            // threshold_pct comes from top-level params.thresholding.value
+            @SuppressWarnings("unchecked")
+            Map<String, Object> topLevelParams = (Map<String, Object>) inferenceResult.get("params");
+            if (topLevelParams != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> thresholding = (Map<String, Object>) topLevelParams.get("thresholding");
+                if (thresholding != null) {
+                    Object thresholdPct = thresholding.get("value");
+                    if (thresholdPct instanceof Number) {
+                        metadata.setThresholdPct(((Number) thresholdPct).doubleValue());
+                    }
+                }
+            }
+
+            // iou_thresh and conf_thresh come from detector_summary.params
+            @SuppressWarnings("unchecked")
+            Map<String, Object> detectorSummary = (Map<String, Object>) inferenceResult.get("detector_summary");
+            if (detectorSummary != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> params = (Map<String, Object>) detectorSummary.get("params");
+                if (params != null) {
+                    Object iouThresh = params.get("iou_thresh");
+                    if (iouThresh instanceof Number) {
+                        metadata.setIouThresh(((Number) iouThresh).doubleValue());
+                    }
+                    Object confThresh = params.get("conf_thresh");
+                    if (confThresh instanceof Number) {
+                        metadata.setConfThresh(((Number) confThresh).doubleValue());
+                    }
+                }
+            }
 
             @SuppressWarnings("unchecked")
             Map<String, Object> registration = (Map<String, Object>) inferenceResult.get("registration");
@@ -366,8 +399,6 @@ public class ThermalInferenceService {
             log.info("Saved inference metadata for inspection {}", inspectionId);
 
             // Save detections from YOLO (supervised detections) - ONLY FAULTS
-            @SuppressWarnings("unchecked")
-            Map<String, Object> detectorSummary = (Map<String, Object>) inferenceResult.get("detector_summary");
             if (detectorSummary != null) {
                 @SuppressWarnings("unchecked")
 
@@ -405,10 +436,21 @@ public class ThermalInferenceService {
                         @SuppressWarnings("unchecked")
                         List<Number> bboxXywh = (List<Number>) detection.get("bbox_xywh");
                         if (bboxXywh != null && bboxXywh.size() >= 4) {
-                            anomaly.setBboxX(bboxXywh.get(0).intValue());
-                            anomaly.setBboxY(bboxXywh.get(1).intValue());
-                            anomaly.setBboxWidth(bboxXywh.get(2).intValue());
-                            anomaly.setBboxHeight(bboxXywh.get(3).intValue());
+                            int bboxX = bboxXywh.get(0).intValue();
+                            int bboxY = bboxXywh.get(1).intValue();
+                            int bboxWidth = bboxXywh.get(2).intValue();
+                            int bboxHeight = bboxXywh.get(3).intValue();
+
+                            anomaly.setBboxX(bboxX);
+                            anomaly.setBboxY(bboxY);
+                            anomaly.setBboxWidth(bboxWidth);
+                            anomaly.setBboxHeight(bboxHeight);
+
+                            // Calculate centroid and area
+                            anomaly.setCentroidX(bboxX + bboxWidth / 2.0);
+                            anomaly.setCentroidY(bboxY + bboxHeight / 2.0);
+                            anomaly.setAreaPx(bboxWidth * bboxHeight);
+
                             anomaly.setDetectorBox(objectMapper.writeValueAsString(bboxXywh));
                         }
 
