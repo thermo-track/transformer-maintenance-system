@@ -24,9 +24,9 @@ def main():
     args = p.parse_args()
 
     config = {
-        'processing': {'work_size': [640, 640], 'smooth_sigma': 1.0},
+        'processing': {'work_size': [640, 640], 'smooth_sigma': 3.0},
         'thresholding': {'mode': 'percentile', 'value': float(args.threshold_pct), 'min_area_pct': 0.002},
-        'fuse_weights': [0.6, 0.4],
+        'fuse_weights': [0.3, 0.7],
     }
 
     # 1) Unsupervised
