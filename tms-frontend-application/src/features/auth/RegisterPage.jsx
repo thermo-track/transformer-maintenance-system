@@ -221,6 +221,11 @@ export default function RegisterPage() {
         <p className="auth-link">
           Already have an account? <Link to="/login">Login here</Link>
         </p>
+
+        {/* New: link to admin registration for users who need admin access */}
+        <p className="auth-link">
+          Need admin access? <Link to="/admin/register">Register as Admin</Link>
+        </p>
       </div>
     </div>
   );

@@ -1,0 +1,83 @@
+{
+  "images": {
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpe5nkymic\\100000002_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpe5nkymic\\100000002_maintenance.jpg"
+  },
+  "params": {
+    "work_size": [
+      640,
+      640
+    ],
+    "smooth_sigma": 1.0,
+    "thresholding": {
+      "mode": "percentile",
+      "value": 2.0,
+      "min_area_pct": 0.002
+    },
+    "fuse_weights": [
+      0.6,
+      0.4
+    ]
+  },
+  "registration": {
+    "ok": true,
+    "method": "ORB_RANSAC",
+    "inliers": 68
+  },
+  "resize": {
+    "work_size": [
+      640,
+      640
+    ],
+    "original_size": [
+      3077,
+      1920
+    ],
+    "scale": 0.20799480012999674
+  },
+  "anomalies": [],
+  "detector_summary": {
+    "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\tms-fault-detection-model\\weights\\best.pt",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpe5nkymic\\100000002_maintenance.jpg",
+    "params": {
+      "conf_thresh": 0.25,
+      "iou_thresh": 0.7
+    },
+    "detections": [
+      {
+        "bbox_xyxy": [
+          552.9041748046875,
+          778.07861328125,
+          1668.313232421875,
+          1362.9449462890625
+        ],
+        "bbox_xywh": [
+          552.9041748046875,
+          778.07861328125,
+          1115.4090576171875,
+          584.8663330078125
+        ],
+        "conf": 0.5801141262054443,
+        "class_id": 0,
+        "class_name": "Full wire overload"
+      },
+      {
+        "bbox_xyxy": [
+          276.0774230957031,
+          1069.9598388671875,
+          2584.521728515625,
+          1920.0
+        ],
+        "bbox_xywh": [
+          276.0774230957031,
+          1069.9598388671875,
+          2308.444305419922,
+          850.0401611328125
+        ],
+        "conf": 0.4276868999004364,
+        "class_id": 4,
+        "class_name": "normal"
+      }
+    ]
+  }
+}

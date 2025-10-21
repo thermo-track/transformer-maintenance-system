@@ -7,7 +7,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "inspection_anomalies")
+@Table(name = "inference_metadata")
 @Data
 public class InspectionAnomaly {
 
@@ -55,9 +55,6 @@ public class InspectionAnomaly {
 
     @Column(name = "detector_box", columnDefinition = "TEXT")
     private String detectorBox;
-
-    @Column(name = "detector_iou")
-    private Double detectorIou;
 
     @Column(name = "detected_at")
     private LocalDateTime detectedAt;

@@ -14,7 +14,14 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Skip auth for public endpoints
-    const publicEndpoints = ['/api/auth/login', '/api/auth/register', '/api/auth/verify-otp', '/api/auth/resend-otp'];
+    const publicEndpoints = [
+      '/api/auth/login', 
+      '/api/auth/register', 
+      '/api/auth/verify-otp', 
+      '/api/auth/resend-otp',
+      '/api/admin/auth/register',
+      '/api/admin/auth/verify-otp'
+    ];
     const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
     
     if (isPublicEndpoint) {
@@ -140,6 +147,59 @@ export const authAPI = {
   deleteAccount: async (password) => {
     const response = await apiClient.delete('/api/auth/account', {
       data: { password },
+    });
+    return response.data;
+  },
+};
+
+// Admin API endpoints
+export const adminAPI = {
+  // Admin registration
+  registerAdmin: async (adminData) => {
+    console.log('[API] registerAdmin called with:', adminData);
+    const requestBody = {
+      username: adminData.username,
+      email: adminData.email,
+      password: adminData.password,
+      fullName: adminData.fullName,
+      employeeId: adminData.employeeId,
+      department: adminData.department,
+      phoneNumber: adminData.phoneNumber,
+      adminSecretKey: adminData.adminSecretKey,
+      justification: adminData.justification,
+    };
+    console.log('[API] Sending POST to /api/admin/auth/register with body:', requestBody);
+    const response = await apiClient.post('/api/admin/auth/register', requestBody);
+    console.log('[API] Response received:', response);
+    console.log('[API] Response data:', response.data);
+    return response.data;
+  },
+
+  // Verify admin email with OTP
+  verifyAdminOtp: async (email, otpCode) => {
+    const response = await apiClient.post('/api/admin/auth/verify-otp', {
+      email,
+      otpCode,
+    });
+    return response.data;
+  },
+
+  // Get pending admin approvals (admin only)
+  getPendingApprovals: async () => {
+    const response = await apiClient.get('/api/admin/auth/pending-approvals');
+    return response.data;
+  },
+
+  // Approve admin request (admin only)
+  approveAdmin: async (approvalId) => {
+    const response = await apiClient.post(`/api/admin/auth/approve/${approvalId}`);
+    return response.data;
+  },
+
+  // Reject admin request (admin only)
+  rejectAdmin: async (approvalId, reason) => {
+    const response = await apiClient.post(`/api/admin/auth/reject/${approvalId}`, {
+      reason,
     });
     return response.data;
   },

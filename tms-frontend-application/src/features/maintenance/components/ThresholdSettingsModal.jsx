@@ -5,27 +5,71 @@ import '../styles/threshold-settings-modal.css';
 const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
   const [thresholds, setThresholds] = useState({
     thresholdPct: currentSettings?.thresholdPct || 2.0,
-    iouThresh: currentSettings?.iouThresh || 0.7,
+    iouThresh: currentSettings?.iouThresh || 0.35,
     confThresh: currentSettings?.confThresh || 0.25
   });
 
   const handleChange = (field, value) => {
+    // Allow empty string for better UX when clearing
+    if (value === '' || value === null) {
+      setThresholds(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+      return;
+    }
+
     const numValue = parseFloat(value);
-    setThresholds(prev => ({
-      ...prev,
-      [field]: isNaN(numValue) ? 0 : numValue
-    }));
+    
+    // Validate and enforce limits
+    if (!isNaN(numValue)) {
+      let validatedValue = numValue;
+      
+      // Enforce max limit for thresholdPct
+      if (field === 'thresholdPct') {
+        validatedValue = Math.min(Math.max(0, numValue), 100);
+      } else if (field === 'iouThresh' || field === 'confThresh') {
+        validatedValue = Math.min(Math.max(0, numValue), 1);
+      }
+      
+      setThresholds(prev => ({
+        ...prev,
+        [field]: validatedValue
+      }));
+    }
+  };
+
+  const handleBlur = (field) => {
+    // Ensure we have a valid number when field loses focus
+    if (thresholds[field] === '' || thresholds[field] === null) {
+      const defaults = {
+        thresholdPct: 2.0,
+        iouThresh: 0.35,
+        confThresh: 0.25
+      };
+      setThresholds(prev => ({
+        ...prev,
+        [field]: defaults[field]
+      }));
+    }
   };
 
   const handleApply = () => {
-    onApply(thresholds);
+    // Ensure all values are valid before applying
+    const validatedThresholds = {
+      thresholdPct: thresholds.thresholdPct === '' ? 2.0 : thresholds.thresholdPct,
+      iouThresh: thresholds.iouThresh === '' ? 0.35 : thresholds.iouThresh,
+      confThresh: thresholds.confThresh === '' ? 0.25 : thresholds.confThresh
+    };
+    
+    onApply(validatedThresholds);
     onClose();
   };
 
   const handleReset = () => {
     setThresholds({
       thresholdPct: 2.0,
-      iouThresh: 0.7,
+      iouThresh: 0.35,
       confThresh: 0.25
     });
   };
@@ -65,6 +109,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
                 step="0.1"
                 value={thresholds.thresholdPct}
                 onChange={(e) => handleChange('thresholdPct', e.target.value)}
+                onBlur={() => handleBlur('thresholdPct')}
                 className="threshold-input"
               />
               <span className="input-suffix">%</span>
@@ -88,10 +133,11 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
                 step="0.05"
                 value={thresholds.iouThresh}
                 onChange={(e) => handleChange('iouThresh', e.target.value)}
+                onBlur={() => handleBlur('iouThresh')}
                 className="threshold-input"
               />
             </div>
-            <span className="range-info">Range: 0-1 (Default: 0.7)</span>
+            <span className="range-info">Range: 0-1 (Default: 0.35)</span>
           </div>
 
           <div className="threshold-group">
@@ -110,6 +156,7 @@ const ThresholdSettingsModal = ({ onClose, onApply, currentSettings }) => {
                 step="0.05"
                 value={thresholds.confThresh}
                 onChange={(e) => handleChange('confThresh', e.target.value)}
+                onBlur={() => handleBlur('confThresh')}
                 className="threshold-input"
               />
             </div>
