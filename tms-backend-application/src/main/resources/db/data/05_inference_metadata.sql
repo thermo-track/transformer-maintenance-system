@@ -1,4 +1,5 @@
 -- Insert inference metadata data
+-- ON CONFLICT DO NOTHING makes this idempotent (safe to run multiple times)
 INSERT INTO inference_metadata (
     id,
     baseline_image_url,
@@ -27,7 +28,8 @@ INSERT INTO inference_metadata (
 ('96fbc04c-add9-47de-90c8-937b89e0e9e0', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761048934/transformers/baseline/9ccdd6c3-3381-49ef-9b75-8c0dec91a34a/baseline_9ccdd6c3-3381-49ef-9b75-8c0dec91a34a_sunny_1761048933037.png', 0.5, '2025-01-01 00:16:22.6', '2025-01-01 00:16:22.6', 100000010, 1, 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761048969/inspections/100000010/100000010_sunny_1761048968360.png', 42, 'ORB_RANSAC', TRUE, 5),
 ('d433cc3b-d91d-4f55-b26c-82da674197cc', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761048934/transformers/baseline/9ccdd6c3-3381-49ef-9b75-8c0dec91a34a/baseline_9ccdd6c3-3381-49ef-9b75-8c0dec91a34a_sunny_1761048933037.png', 0.5, '2025-01-01 00:17:50.5', '2025-01-01 00:17:50.5', 100000012, 1, 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761049057/inspections/100000012/100000012_sunny_1761049055754.png', 18, 'ORB_RANSAC', TRUE, 5),
 ('e420895b-6633-4f7d-8e91-2c6b3d5762d0', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761048934/transformers/baseline/9ccdd6c3-3381-49ef-9b75-8c0dec91a34a/baseline_9ccdd6c3-3381-49ef-9b75-8c0dec91a34a_sunny_1761048933037.png', 0.5, '2025-01-01 00:17:09.5', '2025-01-01 00:17:09.5', 100000011, 1, 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761049016/inspections/100000011/100000011_sunny_1761049013762.png', 35, 'ORB_RANSAC', TRUE, 5),
-('f788d4eb-5ffb-4c33-833c-f6d4e0bf84d8', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761047774/transformers/baseline/de72eb41-12c3-43a4-9031-c2911cb986aa/baseline_de72eb41-12c3-43a4-9031-c2911cb986aa_sunny_1761047771040.jpg', 0.5, '2025-01-01 00:58:42.6', '2025-01-01 00:58:42.6', 100000001, 1, 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761047874/inspections/100000001/100000001_sunny_1761047870358.jpg', 70, 'ORB_RANSAC', TRUE, 5);
+('f788d4eb-5ffb-4c33-833c-f6d4e0bf84d8', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761047774/transformers/baseline/de72eb41-12c3-43a4-9031-c2911cb986aa/baseline_de72eb41-12c3-43a4-9031-c2911cb986aa_sunny_1761047771040.jpg', 0.5, '2025-01-01 00:58:42.6', '2025-01-01 00:58:42.6', 100000001, 1, 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1761047874/inspections/100000001/100000001_sunny_1761047870358.jpg', 70, 'ORB_RANSAC', TRUE, 5)
+ON CONFLICT (id) DO NOTHING;
 
 -- Note: PostgreSQL UUID generation doesn't require sequence management
 -- UUIDs are handled by GenerationType.UUID in the entity
