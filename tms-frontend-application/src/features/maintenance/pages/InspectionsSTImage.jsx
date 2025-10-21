@@ -332,18 +332,28 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
 
   const handleImageDelete = async () => {
     try {
-      if (!currentInspection) return;
+      if (!currentInspection) {
+        console.warn('❌ handleImageDelete: No current inspection selected');
+        return;
+      }
       
-      console.log('Deleting cloud image for inspection:', currentInspection.inspectionId);
+      console.log('🗑️ ======================================');
+      console.log('🗑️ FRONTEND: Starting handleImageDelete');
+      console.log('🗑️ Inspection ID:', currentInspection.inspectionId);
+      console.log('🗑️ Timestamp:', new Date().toISOString());
+      console.log('🗑️ ======================================');
+      
       setUploadStatus({ 
         type: 'loading', 
         message: 'Deleting image from cloud storage...' 
       });
       
       // Delete from both Cloudinary and backend
-      await cloudinaryService.deleteInspectionImage(currentInspection.inspectionId);
+      console.log('🗑️ FRONTEND: Calling cloudinaryService.deleteInspectionImage...');
+      const deleteResult = await cloudinaryService.deleteInspectionImage(currentInspection.inspectionId);
       
-      console.log('Cloud image deleted for inspection:', currentInspection.inspectionId);
+      console.log('🗑️ FRONTEND: Delete operation completed');
+      console.log('🗑️ Delete result:', deleteResult);
       
       // Update local state
       setHasCloudImage(false);
@@ -355,15 +365,21 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
         message: 'Thermal image deleted from cloud successfully.' 
       });
       
+      console.log('🗑️ FRONTEND: Refreshing inspection data...');
       // Refresh inspection data
       await fetchInspectionsByTransformer(transformerNo);
       
       // Check cloud image status again
+      console.log('🗑️ FRONTEND: Checking cloud image status...');
       await checkExistingCloudImage(currentInspection.inspectionId);
+      
+      console.log('🗑️ FRONTEND: handleImageDelete completed successfully');
+      console.log('🗑️ ======================================');
       
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (error) {
-      console.error('Error deleting cloud image:', error);
+      console.error('🗑️ ❌ FRONTEND ERROR in handleImageDelete:', error);
+      console.error('🗑️ Error stack:', error.stack);
       setUploadStatus({ 
         type: 'error', 
         message: 'Failed to delete image from cloud. Please try again.' 

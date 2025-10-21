@@ -134,6 +134,12 @@ public class ThermalInferenceService {
             if (!existingAnomalies.isEmpty()) {
                 log.info("Deleting {} existing anomalies", existingAnomalies.size());
                 anomalyRepository.deleteAll(existingAnomalies);
+                try {
+                    int affected = anomalyRepository.deleteByInspectionId(inspectionId);
+                    log.info("anomalyRepository.deleteByInspectionId affected rows: {}", affected);
+                } catch (Exception e) {
+                    log.warn("anomalyRepository.deleteByInspectionId threw: {}", e.getMessage());
+                }
             }
             
             // Delete existing inference metadata

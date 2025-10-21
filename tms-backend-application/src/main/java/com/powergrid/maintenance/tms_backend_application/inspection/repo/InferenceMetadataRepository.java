@@ -15,9 +15,10 @@ public interface InferenceMetadataRepository extends JpaRepository<InferenceMeta
 
     Optional<InferenceMetadata> findByInspectionId(Long inspectionId);
 
-    @Transactional
-    @Modifying
-    void deleteByInspectionId(Long inspectionId);
+  @Transactional
+  @Modifying
+  @Query("DELETE FROM InferenceMetadata m WHERE m.inspectionId = :inspectionId")
+  int deleteByInspectionId(@Param("inspectionId") Long inspectionId);
 
     /**
      * Update ONLY the maintenance image URL for a given inspection.
