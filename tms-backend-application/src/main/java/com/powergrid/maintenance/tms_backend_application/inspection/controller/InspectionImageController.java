@@ -71,16 +71,33 @@ public class InspectionImageController {
     public ResponseEntity<Void> deleteImageMetadata(
             @Parameter(description = "Inspection ID", required = true)
             @PathVariable String inspectionId) {
+        log.info("========================================");
+        log.info("CONTROLLER: DELETE /api/inspections/{}/images/image-metadata CALLED", inspectionId);
+        log.info("Thread: {}", Thread.currentThread().getName());
+        log.info("Timestamp: {}", java.time.LocalDateTime.now());
+        log.info("========================================");
+        
         try {
-            log.info("Deleting image metadata for inspection: {}", inspectionId);
+            log.info("CONTROLLER: Calling inspectionService.deleteImageMetadata for inspection: {}", inspectionId);
             boolean deleted = inspectionService.deleteImageMetadata(inspectionId);
+            
+            log.info("========================================");
+            log.info("CONTROLLER: Service returned: {} for inspection {}", deleted, inspectionId);
+            log.info("========================================");
+            
             if (deleted) {
+                log.info("CONTROLLER: Returning 200 OK");
                 return ResponseEntity.ok().build();
             } else {
+                log.warn("CONTROLLER: Returning 404 NOT FOUND (deleted=false)");
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            log.error("Error deleting image metadata for inspection: {}", inspectionId, e);
+            log.error("========================================");
+            log.error("CONTROLLER: EXCEPTION in deleteImageMetadata for inspection: {}", inspectionId, e);
+            log.error("Exception type: {}", e.getClass().getName());
+            log.error("Exception message: {}", e.getMessage());
+            log.error("========================================");
             return ResponseEntity.badRequest().build();
         }
     }

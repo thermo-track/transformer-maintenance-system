@@ -42,14 +42,8 @@ tms-fault-detection-model/api/outputs/viz/*
 tms-fault-detection-model/api/outputs/
 
 # Ignore all JSON output files
-# tms-fault-detection-model/api/outputs/json/*
+tms-fault-detection-model/api/outputs/json/*
 
-!tms-fault-detection-model/api/outputs/json/100000001_result.json
-!tms-fault-detection-model/api/outputs/json/100000002_result.json
-!tms-fault-detection-model/api/outputs/json/100000003_result.json
-!tms-fault-detection-model/api/outputs/json/100000004_result.json
-!tms-fault-detection-model/api/outputs/json/100000005_result.json
-!tms-fault-detection-model/api/outputs/json/100000006_result.json
 
 
 .vscode/
@@ -62,7 +56,6 @@ docker_cred.env
 
 tms-fault-detection-model/docker-build.ps1
 tms-fault-detection-model/DOCKER_README.md
-OTP_IMPLEMENTATION.md
 anom/*
 ano/*
 phase3_fault_type/__pycache__/*

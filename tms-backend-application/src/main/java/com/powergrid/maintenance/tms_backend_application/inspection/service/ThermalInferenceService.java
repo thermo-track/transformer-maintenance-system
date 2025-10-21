@@ -134,6 +134,12 @@ public class ThermalInferenceService {
             if (!existingAnomalies.isEmpty()) {
                 log.info("Deleting {} existing anomalies", existingAnomalies.size());
                 anomalyRepository.deleteAll(existingAnomalies);
+                try {
+                    int affected = anomalyRepository.deleteByInspectionId(inspectionId);
+                    log.info("anomalyRepository.deleteByInspectionId affected rows: {}", affected);
+                } catch (Exception e) {
+                    log.warn("anomalyRepository.deleteByInspectionId threw: {}", e.getMessage());
+                }
             }
             
             // Delete existing inference metadata
@@ -386,8 +392,6 @@ public class ThermalInferenceService {
                     try { metadata.setRegistrationInliers(Integer.parseInt(inliers.toString())); } catch (Exception ignore) {}
                 }
             }
-
-            metadata.setFullJsonResult(objectMapper.writeValueAsString(inferenceResult));
             metadata.setInferenceRunAt(LocalDateTime.now());
             
             // Set createdAt only if it's a new record

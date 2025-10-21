@@ -27,6 +27,8 @@ import com.powergrid.maintenance.tms_backend_application.inspection.mapper.Inspe
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,6 +47,12 @@ public class InspectionService {
 
     @Autowired
     private com.powergrid.maintenance.tms_backend_application.inspection.repo.InferenceMetadataRepository inferenceMetadataRepository;
+
+    @Autowired
+    private com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionAnomalyRepository inspectionAnomalyRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Create a new inspection with proper transformer relationship management
@@ -386,7 +394,12 @@ public class InspectionService {
      */
     @Transactional
     public boolean deleteImageMetadata(String inspectionId) {
-        log.info("=== Starting deleteImageMetadata for inspection: {} ===", inspectionId);
+        log.info("========================================");
+        log.info("SERVICE: deleteImageMetadata ENTRY");
+        log.info("SERVICE: Input inspectionId: {}", inspectionId);
+        log.info("SERVICE: Thread: {}", Thread.currentThread().getName());
+        log.info("SERVICE: @Transactional active");
+        log.info("========================================");
         try {
             // Parse string ID to Long
             Long id = Long.parseLong(inspectionId);
@@ -398,13 +411,21 @@ public class InspectionService {
                 Inspection inspection = optionalInspection.get();
                 log.info("Found inspection with ID: {}", id);
                 
-                // Check if inference metadata exists BEFORE deletion
-                Optional<com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata> existingMetadata = 
-                    inferenceMetadataRepository.findByInspectionId(id);
-                log.info("Inference metadata exists before deletion: {}", existingMetadata.isPresent());
-                if (existingMetadata.isPresent()) {
-                    log.info("Existing inference metadata ID: {}", existingMetadata.get().getId());
+                // Check counts BEFORE deletion for diagnostics
+                long inferenceCountBefore = 0L;
+                long anomalyCountBefore = 0L;
+                try {
+                    inferenceCountBefore = inferenceMetadataRepository.findAll().stream()
+                            .filter(m -> m.getInspectionId() != null && m.getInspectionId().equals(id)).count();
+                } catch (Exception e) {
+                    log.warn("Failed to compute inferenceCountBefore via findAll filter: {}", e.getMessage());
                 }
+                try {
+                    anomalyCountBefore = inspectionAnomalyRepository.findByInspectionId(id).size();
+                } catch (Exception e) {
+                    log.warn("Failed to compute anomalyCountBefore: {}", e.getMessage());
+                }
+                log.info("Counts BEFORE deletion for inspection {}: inferenceMetadata={}, anomalies={}", id, inferenceCountBefore, anomalyCountBefore);
                 
                 // Clear cloud image metadata from inspection
                 log.info("Clearing cloud image metadata from inspection table...");
@@ -413,20 +434,85 @@ public class InspectionService {
                 Inspection savedInspection = inspectionRepo.save(inspection);
                 log.info("Saved inspection with cleared metadata. Cloud URL now: {}", savedInspection.getCloudImageUrl());
                 
-                // Delete associated inference metadata if it exists
-                log.info("About to call deleteByInspectionId for inspection ID: {}", id);
-                inferenceMetadataRepository.deleteByInspectionId(id);
-                log.info("Called deleteByInspectionId - checking if actually deleted...");
-                
-                // Verify deletion
-                Optional<com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata> verifyDeleted = 
-                    inferenceMetadataRepository.findByInspectionId(id);
-                log.info("Inference metadata exists AFTER deletion: {}", verifyDeleted.isPresent());
-                
-                if (verifyDeleted.isPresent()) {
-                    log.error("DELETION FAILED! Inference metadata still exists with ID: {}", verifyDeleted.get().getId());
+                // Delete associated inference metadata.
+                // We fetched existingMetadata earlier; prefer removing the managed entity to keep
+                // the persistence context consistent (bulk deletes bypass the persistence context
+                // and can leave stale managed entities visible until flush/clear).
+                // Delete inference metadata rows for this inspection
+                try {
+                    log.info("Attempting to delete inference metadata for inspection ID: {} using repository.deleteByInspectionId", id);
+                    int deleted = inferenceMetadataRepository.deleteByInspectionId(id);
+                    log.info("InferenceMetadataRepository.deleteByInspectionId returned affected rows: {} for inspection {}", deleted, id);
+                } catch (Exception e) {
+                    log.error("Failed to delete inference metadata by inspectionId: {} - {}", id, e.getMessage());
+                }
+
+                // Ensure changes are flushed to the DB and persistence context cleared so
+                // subsequent repository queries reflect the deletion immediately.
+                try {
+                    log.info("Flushing repositories and clearing persistence context...");
+                    inferenceMetadataRepository.flush();
+                    inspectionAnomalyRepository.flush();
+                    entityManager.clear();
+                } catch (Exception flushEx) {
+                    log.warn("Flush/Clear failed: {}", flushEx.getMessage());
+                }
+
+                // Ensure changes are flushed to the DB and clear persistence context so
+                // subsequent repository queries hit the database and don't return cached entities.
+                try {
+                    log.info("Flushing and clearing persistence context to ensure deletions are applied to DB");
+                    entityManager.flush();
+                    entityManager.clear();
+                } catch (Exception e) {
+                    log.warn("Failed to flush/clear persistence context: {}", e.getMessage());
+                }
+
+                // Ensure changes are flushed so subsequent verification queries observe the delete
+                try {
+                    inferenceMetadataRepository.flush();
+                    log.info("Flushed inferenceMetadataRepository after delete");
+                } catch (Exception e) {
+                    log.warn("Failed to flush inferenceMetadataRepository: {}", e.getMessage());
+                }
+
+                // Delete associated inspection anomalies if they exist
+                log.info("About to call deleteByInspectionId for inspection anomalies for inspection ID: {}", id);
+                try {
+                    int deletedAnomalies = inspectionAnomalyRepository.deleteByInspectionId(id);
+                    log.info("inspectionAnomalyRepository.deleteByInspectionId affected rows: {} for inspection {}", deletedAnomalies, id);
+                } catch (Exception e) {
+                    log.error("Failed to delete inspection anomalies for inspection {}: {}", id, e.getMessage());
+                }
+                try {
+                    inspectionAnomalyRepository.flush();
+                    log.info("Flushed inspectionAnomalyRepository after delete");
+                } catch (Exception e) {
+                    log.warn("Failed to flush inspectionAnomalyRepository: {}", e.getMessage());
+                }
+                log.info("Called deleteByInspectionId for inspection anomalies - checking if actually deleted...");
+
+                // Verify deletion - compute counts AFTER deletion
+                long inferenceCountAfter = 0L;
+                long anomalyCountAfter = 0L;
+                try {
+                    inferenceCountAfter = inferenceMetadataRepository.findAll().stream()
+                            .filter(m -> m.getInspectionId() != null && m.getInspectionId().equals(id)).count();
+                } catch (Exception e) {
+                    log.warn("Failed to compute inferenceCountAfter via findAll filter: {}", e.getMessage());
+                }
+                try {
+                    anomalyCountAfter = inspectionAnomalyRepository.findByInspectionId(id).size();
+                } catch (Exception e) {
+                    log.warn("Failed to compute anomalyCountAfter: {}", e.getMessage());
+                }
+
+                log.info("Counts AFTER deletion for inspection {}: inferenceMetadata={}, anomalies={}", id, inferenceCountAfter, anomalyCountAfter);
+
+                if (inferenceCountAfter > 0) {
+                    log.error("DELETION FAILED! inference_metadata rows remain for inspection {}: count={}", id, inferenceCountAfter);
                 } else {
-                    log.info("DELETION SUCCESSFUL! Inference metadata was removed.");
+                    log.info("DELETION SUCCESSFUL! No inference_metadata rows for inspection {}.", id);
                 }
                 
                 log.info("=== Completed deleteImageMetadata for inspection: {} ===", inspectionId);
