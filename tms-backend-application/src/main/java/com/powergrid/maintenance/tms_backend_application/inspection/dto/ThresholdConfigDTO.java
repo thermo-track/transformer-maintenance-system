@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ThresholdConfigDTO {
-    private Double thresholdPct = 2.0;
-    private Double iouThresh = 0.7;
-    private Double confThresh = 0.25;
+    private Double thresholdPct = 5.0;
+    private Double iouThresh = 1.0;
+    private Double confThresh = 0.50;
 }
