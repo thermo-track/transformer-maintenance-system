@@ -54,9 +54,6 @@ public class InspectionAnomaly {
     @Column(name = "class_id")
     private Integer classId;
 
-    @Column(name = "detector_box", columnDefinition = "TEXT")
-    private String detectorBox;
-
     @Column(name = "detected_at")
     private LocalDateTime detectedAt;
 
