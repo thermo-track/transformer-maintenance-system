@@ -7,7 +7,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "inference_metadata")
+@Table(name = "inspection_anomalies")
 @Data
 public class InspectionAnomaly {
 

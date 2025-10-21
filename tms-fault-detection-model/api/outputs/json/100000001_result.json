@@ -1,7 +1,7 @@
 {
   "images": {
-    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp8cfacrq3\\100000001_baseline.jpg",
-    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp8cfacrq3\\100000001_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp2p77r01w\\100000001_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp2p77r01w\\100000001_maintenance.jpg"
   },
   "params": {
     "work_size": [
@@ -38,7 +38,7 @@
   "anomalies": [],
   "detector_summary": {
     "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\tms-fault-detection-model\\weights\\best.pt",
-    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp8cfacrq3\\100000001_maintenance.jpg",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmp2p77r01w\\100000001_maintenance.jpg",
     "params": {
       "conf_thresh": 0.25,
       "iou_thresh": 0.7
