@@ -302,9 +302,9 @@ public class ThermalInferenceService {
             request.put("maintenance_url", maintenanceUrl);
             request.put("inspection_id", inspectionId);
             // Use provided thresholds if present; otherwise apply defaults
-            request.put("threshold_pct", thresholdPct != null ? thresholdPct : 2.0);
-            request.put("iou_thresh",   iouThresh    != null ? iouThresh    : 0.35);
-            request.put("conf_thresh",  confThresh   != null ? confThresh   : 0.25);
+            request.put("threshold_pct", thresholdPct != null ? thresholdPct : 5.0);
+            request.put("iou_thresh",   iouThresh    != null ? iouThresh    : 1.0);
+            request.put("conf_thresh",  confThresh   != null ? confThresh   : 0.50);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -404,25 +404,15 @@ public class ThermalInferenceService {
             inferenceMetadataRepository.save(metadata);
             log.info("Saved inference metadata for inspection {}", inspectionId);
 
-            // Save detections from YOLO (supervised detections) - ONLY FAULTS
+            // Save ALL detections from YOLO (supervised detections) - including normal
             if (detectorSummary != null) {
                 @SuppressWarnings("unchecked")
-
                 List<Map<String, Object>> detections = (List<Map<String, Object>>) detectorSummary.get("detections");
                 if (detections != null) {
                     int savedCount = 0;
-                    int skippedCount = 0;
 
                     for (Map<String, Object> detection : detections) {
                         String className = (String) detection.get("class_name");
-
-                        // CRITICAL: Skip "normal" detections - only save actual faults
-                        if (className != null && className.toLowerCase().contains("normal")) {
-                            log.debug("Skipping normal detection: {} with confidence {}",
-                                    className, detection.get("conf"));
-                            skippedCount++;
-                            continue;
-                        }
 
                         InspectionAnomaly anomaly = new InspectionAnomaly();
                         anomaly.setInspectionId(inspectionId);  // Now sets Long
@@ -464,8 +454,8 @@ public class ThermalInferenceService {
                         savedCount++;
                     }
 
-                    log.info("Saved {} fault detections for inspection {} (skipped {} normal detections)",
-                            savedCount, inspectionId, skippedCount);
+                    log.info("Saved {} detections for inspection {} (including normal and faults)",
+                            savedCount, inspectionId);
                 }
             }
 

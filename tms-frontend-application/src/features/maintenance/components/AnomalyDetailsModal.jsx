@@ -14,10 +14,26 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
       minute: '2-digit',
     });
 
-  const getSeverityColor = (confidence) => {
-    if (confidence > 0.7) return '#dc3545';
-    if (confidence > 0.5) return '#fd7e14';
-    return '#ffc107';
+  const getSeverityColor = (faultType, confidence) => {
+    // Check if it's a normal detection
+    if (faultType && faultType.toLowerCase().includes('normal')) {
+      return '#28a745'; // Green for normal
+    }
+    // For actual faults, use confidence-based colors
+    if (confidence > 0.7) return '#dc3545'; // Red for critical
+    if (confidence > 0.5) return '#fd7e14'; // Orange for high
+    return '#ffc107'; // Yellow for medium
+  };
+
+  const getSeverityLabel = (faultType, confidence) => {
+    // Check if it's a normal detection
+    if (faultType && faultType.toLowerCase().includes('normal')) {
+      return 'Normal';
+    }
+    // For actual faults, use confidence-based labels
+    if (confidence > 0.7) return 'Critical';
+    if (confidence > 0.5) return 'High';
+    return 'Medium';
   };
 
   return (
@@ -26,11 +42,11 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
         <div className="anomaly-modal-header">
           <div
             className="header-icon"
-            style={{ backgroundColor: getSeverityColor(anomaly.faultConfidence) }}
+            style={{ backgroundColor: getSeverityColor(anomaly.faultType, anomaly.faultConfidence) }}
           >
             <AlertTriangle size={24} color="white" />
           </div>
-          <h2>Fault Detection Details</h2>
+          <h2>Detection Details</h2>
           <button className="close-btn" onClick={onClose}>
             <X size={20} />
           </button>
@@ -38,10 +54,10 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
 
         <div className="anomaly-modal-body">
           <div className="detail-section">
-            <h3>Fault Information</h3>
+            <h3>Detection Information</h3>
             <div className="detail-grid">
               <div className="detail-item">
-                <label>Fault Type</label>
+                <label>Detection Type</label>
                 <p className="fault-type-value">{anomaly.faultType}</p>
               </div>
 
@@ -53,7 +69,7 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
                       className="confidence-bar-fill"
                       style={{
                         width: `${anomaly.faultConfidence * 100}%`,
-                        backgroundColor: getSeverityColor(anomaly.faultConfidence),
+                        backgroundColor: getSeverityColor(anomaly.faultType, anomaly.faultConfidence),
                       }}
                     ></div>
                   </div>
@@ -67,13 +83,9 @@ const AnomalyDetailsModal = ({ anomaly, inspectionData, onClose }) => {
                 <label>Severity Level</label>
                 <span
                   className="severity-badge"
-                  style={{ backgroundColor: getSeverityColor(anomaly.faultConfidence) }}
+                  style={{ backgroundColor: getSeverityColor(anomaly.faultType, anomaly.faultConfidence) }}
                 >
-                  {anomaly.faultConfidence > 0.7
-                    ? 'Critical'
-                    : anomaly.faultConfidence > 0.5
-                    ? 'High'
-                    : 'Medium'}
+                  {getSeverityLabel(anomaly.faultType, anomaly.faultConfidence)}
                 </span>
               </div>
             </div>
