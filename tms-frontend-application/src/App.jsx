@@ -17,6 +17,7 @@ import TransformerLocationPage from './features/transformers/components/Transfor
 import TransformerLocationWrapper from './features/transformers/components/TransformerLocationWrapper';
 import TransformersMapWrapper from './features/transformers/components/TransformersMapWrapper';
 import UserSettings from './components/UserSettings/UserSettings.jsx';
+import AnnotationPage from './pages/AnnotationPage.jsx';
 
 import './App.css';
 
@@ -69,6 +70,14 @@ export default function App() {
         <PrivateRoute>
           <Layout>
             <InspectionsSTImage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/annotations/:inspectionId" element={
+        <PrivateRoute>
+          <Layout>
+            <AnnotationPage />
           </Layout>
         </PrivateRoute>
       } />

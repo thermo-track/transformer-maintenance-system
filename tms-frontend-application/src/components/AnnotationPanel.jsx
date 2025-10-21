@@ -34,60 +34,30 @@ import './AnnotationPanel.css';
 /**
  * Panel component for managing annotations
  */
-const AnnotationPanel = ({ 
-    inspectionId, 
-    userId,
-    annotations = [],
+const AnnotationPanel = ({
+    aiDetections = [],
+    userAnnotations = [],
+    drawMode,
+    setDrawMode,
+    onDrawModeChange,
     selectedAnnotationId,
     onAnnotationSelect,
+    onEditClick,
     onAnnotationsUpdate,
-    onDrawModeChange
+    inspectionId,
+    userId
 }) => {
-    const [aiDetections, setAiDetections] = useState([]);
-    const [userAnnotations, setUserAnnotations] = useState([]);
-    const [commentDialogOpen, setCommentDialogOpen] = useState(false);
-    const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
-    const [currentComment, setCurrentComment] = useState('');
-    const [currentHistory, setCurrentHistory] = useState([]);
-    const [drawMode, setDrawMode] = useState('view');
-
-    useEffect(() => {
-        // Separate annotations by source
-        const ai = annotations.filter(a => a.source === 'AI_GENERATED' && a.isActive);
-        const user = annotations.filter(a => a.source === 'USER_ADDED' && a.isActive);
-        setAiDetections(ai);
-        setUserAnnotations(user);
-    }, [annotations]);
-
-    const handleAcceptAI = async (anomaly) => {
-        try {
-            await AnnotationService.acceptAiDetection(anomaly.id, inspectionId, userId);
-            onAnnotationsUpdate();
-        } catch (error) {
-            console.error('Error accepting AI detection:', error);
-        }
-    };
-
-    const handleRejectAI = async (anomaly) => {
-        const reason = prompt('Reason for rejection (optional):');
-        try {
-            await AnnotationService.rejectAiDetection(anomaly.id, inspectionId, reason, userId);
-            onAnnotationsUpdate();
-        } catch (error) {
-            console.error('Error rejecting AI detection:', error);
-        }
-    };
-
-    const handleDelete = async (anomaly) => {
-        if (window.confirm('Are you sure you want to delete this annotation?')) {
-            try {
-                await AnnotationService.deleteAnnotation(anomaly.id, inspectionId, 'User deleted annotation', userId);
-                onAnnotationsUpdate();
-            } catch (error) {
-                console.error('Error deleting annotation:', error);
-            }
-        }
-    };
+    // ...existing code...
+    // (all hooks, handlers, and renderAnnotationItem function)
+    // ...existing code...
+    return (
+        <Card className="annotation-panel">
+            <CardContent>
+                {/* ...existing code... (all JSX as above) ... */}
+            </CardContent>
+        </Card>
+    );
+};
 
     const handleAddComment = (anomaly) => {
         onAnnotationSelect(anomaly);
@@ -132,14 +102,14 @@ const AnnotationPanel = ({
     const renderAnnotationItem = (anomaly, isAI = false) => (
         <ListItem
             key={anomaly.id}
-            button
             selected={selectedAnnotationId === anomaly.id}
             onClick={() => onAnnotationSelect(anomaly)}
             sx={{ 
                 border: selectedAnnotationId === anomaly.id ? '2px solid #1976d2' : '1px solid #ddd',
                 borderRadius: 1,
                 mb: 1,
-                backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : 'white'
+                backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : 'white',
+                cursor: 'pointer'
             }}
         >
             <ListItemText
@@ -148,13 +118,11 @@ const AnnotationPanel = ({
                         <Typography variant="subtitle2">
                             {anomaly.faultType || 'Unknown'}
                         </Typography>
-                        <Chip 
-                            label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`}
-                            size="small"
-                            color={getConfidenceColor(anomaly.faultConfidence)}
-                        />
                         {isAI && (
-                            <Chip label="AI" size="small" color="success" variant="outlined" />
+                            <>
+                                <Chip label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} size="small" color={getConfidenceColor(anomaly.faultConfidence)} />
+                                <Chip label="AI" size="small" color="success" variant="outlined" />
+                            </>
                         )}
                     </Box>
                 }
@@ -179,6 +147,11 @@ const AnnotationPanel = ({
                         </Tooltip>
                     </>
                 )}
+                <Tooltip title="Edit">
+                    <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); onEditClick(); }}>
+                        <EditIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
                 <Tooltip title="Comment">
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleAddComment(anomaly); }}>
                         <CommentIcon fontSize="small" />
@@ -312,6 +285,5 @@ const AnnotationPanel = ({
             </CardContent>
         </Card>
     );
-};
 
 export default AnnotationPanel;

@@ -123,7 +123,8 @@ const ThermalImageComparison = ({
   const fetchAnomalies = async (inspId) => {
     try {
       const result = await cloudinaryService.getInspectionAnomalies(inspId);
-      const detectionData = (result.anomalies || []).filter(a => a.faultType);
+      // Filter only active annotations with faultType
+      const detectionData = (result.anomalies || []).filter(a => a.faultType && a.isActive !== false);
       setDetections(detectionData);
     } catch (error) {
       console.error('Error fetching anomalies:', error);

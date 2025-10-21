@@ -14,6 +14,7 @@ import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import AnnotationCanvas from '../components/AnnotationCanvas';
 import AnnotationPanel from '../components/AnnotationPanel';
 import AnnotationService from '../services/AnnotationService';
+import apiClient from '../config/api';
 import './AnnotationPage.css';
 
 /**
@@ -52,9 +53,13 @@ const AnnotationPage = () => {
             
             setAnnotations(allAnnotations);
             
-            // TODO: Get image URL from inspection data
-            // For now, using a placeholder
-            setImageUrl('/api/inspections/' + inspectionId + '/image');
+            // Get cloud image URL from backend
+            const imageResponse = await apiClient.get(`/api/inspections/${inspectionId}/images/cloud-image-url`);
+            if (imageResponse.data && imageResponse.data.cloudImageUrl) {
+                setImageUrl(imageResponse.data.cloudImageUrl);
+            } else {
+                setError('No thermal image found for this inspection');
+            }
             
             setLoading(false);
         } catch (err) {
