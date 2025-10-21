@@ -1,0 +1,27 @@
+{
+  "images": [
+    {
+      "image_url": "https://res.cloudinary.com/dxqmzslkb/image/upload/v1761047784/transformers/baseline/de72eb41-12c3-43a4-9031-c2911cb986aa/baseline_de72eb41-12c3-43a4-9031-c2911cb986aa_rainy_1761047782394.jpg",
+      "detections": [
+        {
+          "box": {
+            "x_min": 120,
+            "y_min": 80,
+            "x_max": 250,
+            "y_max": 200
+          },
+          "class_id": 3,
+        },
+        {
+          "box": {
+            "x_min": 300,
+            "y_min": 150,
+            "x_max": 400,
+            "y_max": 280
+          },
+          "class_id": 1,
+        }
+      ]
+    }
+  ]
+}
