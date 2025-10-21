@@ -1,28 +1,28 @@
 {
   "images": {
-    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpj4691x8x\\100000001_baseline.jpg",
-    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpj4691x8x\\100000001_maintenance.jpg"
+    "baseline": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpdgrj0ubk\\100000001_baseline.jpg",
+    "maintenance": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpdgrj0ubk\\100000001_maintenance.jpg"
   },
   "params": {
     "work_size": [
       640,
       640
     ],
-    "smooth_sigma": 1.0,
+    "smooth_sigma": 3.0,
     "thresholding": {
       "mode": "percentile",
-      "value": 2.0,
+      "value": 5.0,
       "min_area_pct": 0.002
     },
     "fuse_weights": [
-      0.6,
-      0.4
+      0.3,
+      0.7
     ]
   },
   "registration": {
     "ok": true,
     "method": "ORB_RANSAC",
-    "inliers": 8
+    "inliers": 70
   },
   "resize": {
     "work_size": [
@@ -38,113 +38,28 @@
   "anomalies": [],
   "detector_summary": {
     "weights": "D:\\UoM\\EN3350 - Software Design Competition\\project\\transformer-maintenance-system\\tms-fault-detection-model\\weights\\best.pt",
-    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpj4691x8x\\100000001_maintenance.jpg",
+    "image": "C:\\Users\\mihir\\AppData\\Local\\Temp\\tmpdgrj0ubk\\100000001_maintenance.jpg",
     "params": {
-      "conf_thresh": 0.25,
-      "iou_thresh": 0.7
+      "conf_thresh": 0.5,
+      "iou_thresh": 1.0
     },
     "detections": [
       {
         "bbox_xyxy": [
-          732.9994506835938,
-          1143.17333984375,
-          1165.5394287109375,
-          1433.2921142578125
+          552.9041748046875,
+          778.07861328125,
+          1668.313232421875,
+          1362.9449462890625
         ],
         "bbox_xywh": [
-          732.9994506835938,
-          1143.17333984375,
-          432.53997802734375,
-          290.1187744140625
+          552.9041748046875,
+          778.07861328125,
+          1115.4090576171875,
+          584.8663330078125
         ],
-        "conf": 0.8129346370697021,
-        "class_id": 4,
-        "class_name": "normal"
-      },
-      {
-        "bbox_xyxy": [
-          432.786376953125,
-          735.389404296875,
-          766.0858154296875,
-          1045.4310302734375
-        ],
-        "bbox_xywh": [
-          432.786376953125,
-          735.389404296875,
-          333.2994384765625,
-          310.0416259765625
-        ],
-        "conf": 0.7639321684837341,
-        "class_id": 4,
-        "class_name": "normal"
-      },
-      {
-        "bbox_xyxy": [
-          1857.4385986328125,
-          776.1428833007812,
-          2147.052734375,
-          1037.490478515625
-        ],
-        "bbox_xywh": [
-          1857.4385986328125,
-          776.1428833007812,
-          289.6141357421875,
-          261.34759521484375
-        ],
-        "conf": 0.610597550868988,
-        "class_id": 4,
-        "class_name": "normal"
-      },
-      {
-        "bbox_xyxy": [
-          1263.1796875,
-          765.5157470703125,
-          1460.0875244140625,
-          1044.2872314453125
-        ],
-        "bbox_xywh": [
-          1263.1796875,
-          765.5157470703125,
-          196.9078369140625,
-          278.771484375
-        ],
-        "conf": 0.54423588514328,
-        "class_id": 4,
-        "class_name": "normal"
-      },
-      {
-        "bbox_xyxy": [
-          343.1369934082031,
-          329.0942077636719,
-          434.7637634277344,
-          447.9307861328125
-        ],
-        "bbox_xywh": [
-          343.1369934082031,
-          329.0942077636719,
-          91.62677001953125,
-          118.83657836914062
-        ],
-        "conf": 0.45233798027038574,
-        "class_id": 1,
-        "class_name": "Loose Joint -Faulty"
-      },
-      {
-        "bbox_xyxy": [
-          1117.260986328125,
-          1491.4412841796875,
-          1372.1365966796875,
-          1806.162841796875
-        ],
-        "bbox_xywh": [
-          1117.260986328125,
-          1491.4412841796875,
-          254.8756103515625,
-          314.7215576171875
-        ],
-        "conf": 0.4092633128166199,
-        "class_id": 4,
-        "class_name": "normal"
+        "conf": 0.5801141262054443,
+        "class_id": 0,
+        "class_name": "Full wire overload"
       }
     ]
   }
