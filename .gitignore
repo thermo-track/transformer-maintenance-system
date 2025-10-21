@@ -61,3 +61,5 @@ docker_cred.env
 
 phase2_fault_type/docker-build.ps1
 phase2_fault_type/DOCKER_README.md
+phase2_fault_type/inference_playground.ipynb
+phase3_fault_type/yolo11n.pt
