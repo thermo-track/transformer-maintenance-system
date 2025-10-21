@@ -24,7 +24,6 @@ import {
     Delete as DeleteIcon,
     Comment as CommentIcon,
     Check as CheckIcon,
-    Close as CloseIcon,
     History as HistoryIcon,
     Add as AddIcon
 } from '@mui/icons-material';
@@ -47,17 +46,46 @@ const AnnotationPanel = ({
     inspectionId,
     userId
 }) => {
-    // ...existing code...
-    // (all hooks, handlers, and renderAnnotationItem function)
-    // ...existing code...
-    return (
-        <Card className="annotation-panel">
-            <CardContent>
-                {/* ...existing code... (all JSX as above) ... */}
-            </CardContent>
-        </Card>
-    );
-};
+    // State hooks
+    const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+    const [currentComment, setCurrentComment] = useState('');
+    const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+    const [currentHistory, setCurrentHistory] = useState([]);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteComment, setDeleteComment] = useState('');
+    const [annotationToDelete, setAnnotationToDelete] = useState(null);
+
+    // Handlers
+    const handleAcceptAI = async (anomaly) => {
+        try {
+            await AnnotationService.acceptAiDetection(anomaly.id, inspectionId, userId);
+            onAnnotationsUpdate();
+        } catch (error) {
+            console.error('Error accepting AI detection:', error);
+        }
+    };
+
+    const handleDelete = (anomaly) => {
+        setAnnotationToDelete(anomaly);
+        setDeleteComment('');
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteComment.trim()) {
+            alert('Please provide a comment for deletion.');
+            return;
+        }
+        try {
+            await AnnotationService.deleteAnnotation(annotationToDelete.id, inspectionId, deleteComment, userId);
+            setDeleteDialogOpen(false);
+            setDeleteComment('');
+            setAnnotationToDelete(null);
+            onAnnotationsUpdate();
+        } catch (error) {
+            console.error('Error deleting annotation:', error);
+        }
+    };
 
     const handleAddComment = (anomaly) => {
         onAnnotationSelect(anomaly);
@@ -91,6 +119,13 @@ const AnnotationPanel = ({
     const handleDrawModeToggle = (mode) => {
         setDrawMode(mode);
         onDrawModeChange(mode);
+    };
+    
+    const handleEditAnnotation = (anomaly) => {
+        // Select the annotation first
+        onAnnotationSelect(anomaly);
+        // Then switch to edit mode
+        handleDrawModeToggle('edit');
     };
 
     const getConfidenceColor = (confidence) => {
@@ -134,21 +169,14 @@ const AnnotationPanel = ({
             />
             <Box display="flex" gap={0.5}>
                 {isAI && (
-                    <>
-                        <Tooltip title="Accept">
-                            <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}>
-                                <CheckIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Reject">
-                            <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleRejectAI(anomaly); }}>
-                                <CloseIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </>
+                    <Tooltip title="Accept">
+                        <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}>
+                            <CheckIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                 )}
                 <Tooltip title="Edit">
-                    <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); onEditClick(); }}>
+                    <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleEditAnnotation(anomaly); }}>
                         <EditIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
@@ -189,13 +217,6 @@ const AnnotationPanel = ({
                             startIcon={<AddIcon />}
                         >
                             Draw
-                        </Button>
-                        <Button 
-                            variant={drawMode === 'edit' ? 'contained' : 'outlined'}
-                            onClick={() => handleDrawModeToggle('edit')}
-                            startIcon={<EditIcon />}
-                        >
-                            Edit
                         </Button>
                     </ButtonGroup>
                 </Box>
@@ -243,7 +264,31 @@ const AnnotationPanel = ({
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setCommentDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCommentSubmit} variant="contained">Submit</Button>
+                        <Button onClick={handleCommentSubmit} variant="contained" disabled={!currentComment.trim()}>Submit</Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle>Delete Annotation</DialogTitle>
+                    <DialogContent>
+                        <Typography gutterBottom>
+                            Please provide a comment for deleting this annotation:
+                        </Typography>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Delete Comment (required)"
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={deleteComment}
+                            onChange={(e) => setDeleteComment(e.target.value)}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleDeleteConfirm} variant="contained" color="error" disabled={!deleteComment.trim()}>Delete</Button>
                     </DialogActions>
                 </Dialog>
 
@@ -285,5 +330,6 @@ const AnnotationPanel = ({
             </CardContent>
         </Card>
     );
+};
 
 export default AnnotationPanel;

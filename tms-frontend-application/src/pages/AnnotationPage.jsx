@@ -8,7 +8,15 @@ import {
     CircularProgress,
     Alert,
     Snackbar,
-    Button
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import AnnotationCanvas from '../components/AnnotationCanvas';
@@ -25,12 +33,28 @@ const AnnotationPage = () => {
     const navigate = useNavigate();
     
     const [annotations, setAnnotations] = useState([]);
+    const [aiDetections, setAiDetections] = useState([]);
+    const [userAnnotations, setUserAnnotations] = useState([]);
     const [imageUrl, setImageUrl] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
     const [drawMode, setDrawMode] = useState('view');
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+    
+    // Dialog state for new annotation
+    const [newAnnotationDialog, setNewAnnotationDialog] = useState(false);
+    const [pendingBbox, setPendingBbox] = useState(null);
+    const [selectedFaultType, setSelectedFaultType] = useState('');
+    
+    // Fault type options (matching YOLO dataset classes)
+    const faultTypes = [
+        'Full wire overload',
+        'Loose Joint -Faulty',
+        'Loose Joint -Potential',
+        'Point Overload - Faulty',
+        'normal'
+    ];
     
     // Mock user ID - in real app, get from auth context
     const userId = 1;
@@ -44,7 +68,13 @@ const AnnotationPage = () => {
             setLoading(true);
             const data = await AnnotationService.getAnnotations(inspectionId);
             
-            // Combine all annotations
+            console.log('[AnnotationService] Annotations fetched:', data);
+            
+            // Set separate state for AI detections and user annotations
+            setAiDetections(data.aiDetections || []);
+            setUserAnnotations(data.userAnnotations || []);
+            
+            // Combine all annotations for canvas display
             const allAnnotations = [
                 ...(data.aiDetections || []),
                 ...(data.userAnnotations || []),
@@ -74,23 +104,34 @@ const AnnotationPage = () => {
     };
 
     const handleAnnotationCreate = async (bbox) => {
+        // Store the bbox and show dialog
+        setPendingBbox(bbox);
+        setSelectedFaultType('');
+        setNewAnnotationDialog(true);
+    };
+    
+    const handleConfirmAnnotation = async () => {
+        if (!selectedFaultType) {
+            showSnackbar('Please select a fault type', 'warning');
+            return;
+        }
+        
         try {
-            // Show dialog to get classification
-            const faultType = prompt('Enter fault type:') || 'Unknown';
-            const confidence = parseFloat(prompt('Enter confidence (0-1):') || '0.8');
-            
             await AnnotationService.createAnnotation({
                 inspectionId: parseInt(inspectionId),
                 userId,
-                geometry: bbox,
+                geometry: pendingBbox,
                 classification: {
-                    faultType,
-                    confidence,
+                    faultType: selectedFaultType,
+                    confidence: 1.0, // Default confidence for user annotations
                     classId: 0
                 },
                 comment: 'User-created annotation'
             });
             
+            setNewAnnotationDialog(false);
+            setPendingBbox(null);
+            setSelectedFaultType('');
             showSnackbar('Annotation created successfully', 'success');
             loadAnnotations();
             setDrawMode('view');
@@ -98,6 +139,12 @@ const AnnotationPage = () => {
             console.error('Error creating annotation:', err);
             showSnackbar('Failed to create annotation', 'error');
         }
+    };
+    
+    const handleCancelAnnotation = () => {
+        setNewAnnotationDialog(false);
+        setPendingBbox(null);
+        setSelectedFaultType('');
     };
 
     const handleAnnotationEdit = async (editedAnnotation) => {
@@ -124,7 +171,8 @@ const AnnotationPage = () => {
 
     const handleDrawModeChange = (mode) => {
         setDrawMode(mode);
-        if (mode === 'draw' || mode === 'edit') {
+        // Only clear selection when entering draw mode, not edit mode
+        if (mode === 'draw') {
             setSelectedAnnotationId(null);
         }
     };
@@ -170,7 +218,7 @@ const AnnotationPage = () => {
 
             <Grid container spacing={3}>
                 {/* Canvas Area */}
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                     <Paper elevation={3} sx={{ p: 2, height: '70vh' }}>
                         <AnnotationCanvas
                             imageUrl={imageUrl}
@@ -185,16 +233,20 @@ const AnnotationPage = () => {
                 </Grid>
 
                 {/* Annotation Panel */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <Paper elevation={3} sx={{ height: '70vh', overflow: 'hidden' }}>
                         <AnnotationPanel
                             inspectionId={parseInt(inspectionId)}
                             userId={userId}
-                            annotations={annotations}
+                            aiDetections={aiDetections}
+                            userAnnotations={userAnnotations}
+                            drawMode={drawMode}
+                            setDrawMode={setDrawMode}
                             selectedAnnotationId={selectedAnnotationId}
                             onAnnotationSelect={handleAnnotationSelect}
                             onAnnotationsUpdate={loadAnnotations}
                             onDrawModeChange={handleDrawModeChange}
+                            onEditClick={() => setDrawMode('edit')}
                         />
                     </Paper>
                 </Grid>
@@ -211,6 +263,40 @@ const AnnotationPage = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* New Annotation Dialog */}
+            <Dialog open={newAnnotationDialog} onClose={handleCancelAnnotation} maxWidth="sm" fullWidth>
+                <DialogTitle>Create New Annotation</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 2 }}>
+                        <FormControl fullWidth>
+                            <InputLabel id="fault-type-label">Fault Type</InputLabel>
+                            <Select
+                                labelId="fault-type-label"
+                                value={selectedFaultType}
+                                onChange={(e) => setSelectedFaultType(e.target.value)}
+                                label="Fault Type"
+                            >
+                                {faultTypes.map((type) => (
+                                    <MenuItem key={type} value={type}>
+                                        {type}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelAnnotation}>Cancel</Button>
+                    <Button 
+                        onClick={handleConfirmAnnotation} 
+                        variant="contained" 
+                        disabled={!selectedFaultType}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
