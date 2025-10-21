@@ -16,7 +16,7 @@ COPY api/requirements.txt api/
 # Install Python dependencies
 RUN pip install --no-cache-dir -r api/requirements.txt
 
-# Copy the entire phase2_fault_type directory
+# Copy the entire tms-fault-detection-model directory
 COPY . .
 
 # Create necessary directories

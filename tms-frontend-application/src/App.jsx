@@ -4,6 +4,9 @@ import PrivateRoute from './components/PrivateRoute.jsx';
 import LoginPage from './features/auth/LoginPage.jsx';
 import RegisterPage from './features/auth/RegisterPage.jsx';
 import VerifyOtpPage from './features/auth/VerifyOtpPage.jsx';
+import AdminRegisterPage from './features/auth/AdminRegisterPage.jsx';
+import AdminApprovalsPage from './features/admin/AdminApprovalsPage.jsx';
+import ModelRetrainingPage from './features/admin/ModelRetrainingPage.jsx';
 import Transformer from './features/transformers/pages/Transformer.jsx';
 import InspectionsST from './features/maintenance/pages/InspectionsST.jsx';
 import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
@@ -24,6 +27,10 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
+      
+      {/* Admin registration routes */}
+      <Route path="/admin/register" element={<AdminRegisterPage />} />
+      <Route path="/admin/verify-otp" element={<VerifyOtpPage />} />
       
       {/* Protected routes with Layout */}
       <Route path="/" element={
@@ -102,6 +109,23 @@ export default function App() {
         <PrivateRoute>
           <Layout>
             <UserSettings />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      {/* Admin routes */}
+      <Route path="/admin/approvals" element={
+        <PrivateRoute>
+          <Layout>
+            <AdminApprovalsPage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/admin/model-retraining" element={
+        <PrivateRoute>
+          <Layout>
+            <ModelRetrainingPage />
           </Layout>
         </PrivateRoute>
       } />

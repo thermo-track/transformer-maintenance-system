@@ -28,28 +28,28 @@ SDP/*
 additional/*
 __pycache__/*
 phase2_anomaly_pipeline/*
-phase2_fault_type/__pycache__/*
-phase2_fault_type/__pycache__
-phase2_fault_type/pipeline/__pycache__/*
-phase2_fault_type/yolo11s.pt
-phase2_fault_type/api/__pycache__/*
-phase2_fault_type/api/__pycache__
-phase2_fault_type/api/venv
-phase2_fault_type/api/venv/*
+tms-fault-detection-model/__pycache__/*
+tms-fault-detection-model/__pycache__
+tms-fault-detection-model/pipeline/__pycache__/*
+tms-fault-detection-model/yolo11s.pt
+tms-fault-detection-model/api/__pycache__/*
+tms-fault-detection-model/api/__pycache__
+tms-fault-detection-model/api/venv
+tms-fault-detection-model/api/venv/*
 
 # Ignore all phase2 outputs except json folder
-phase2_fault_type/api/outputs/viz/*
-phase2_fault_type/api/outputs/
+tms-fault-detection-model/api/outputs/viz/*
+tms-fault-detection-model/api/outputs/
 
 # Ignore all JSON output files
-phase2_fault_type/api/outputs/json/*
+# tms-fault-detection-model/api/outputs/json/*
 
-!phase2_fault_type/api/outputs/json/100000001_result.json
-!phase2_fault_type/api/outputs/json/100000002_result.json
-!phase2_fault_type/api/outputs/json/100000003_result.json
-!phase2_fault_type/api/outputs/json/100000004_result.json
-!phase2_fault_type/api/outputs/json/100000005_result.json
-!phase2_fault_type/api/outputs/json/100000006_result.json
+!tms-fault-detection-model/api/outputs/json/100000001_result.json
+!tms-fault-detection-model/api/outputs/json/100000002_result.json
+!tms-fault-detection-model/api/outputs/json/100000003_result.json
+!tms-fault-detection-model/api/outputs/json/100000004_result.json
+!tms-fault-detection-model/api/outputs/json/100000005_result.json
+!tms-fault-detection-model/api/outputs/json/100000006_result.json
 
 
 .vscode/
@@ -59,8 +59,8 @@ docker_cred.env
 
 
 
-phase2_fault_type/docker-build.ps1
-phase2_fault_type/DOCKER_README.md
+tms-fault-detection-model/docker-build.ps1
+tms-fault-detection-model/DOCKER_README.md
 OTP_IMPLEMENTATION.md
 anom/*
 ano/*
@@ -70,4 +70,4 @@ phase3_fault_type/feedback_dataset/*
 phase3_fault_type/yolo11n.pt
 phase3_fault_type/runs/
 phase3_fault_type/weights/
-phase2_fault_type/inference_playground.ipynb
+tms-fault-detection-model/inference_playground.ipynb

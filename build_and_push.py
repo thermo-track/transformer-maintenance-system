@@ -21,7 +21,7 @@ DOCKER_IMAGES = [
         "tag": f"{DOCKER_USERNAME}/tms-backend:latest",
     },
     {
-        "context": "./phase2_fault_type",
+        "context": "./tms-fault-detection-model",
         "dockerfile": "Dockerfile",
         "tag": f"{DOCKER_USERNAME}/tms-inference-api:latest",
     },

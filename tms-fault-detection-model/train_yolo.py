@@ -16,7 +16,7 @@ except Exception:
 
 # Minimal training script
 # - Uses pretrained weights (e.g., yolo11s.pt) and trains on Annotated_dataset
-# - Saves results to runs (under phase2_fault_type/runs)
+# - Saves results to runs (under tms-fault-detection-model/runs)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_YAML = REPO_ROOT / "Annotated_dataset" / "data.yaml"
@@ -124,7 +124,7 @@ def main():
         pretrained=True,
         device=device,
         workers=args.workers,
-        project=str(REPO_ROOT / "phase2_fault_type" / "runs"),
+        project=str(REPO_ROOT / "tms-fault-detection-model" / "runs"),
         name=args.name,
         exist_ok=True,
     )

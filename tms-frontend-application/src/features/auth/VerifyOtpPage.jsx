@@ -6,9 +6,10 @@ import './AuthPages.css';
 export default function VerifyOtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOtp } = useAuth();
+  const { verifyOtp, verifyAdminOtp } = useAuth();
   
   const email = location.state?.email;
+  const isAdmin = location.state?.isAdmin || false;
   
   const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState('');
@@ -44,13 +45,21 @@ export default function VerifyOtpPage() {
     setIsSubmitting(true);
     
     try {
-      const result = await verifyOtp(email, otpCode);
+      // Use appropriate verification method based on registration type
+      const result = isAdmin 
+        ? await verifyAdminOtp(email, otpCode)
+        : await verifyOtp(email, otpCode);
       
       if (result.success) {
-        setSuccess('Email verified successfully! Redirecting to login...');
+        const message = isAdmin 
+          ? 'Email verified successfully! Your admin access is pending approval. You will be notified once approved.'
+          : 'Email verified successfully! Redirecting to login...';
+        
+        setSuccess(message);
+        
         setTimeout(() => {
           navigate('/login');
-        }, 2000);
+        }, isAdmin ? 4000 : 2000);
       } else {
         setError(result.error || 'Invalid or expired verification code.');
       }
@@ -92,6 +101,9 @@ export default function VerifyOtpPage() {
     <div className="auth-container">
       <div className="auth-card">
         <h1 className="auth-title">Verify Your Email</h1>
+        <h2 className="auth-subtitle">
+          {isAdmin ? 'Admin Registration' : 'User Registration'}
+        </h2>
         <p className="auth-subtitle-text">
           We've sent a 6-digit verification code to<br />
           <strong>{email}</strong>
@@ -148,7 +160,7 @@ export default function VerifyOtpPage() {
         </div>
 
         <p className="auth-link">
-          Wrong email? <Link to="/register">Register again</Link>
+          Wrong email? <Link to={isAdmin ? "/admin/register" : "/register"}>Register again</Link>
         </p>
       </div>
     </div>

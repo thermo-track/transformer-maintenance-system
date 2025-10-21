@@ -46,7 +46,7 @@ VALUES
 
 ('f7099b2e-643c-4d04-b1b0-f579ecda1049', 'transformers/baseline/a2dd837e-2030-4f0b-95fe-4f4b43f31d6e/baseline_a2dd837e-2030-4f0b-95fe-4f4b43f31d6e_sunny_1756300842803', 'Sunny 01 (4).jpeg', 'image/jpeg', '2025-08-27 18:50:43.756547+05:30', 'https://res.cloudinary.com/dxqmzslkb/image/upload/v1756300843/transformers/baseline/a2dd837e-2030-4f0b-95fe-4f4b43f31d6e/baseline_a2dd837e-2030-4f0b-95fe-4f4b43f31d6e_sunny_1756300842803.jpg', '2025-08-27 18:50:43.757546+05:30', 'a2dd837e-2030-4f0b-95fe-4f4b43f31d6e', 'SYSTEM', 'SUNNY')
 
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT ON CONSTRAINT ux_transformer_weather DO NOTHING;
 
 -- Verify the transformer_images insert
 SELECT 

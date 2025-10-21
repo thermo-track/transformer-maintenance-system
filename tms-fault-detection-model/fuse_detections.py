@@ -2,7 +2,7 @@
 Fuse YOLO detections with unsupervised anomaly regions.
 
 Inputs:
-- --weights: Path to YOLO weights (e.g., phase2_fault_type/weights/best.pt)
+- --weights: Path to YOLO weights (e.g., tms-fault-detection-model/weights/best.pt)
 - --image: Maintenance image path used for unsupervised comparison
 - --json-in: Unsupervised JSON file to augment
 - --json-out: Output JSON path (defaults to overwrite input if omitted)

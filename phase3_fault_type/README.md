@@ -35,7 +35,7 @@ The script performs the following steps:
 1. Loads the final annotation state for the specified image (via `AnnotationStore`).
 2. Registers/updates that annotation inside the feedback dataset (writes a YOLO label file).
 3. Builds a temporary dataset mixing the latest feedback sample, a window of previous feedback samples, and a rehearsal subset from the original annotated training set.
-4. Runs Ultralytics fine-tuning starting from `phase2_fault_type/weights/best.pt`.
+4. Runs Ultralytics fine-tuning starting from `tms-fault-detection-model/weights/best.pt`.
 5. Evaluates the resulting weights on the held-out Phase 2 test set and appends the metrics to `runs/history.jsonl`.
 
 Temporary training datasets are stored under `phase3_fault_type/phase3_ft_*`. By default they are deleted; pass `--keep-temp` to inspect them manually.

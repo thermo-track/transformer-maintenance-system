@@ -259,18 +259,18 @@ npm run dev
 
 1. Install Python dependencies:
 ```bash
-pip install -r phase2_fault_type/requirements.txt
+pip install -r tms-fault-detection-model/requirements.txt
 ```
 
 2. Ensure YOLO weights file is present:
 ```bash
 # Use the provided model or train your own
-phase2_fault_type/weights/best.pt
+tms-fault-detection-model/weights/best.pt
 ```
 
 3. Run inference for a baseline/maintenance pair:
 ```bash
-python phase2_fault_type/api/inference_api.py
+python tms-fault-detection-model/api/inference_api.py
 ```
 
 ### 5. Access the Application
@@ -365,7 +365,7 @@ transformer-maintenance-system/
 │   │   └── styles/                   # Global styles
 │   ├── package.json                  # npm dependencies
 │   └── vite.config.js               # Vite configuration
-├── phase2_fault_type/                # AI anomaly detection
+├── tms-fault-detection-model/                # AI anomaly detection
 │   ├── api/                          # Inference API
 │   ├── pipeline/                     # Detection pipeline
 │   │   ├── detector.py               # YOLO detector

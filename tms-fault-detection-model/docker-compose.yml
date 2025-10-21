@@ -9,9 +9,7 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      # Mount weights directory to persist model files
       - ./weights:/app/weights:ro
-      # Mount outputs directory to access results
       - ./outputs:/app/outputs
     environment:
       - PYTHONUNBUFFERED=1

@@ -10,7 +10,7 @@ What’s included:
 ## Folder structure
 
 ```
-phase2_fault_type/
+tms-fault-detection-model/
 ├─ pipeline/
 │  ├─ run_pair.py           # CLI entrypoint: end-to-end for one (baseline, maintenance) pair
 │  ├─ unsupervised.py       # image processing + region extraction
@@ -32,18 +32,18 @@ Optional (not required by the web app at runtime):
 1) Install dependencies (inside your virtual environment):
 
 ```powershell
-pip install -r phase2_fault_type\requirements.txt
+pip install -r tms-fault-detection-model\requirements.txt
 ```
 
-2) Place your trained YOLO weights at `phase2_fault_type\weights\best.pt`.
+2) Place your trained YOLO weights at `tms-fault-detection-model\weights\best.pt`.
 
 3) Run the end-to-end pipeline for a selected pair (Windows PowerShell example):
 
 ```powershell
-python -m phase2_fault_type.pipeline.run_pair `
+python -m tms-fault-detection-model.pipeline.run_pair `
 	--baseline "Sample_Thermal_Images\T8\normal\T8_normal_001.jpg" `
 	--maintenance "Sample_Thermal_Images\T8\faulty\T8_faulty_001.jpg" `
-	--weights "phase2_fault_type\weights\best.pt" `
+	--weights "tms-fault-detection-model\weights\best.pt" `
 	--out-json "outputs\json\t8_pair_fused.json" `
 	--out-viz "outputs\viz\t8_pair_overlay.png" `
 	--threshold-pct 2.0 `
@@ -58,7 +58,7 @@ Outputs:
 ### Arguments
 - `--baseline` (path): Baseline/reference image of the same transformer under comparable conditions.
 - `--maintenance` (path): Current image to be inspected and compared against the baseline.
-- `--weights` (path): YOLO model weights `.pt` used for fault-type detection (place at `phase2_fault_type/weights/best.pt`).
+- `--weights` (path): YOLO model weights `.pt` used for fault-type detection (place at `tms-fault-detection-model/weights/best.pt`).
 - `--out-json` (path): Output path for the fused results JSON. Parent folders are created automatically.
 - `--out-viz` (path, optional): Output path for an annotated overlay PNG. Parent folders are created automatically.
 - `--threshold-pct` (float, default 2.0): Unsupervised anomaly threshold as a percentile. Keeps the top N% of the fused anomaly map (lower value = stricter, fewer regions).

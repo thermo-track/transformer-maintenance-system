@@ -96,7 +96,7 @@ async def run_inference(request: InferenceRequest):
         
         # Run inference pipeline
         cmd = [
-            python_executable, "-m", "pipeline.run_pair",  # Run as module, not phase2_fault_type.pipeline.run_pair
+            python_executable, "-m", "pipeline.run_pair",  # Run as module, not tms-fault-detection-model.pipeline.run_pair
             "--baseline", str(baseline_path.absolute()),
             "--maintenance", str(maintenance_path.absolute()),
             "--weights", str(weights_path.absolute()),
@@ -111,10 +111,10 @@ async def run_inference(request: InferenceRequest):
         print(" ".join(cmd))
         print()
 
-        # Set working directory to phase2_fault_type (parent of api)
-        # Get the absolute path to the phase2_fault_type directory
+        # Set working directory to tms-fault-detection-model (parent of api)
+        # Get the absolute path to the tms-fault-detection-model directory
         api_dir = Path(__file__).parent.absolute()  # api directory
-        parent_dir = api_dir.parent  # phase2_fault_type directory
+        parent_dir = api_dir.parent  # tms-fault-detection-model directory
         
         print(f"Working directory: {parent_dir}")
 
@@ -123,7 +123,7 @@ async def run_inference(request: InferenceRequest):
             capture_output=True, 
             text=True, 
             timeout=300,
-            cwd=str(parent_dir)  # Run from phase2_fault_type directory
+            cwd=str(parent_dir)  # Run from tms-fault-detection-model directory
 )
         
         print("STDOUT:", result.stdout)

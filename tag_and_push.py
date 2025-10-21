@@ -19,7 +19,7 @@ IMAGES_TO_PUSH = [
         "remote": f"{DOCKER_USERNAME}/tms-backend:latest",
     },
     {
-        "local": "phase2_fault_type-inference-api:latest",
+        "local": "tms-fault-detection-model-inference-api:latest",
         "remote": f"{DOCKER_USERNAME}/tms-inference-api:latest",
     },
 ]
