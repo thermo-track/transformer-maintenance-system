@@ -24,6 +24,22 @@ public class AdminRetrainingController {
     private final ModelRetrainingService retrainingService;
 
     /**
+     * Get all annotation actions for model retraining review
+     */
+    @GetMapping("/annotations")
+    public ResponseEntity<?> getAnnotations() {
+        log.info("Fetching all annotation actions for retraining");
+        try {
+            Map<String, Object> result = retrainingService.getAllAnnotationActions();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error fetching annotations", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Failed to fetch annotations: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Get retraining statistics (corrections count, last training date, etc.)
      */
     @GetMapping("/stats")
