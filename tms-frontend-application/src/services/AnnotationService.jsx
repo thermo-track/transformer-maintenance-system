@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+import apiClient from '../config/api';
 
 /**
  * Service for annotation feedback operations
@@ -15,7 +13,7 @@ class AnnotationService {
     async getAnnotations(inspectionId) {
         console.log(`[AnnotationService] Fetching annotations for inspection: ${inspectionId}`);
         try {
-            const response = await axios.get(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.get('/api/annotations', {
                 params: { inspectionId }
             });
             console.log(`[AnnotationService] Annotations fetched:`, response.data);
@@ -34,7 +32,7 @@ class AnnotationService {
     async createAnnotation(annotationData) {
         console.log('[AnnotationService] Creating annotation:', annotationData);
         try {
-            const response = await axios.post(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.post('/api/annotations', {
                 ...annotationData,
                 action: 'CREATED'
             });
@@ -55,7 +53,7 @@ class AnnotationService {
     async editAnnotation(anomalyId, editData) {
         console.log(`[AnnotationService] Editing annotation ${anomalyId}:`, editData);
         try {
-            const response = await axios.post(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.post('/api/annotations', {
                 ...editData,
                 anomalyId,
                 action: 'EDITED'
@@ -79,7 +77,7 @@ class AnnotationService {
     async deleteAnnotation(anomalyId, inspectionId, comment, userId) {
         console.log(`[AnnotationService] Deleting annotation ${anomalyId}`);
         try {
-            const response = await axios.post(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.post('/api/annotations', {
                 anomalyId,
                 inspectionId,
                 comment,
@@ -105,7 +103,7 @@ class AnnotationService {
     async addComment(anomalyId, inspectionId, comment, userId) {
         console.log(`[AnnotationService] Adding comment to annotation ${anomalyId}`);
         try {
-            const response = await axios.post(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.post('/api/annotations', {
                 anomalyId,
                 inspectionId,
                 comment,
@@ -130,7 +128,7 @@ class AnnotationService {
     async acceptAiDetection(anomalyId, inspectionId, userId) {
         console.log(`[AnnotationService] Accepting AI detection ${anomalyId}`);
         try {
-            const response = await axios.post(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.post('/api/annotations', {
                 anomalyId,
                 inspectionId,
                 userId,
@@ -155,7 +153,7 @@ class AnnotationService {
     async rejectAiDetection(anomalyId, inspectionId, reason, userId) {
         console.log(`[AnnotationService] Rejecting AI detection ${anomalyId}`);
         try {
-            const response = await axios.post(`${API_BASE_URL}/annotations`, {
+            const response = await apiClient.post('/api/annotations', {
                 anomalyId,
                 inspectionId,
                 comment: reason,
@@ -178,7 +176,7 @@ class AnnotationService {
     async getAnnotationHistory(anomalyId) {
         console.log(`[AnnotationService] Fetching history for annotation ${anomalyId}`);
         try {
-            const response = await axios.get(`${API_BASE_URL}/annotations/${anomalyId}/history`);
+            const response = await apiClient.get(`/api/annotations/${anomalyId}/history`);
             console.log('[AnnotationService] History fetched:', response.data);
             return response.data;
         } catch (error) {
@@ -195,7 +193,7 @@ class AnnotationService {
     async getInspectionActions(inspectionId) {
         console.log(`[AnnotationService] Fetching actions for inspection ${inspectionId}`);
         try {
-            const response = await axios.get(`${API_BASE_URL}/annotations/inspection/${inspectionId}/actions`);
+            const response = await apiClient.get(`/api/annotations/inspection/${inspectionId}/actions`);
             console.log('[AnnotationService] Actions fetched:', response.data);
             return response.data;
         } catch (error) {
