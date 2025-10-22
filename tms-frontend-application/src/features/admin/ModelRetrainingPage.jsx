@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../config/api';
 import * as XLSX from 'xlsx';
-import * as XLSX from 'xlsx';
 import './ModelRetraining.css';
 
 /**
@@ -34,6 +33,19 @@ export default function ModelRetrainingPage() {
   const [retrainingStep, setRetrainingStep] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  // Filter states
+  const [filters, setFilters] = useState({
+    actionType: 'ALL',
+    dateRange: 'ALL',
+    customStartDate: '',
+    customEndDate: '',
+    transformerId: 'ALL',
+    username: 'ALL',
+    inspectionId: ''
+  });
+  const [filteredGroups, setFilteredGroups] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+
   // Check if user is admin (for hiding retrain button)
   const isAdmin = hasRole('ROLE_ADMIN');
 
@@ -44,6 +56,11 @@ export default function ModelRetrainingPage() {
       checkRetrainingStatus();
     }
   }, [isAdmin]);
+
+  // Apply filters whenever they change
+  useEffect(() => {
+    applyFilters();
+  }, [filters, inspectionGroups]);
 
   const loadAnnotations = async () => {
     try {
@@ -147,6 +164,140 @@ export default function ModelRetrainingPage() {
       inspections: inspectionCount
     };
     setStats(stats);
+  };
+
+  const applyFilters = () => {
+    let filtered = [...inspectionGroups];
+
+    // Filter by inspection ID
+    if (filters.inspectionId && filters.inspectionId.trim() !== '') {
+      filtered = filtered.filter(group => 
+        group.inspectionId.toString().includes(filters.inspectionId.trim())
+      );
+    }
+
+    // Filter by transformer ID
+    if (filters.transformerId !== 'ALL') {
+      filtered = filtered.filter(group => 
+        group.transformerId === filters.transformerId
+      );
+    }
+
+    // Filter each group's actions
+    filtered = filtered.map(group => {
+      let actions = [...group.actions];
+
+      // Filter by action type
+      if (filters.actionType !== 'ALL') {
+        actions = actions.filter(action => 
+          (action.actionType || action.action) === filters.actionType
+        );
+      }
+
+      // Filter by username
+      if (filters.username !== 'ALL') {
+        actions = actions.filter(action => 
+          (action.username || action.modifiedBy) === filters.username
+        );
+      }
+
+      // Filter by date range
+      if (filters.dateRange !== 'ALL') {
+        const now = new Date();
+        let startDate;
+
+        switch (filters.dateRange) {
+          case 'TODAY':
+            startDate = new Date(now.setHours(0, 0, 0, 0));
+            break;
+          case 'LAST_7_DAYS':
+            startDate = new Date(now.setDate(now.getDate() - 7));
+            break;
+          case 'LAST_30_DAYS':
+            startDate = new Date(now.setDate(now.getDate() - 30));
+            break;
+          case 'LAST_90_DAYS':
+            startDate = new Date(now.setDate(now.getDate() - 90));
+            break;
+          case 'CUSTOM':
+            if (filters.customStartDate) {
+              startDate = new Date(filters.customStartDate);
+            }
+            break;
+          default:
+            startDate = null;
+        }
+
+        if (startDate) {
+          actions = actions.filter(action => {
+            const actionDate = new Date(action.actionTimestamp || action.timestamp);
+            if (filters.dateRange === 'CUSTOM' && filters.customEndDate) {
+              const endDate = new Date(filters.customEndDate);
+              endDate.setHours(23, 59, 59, 999);
+              return actionDate >= startDate && actionDate <= endDate;
+            }
+            return actionDate >= startDate;
+          });
+        }
+      }
+
+      // Recalculate stats for filtered actions
+      const filteredStats = {
+        created: actions.filter(a => (a.actionType || a.action) === 'CREATED').length,
+        edited: actions.filter(a => (a.actionType || a.action) === 'EDITED').length,
+        deleted: actions.filter(a => (a.actionType || a.action) === 'DELETED').length,
+        commented: actions.filter(a => (a.actionType || a.action) === 'COMMENTED').length,
+        approved: actions.filter(a => (a.actionType || a.action) === 'APPROVED').length,
+        rejected: actions.filter(a => (a.actionType || a.action) === 'REJECTED').length,
+      };
+
+      return {
+        ...group,
+        actions,
+        stats: filteredStats
+      };
+    }).filter(group => group.actions.length > 0); // Remove groups with no matching actions
+
+    setFilteredGroups(filtered);
+
+    // Recalculate overall stats based on filtered data
+    const allFilteredActions = filtered.flatMap(g => g.actions);
+    calculateStats(allFilteredActions, filtered.length);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      actionType: 'ALL',
+      dateRange: 'ALL',
+      customStartDate: '',
+      customEndDate: '',
+      transformerId: 'ALL',
+      username: 'ALL',
+      inspectionId: ''
+    });
+  };
+
+  const getUniqueTransformers = () => {
+    const transformers = new Set();
+    inspectionGroups.forEach(group => {
+      if (group.transformerId) {
+        transformers.add(group.transformerId);
+      }
+    });
+    return Array.from(transformers).sort();
+  };
+
+  const getUniqueUsernames = () => {
+    const usernames = new Set();
+    inspectionGroups.forEach(group => {
+      group.actions.forEach(action => {
+        const username = action.username || action.modifiedBy;
+        if (username) {
+          usernames.add(username);
+        }
+      });
+    });
+    return Array.from(usernames).sort();
   };
 
   const toggleInspection = (inspectionId) => {
@@ -825,6 +976,12 @@ export default function ModelRetrainingPage() {
           🔄 Refresh Data
         </button>
         <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="btn-secondary"
+        >
+          {showFilters ? '🔽 Hide Filters' : '🔼 Show Filters'}
+        </button>
+        <button
           onClick={handleExportCSV}
           disabled={loading || inspectionGroups.length === 0}
           className="btn-secondary"
@@ -847,11 +1004,126 @@ export default function ModelRetrainingPage() {
         </button>
       </div>
 
+      {/* Filters Section */}
+      {showFilters && (
+        <div className="filters-section">
+          <div className="filters-header">
+            <h3>🔍 Filters</h3>
+            <button onClick={resetFilters} className="btn-text">
+              Reset All Filters
+            </button>
+          </div>
+          
+          <div className="filters-grid">
+            {/* Action Type Filter */}
+            <div className="filter-group">
+              <label>Action Type</label>
+              <select 
+                value={filters.actionType} 
+                onChange={(e) => setFilters({...filters, actionType: e.target.value})}
+              >
+                <option value="ALL">All Actions</option>
+                <option value="CREATED">Created</option>
+                <option value="EDITED">Edited</option>
+                <option value="DELETED">Deleted</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="COMMENTED">Commented</option>
+              </select>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="filter-group">
+              <label>Date Range</label>
+              <select 
+                value={filters.dateRange} 
+                onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+              >
+                <option value="ALL">All Time</option>
+                <option value="TODAY">Today</option>
+                <option value="LAST_7_DAYS">Last 7 Days</option>
+                <option value="LAST_30_DAYS">Last 30 Days</option>
+                <option value="LAST_90_DAYS">Last 90 Days</option>
+                <option value="CUSTOM">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom Date Range */}
+            {filters.dateRange === 'CUSTOM' && (
+              <>
+                <div className="filter-group">
+                  <label>Start Date</label>
+                  <input 
+                    type="date" 
+                    value={filters.customStartDate}
+                    onChange={(e) => setFilters({...filters, customStartDate: e.target.value})}
+                  />
+                </div>
+                <div className="filter-group">
+                  <label>End Date</label>
+                  <input 
+                    type="date" 
+                    value={filters.customEndDate}
+                    onChange={(e) => setFilters({...filters, customEndDate: e.target.value})}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Transformer Filter */}
+            <div className="filter-group">
+              <label>Transformer</label>
+              <select 
+                value={filters.transformerId} 
+                onChange={(e) => setFilters({...filters, transformerId: e.target.value})}
+              >
+                <option value="ALL">All Transformers</option>
+                {getUniqueTransformers().map(id => (
+                  <option key={id} value={id}>{id}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Username Filter */}
+            <div className="filter-group">
+              <label>Username</label>
+              <select 
+                value={filters.username} 
+                onChange={(e) => setFilters({...filters, username: e.target.value})}
+              >
+                <option value="ALL">All Users</option>
+                {getUniqueUsernames().map(username => (
+                  <option key={username} value={username}>{username}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Inspection ID Filter */}
+            <div className="filter-group">
+              <label>Inspection ID</label>
+              <input 
+                type="text" 
+                placeholder="Search by Inspection ID"
+                value={filters.inspectionId}
+                onChange={(e) => setFilters({...filters, inspectionId: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="filter-results">
+            <p>
+              Showing <strong>{filteredGroups.length}</strong> inspections 
+              with <strong>{stats.total}</strong> actions
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Inspection Groups - Annotation History */}
       <div className="annotations-section">
         <div className="section-header">
           <h2>📋 Annotation History by Inspection</h2>
-          {inspectionGroups.length > 0 && (
+          {(filteredGroups.length > 0 || inspectionGroups.length > 0) && (
             <div className="expand-controls">
               <button onClick={expandAll} className="btn-text">Expand All</button>
               <span className="separator">|</span>
@@ -865,9 +1137,14 @@ export default function ModelRetrainingPage() {
             <div className="empty-icon">📝</div>
             <p>No annotations found. Annotations are created when users add, edit, or delete anomalies during inspections.</p>
           </div>
+        ) : filteredGroups.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">🔍</div>
+            <p>No annotations match the current filters. Try adjusting your filter criteria.</p>
+          </div>
         ) : (
           <div className="inspection-groups">
-            {inspectionGroups.map((group) => (
+            {filteredGroups.map((group) => (
               <div key={group.inspectionId} className="inspection-card">
                 {/* Inspection Header */}
                 <div 

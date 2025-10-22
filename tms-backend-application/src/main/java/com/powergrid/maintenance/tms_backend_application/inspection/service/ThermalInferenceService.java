@@ -1,6 +1,5 @@
 package com.powergrid.maintenance.tms_backend_application.inspection.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
