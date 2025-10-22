@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Security configuration for Spring Security.
@@ -26,13 +27,17 @@ public class SecurityConfig {
 
     private final MyUserDetailsService userDetailsService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     /**
      * Constructor injection to avoid circular dependencies.
      */
-    public SecurityConfig(MyUserDetailsService userDetailsService, BCryptPasswordEncoder passwordEncoder) {
+    public SecurityConfig(MyUserDetailsService userDetailsService, 
+                         BCryptPasswordEncoder passwordEncoder,
+                         CorsConfigurationSource corsConfigurationSource) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     /**
@@ -45,11 +50,14 @@ public class SecurityConfig {
                 // Disable CSRF for REST API
                 .csrf(AbstractHttpConfigurer::disable)
                 
-                // Enable CORS using our CorsConfig
-                .cors(cors -> {})
+                // Enable CORS using our CorsConfig - MUST come before authorization
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 
                 // Configure authorization rules - ORDER MATTERS!
                 .authorizeHttpRequests(auth -> auth
+                        // Allow CORS preflight OPTIONS requests for all endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", 
                                         "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()

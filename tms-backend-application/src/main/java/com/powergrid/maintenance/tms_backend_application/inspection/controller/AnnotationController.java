@@ -21,9 +21,9 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/annotations")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class AnnotationController {
 
     private final AnnotationService annotationService;
