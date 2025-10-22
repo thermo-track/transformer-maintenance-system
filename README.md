@@ -120,7 +120,7 @@ The system uses color temperature analysis from thermal images to classify trans
 - Overlay PNG visualizing anomalies with color-coded labels
 - Detection metrics including IoU, area, and anomaly scores
 
-## Interactive Annotation & Feedback System
+## 🟢 Phase 3 Interactive Annotation & Feedback System
 
 A comprehensive annotation system that allows users to interactively correct, validate, and improve AI-generated detections. This creates a feedback loop for continuous model improvement.
 
@@ -384,7 +384,7 @@ npm run dev
 
 **AI Pipeline (Python)**
 
-1. Install Python dependencies:
+1. Install Python dependencies after activating virtual environment:
 ```bash
 pip install -r tms-fault-detection-model/requirements.txt
 ```
@@ -395,10 +395,24 @@ pip install -r tms-fault-detection-model/requirements.txt
 tms-fault-detection-model/weights/best.pt
 ```
 
-3. Run inference for a baseline/maintenance pair:
+3. Run inference for a baseline/maintenance pair # Runs on http://localhost:8001:
 ```bash
 python tms-fault-detection-model/api/inference_api.py
 ```
+
+**Model Fine-Tuning Pipeline (Python)**
+
+1. Install Python dependencies after activating virtual environment:
+```bash
+pip install -r tms-model-finetune/requirements.txt
+```
+
+2. Run API server for fine-tuning (runs on http://localhost:8002):
+```bash
+python api/app.py
+```
+
+**Note:** The fine-tuning service requires the base YOLO weights at `tms-fault-detection-model/weights/best.pt`. Updated weights are saved to `tms-model-finetune/finetune_weight/best_finetune.pt`.
 
 ### 5. Access the Application
 
@@ -472,76 +486,10 @@ python tms-fault-detection-model/api/inference_api.py
 
 
 
-### Project Structure
-
-```
-transformer-maintenance-system/
-├── tms-backend-application/          # Spring Boot backend
-│   ├── src/main/java/                # Java source code
-│   │   ├── config/                   # Security, CORS, DB configs
-│   │   ├── transformer/              # Transformer entities & APIs
-│   │   ├── inspection/               # Inspection, anomaly & annotation
-│   │   │   ├── controller/           # REST controllers
-│   │   │   │   └── AnnotationController.java
-│   │   │   ├── service/              # Business logic
-│   │   │   │   └── AnnotationService.java
-│   │   │   ├── domain/               # Entities
-│   │   │   │   ├── InspectionAnomaly.java
-│   │   │   │   └── AnnotationAction.java
-│   │   │   ├── repository/           # Data access
-│   │   │   └── dto/                  # Data transfer objects
-│   │   ├── admin/                    # Admin-only features
-│   │   │   ├── controller/           
-│   │   │   │   └── AdminRetrainingController.java
-│   │   │   └── service/
-│   │   │       └── ModelRetrainingService.java
-│   │   └── user/                     # User management & auth
-│   ├── src/main/resources/           # Application properties
-│   └── pom.xml                       # Maven dependencies
-├── tms-frontend-application/         # React frontend
-│   ├── src/
-│   │   ├── components/               # Reusable components
-│   │   │   ├── AnnotationCanvas.jsx  # Interactive canvas
-│   │   │   └── AnnotationPanel.jsx   # Annotation controls
-│   │   ├── pages/                    # Page components
-│   │   │   └── AnnotationPage.jsx    # Main annotation interface
-│   │   ├── features/                 # Feature modules
-│   │   │   ├── auth/                 # Authentication pages
-│   │   │   ├── admin/                # Admin features
-│   │   │   │   └── ModelRetrainingPage.jsx
-│   │   │   ├── transformers/         # Transformer management
-│   │   │   └── maintenance/          # Inspection management
-│   │   ├── services/                 # API services
-│   │   │   └── AnnotationService.jsx
-│   │   ├── utils/                    # Utilities
-│   │   │   └── faultTypeUtils.js     # Fault type mappings
-│   │   ├── config/                   # API configuration
-│   │   ├── contexts/                 # React contexts
-│   │   └── styles/                   # Global styles
-│   ├── package.json                  # npm dependencies
-│   └── vite.config.js               # Vite configuration
-├── tms-fault-detection-model/        # AI anomaly detection
-│   ├── api/                          # Inference API
-│   ├── pipeline/                     # Detection pipeline
-│   │   ├── detector.py               # YOLO detector
-│   │   ├── unsupervised.py           # Image diff analysis
-│   │   └── run_pair.py               # Main pipeline
-│   ├── weights/                      # YOLO model weights
-│   │   └── best.pt                   # Trained model
-│   └── requirements.txt              # Python dependencies
-├── Annotated_dataset/                # Training dataset
-└── README.md                         # This file
-```
-
 ## 🚧 Current Limitations
 
-### Security & Access Control
-- **Role-Based Permissions**: No fine-grained role-based access control (RBAC) for different user types
+### Security Control
 - **Request Size Limits**: No constraints on file upload sizes beyond basic validation
-
-### AI & Detection
-- **Model Training**: YOLO model requires retraining for new fault types or improved accuracy
-- **Model Retraining Workflow**: Admin-only model retraining with annotated feedback not yet fully automated
 
 ### Annotation System
 - ⚠️ **Concurrent Editing**: No locking mechanism - last edit wins if multiple users edit simultaneously
@@ -553,9 +501,8 @@ transformer-maintenance-system/
 - **Notification System**: Real-time alerts for critical anomalies not implemented
 
 ### Infrastructure & Deployment
-- **IaC Scripts**: No Terraform or Docker Compose for automated deployment
+- **IaC Scripts**: No Terraform for automated deployment
 - **CI/CD Pipeline**: No automated testing and deployment pipeline
-- **API Documentation**: Swagger/OpenAPI integration pending
 
 ### User Experience
 - **Mobile Optimization**: Layout not fully optimized for narrow devices or tablets
