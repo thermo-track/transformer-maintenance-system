@@ -23,6 +23,40 @@ class InferenceRequest(BaseModel):
     iou_thresh: float = 0.7
     conf_thresh: float = 0.25
 
+def resolve_weights_path() -> Path:
+    """
+    Resolve the weights path with the following priority:
+    1. Fine-tuned model from tms-model-finetune/finetune_weight/best_finetune.pt
+    2. Original model from tms-fault-detection-model/weights/best.pt
+    
+    Returns:
+        Path: Absolute path to the weights file to use
+    
+    Raises:
+        FileNotFoundError: If no weights file is found in either location
+    """
+    api_dir = Path(__file__).parent.absolute()
+    repo_root = api_dir.parent.parent  # Go up to repository root
+    
+    # Priority 1: Fine-tuned model
+    finetuned_weights = repo_root / "tms-model-finetune" / "finetune_weight" / "best_finetune.pt"
+    if finetuned_weights.exists():
+        print(f"✓ Using fine-tuned model: {finetuned_weights}")
+        return finetuned_weights
+    
+    # Priority 2: Original model
+    original_weights = repo_root / "tms-fault-detection-model" / "weights" / "best.pt"
+    if original_weights.exists():
+        print(f"✓ Using original model: {original_weights}")
+        return original_weights
+    
+    # No weights found
+    raise FileNotFoundError(
+        f"No weights file found. Checked:\n"
+        f"  1. {finetuned_weights}\n"
+        f"  2. {original_weights}"
+    )
+
 def download_image(url: str, save_path: Path):
     """Download image from URL"""
     try:
@@ -57,17 +91,16 @@ async def run_inference(request: InferenceRequest):
         api_dir = Path(__file__).parent.absolute()
         parent_dir = api_dir.parent
         
-        weights_path = Path(request.weights_path)
-        if not weights_path.is_absolute():
-            weights_path = parent_dir / weights_path
-        
-        if not weights_path.exists():
+        # Use automatic weights resolution (fine-tuned -> original)
+        try:
+            weights_path = resolve_weights_path()
+        except FileNotFoundError as e:
             raise HTTPException(
                 status_code=404, 
-                detail=f"Weights file not found at {weights_path}"
+                detail=str(e)
             )
         
-        print(f"Weights file found: {weights_path}")
+        print(f"Weights file selected: {weights_path}")
         
         # Download images
         baseline_path = temp_dir / f"{request.inspection_id}_baseline.jpg"
@@ -177,27 +210,42 @@ async def run_inference(request: InferenceRequest):
 @app.get("/health")
 async def health_check():
     api_dir = Path(__file__).parent.absolute()
-    parent_dir = api_dir.parent
-    weights_path = parent_dir / "weights" / "best.pt"
+    repo_root = api_dir.parent.parent
+    
+    finetuned_weights = repo_root / "tms-model-finetune" / "finetune_weight" / "best_finetune.pt"
+    original_weights = repo_root / "tms-fault-detection-model" / "weights" / "best.pt"
+    
+    try:
+        active_weights = resolve_weights_path()
+        weights_status = "ok"
+    except FileNotFoundError:
+        active_weights = None
+        weights_status = "missing"
     
     return {
-        "status": "healthy",
+        "status": "healthy" if weights_status == "ok" else "degraded",
         "service": "thermal-inference-api",
-        "weights_file_exists": weights_path.exists(),
-        "cwd": os.getcwd(),
-        "weights_path": str(weights_path)
+        "weights_status": weights_status,
+        "active_weights": str(active_weights) if active_weights else None,
+        "finetuned_exists": finetuned_weights.exists(),
+        "original_exists": original_weights.exists(),
+        "cwd": os.getcwd()
     }
 
 if __name__ == "__main__":
     import uvicorn
     api_dir = Path(__file__).parent.absolute()
-    parent_dir = api_dir.parent
-    weights_path = parent_dir / "weights" / "best.pt"
+    repo_root = api_dir.parent.parent
     
     print(f"Starting inference API...")
     print(f"Current working directory: {os.getcwd()}")
     print(f"API directory: {api_dir}")
-    print(f"Phase2 directory: {parent_dir}")
-    print(f"Weights path: {weights_path.absolute()}")
-    print(f"Weights exists: {weights_path.exists()}")
+    print(f"Repository root: {repo_root}")
+    
+    try:
+        weights_path = resolve_weights_path()
+        print(f"Active weights: {weights_path}")
+    except FileNotFoundError as e:
+        print(f"WARNING: {e}")
+    
     uvicorn.run(app, host="0.0.0.0", port=8001)
