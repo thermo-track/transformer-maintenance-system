@@ -16,7 +16,7 @@ class AnnotationService {
             const response = await apiClient.get('/api/annotations', {
                 params: { inspectionId }
             });
-            console.log(`[AnnotationService] Annotations fetched:`, response.data);
+            console.log('[AnnotationService] Annotations fetched:', response.data);
             return response.data;
         } catch (error) {
             console.error('[AnnotationService] Error fetching annotations:', error);

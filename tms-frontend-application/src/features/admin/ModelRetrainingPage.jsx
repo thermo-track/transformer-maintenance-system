@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../config/api';
 import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import './ModelRetraining.css';
 
 /**
@@ -26,6 +27,12 @@ export default function ModelRetrainingPage() {
     deleted: 0,
     inspections: 0
   });
+  
+  // Retraining progress states
+  const [isRetraining, setIsRetraining] = useState(false);
+  const [retrainingProgress, setRetrainingProgress] = useState(0);
+  const [retrainingStep, setRetrainingStep] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Check if user is admin (for hiding retrain button)
   const isAdmin = hasRole('ROLE_ADMIN');
@@ -33,15 +40,17 @@ export default function ModelRetrainingPage() {
   // Load annotations and stats
   useEffect(() => {
     loadAnnotations();
-    checkRetrainingStatus();
-  }, []);
+    if (isAdmin) {
+      checkRetrainingStatus();
+    }
+  }, [isAdmin]);
 
   const loadAnnotations = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Use different endpoint based on user role
+      // Use admin endpoint if admin, otherwise user endpoint
       const endpoint = isAdmin 
         ? '/api/admin/retraining/annotations'
         : '/api/annotations/history';
@@ -53,11 +62,14 @@ export default function ModelRetrainingPage() {
         setInspectionGroups(grouped);
         calculateStats(response.data.annotations || [], grouped.length);
       } else {
-        setError(response.data.message || 'Failed to load annotations');
+        const errorMsg = response.data.error || response.data.message || 'Failed to load annotations';
+        console.error('Backend returned error:', errorMsg);
+        setError(errorMsg);
       }
     } catch (err) {
       console.error('Error loading annotations:', err);
-      setError(err.response?.data?.message || 'Failed to load annotation data');
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to load annotation data';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -158,54 +170,102 @@ export default function ModelRetrainingPage() {
   };
 
   const handleStartRetraining = async () => {
-    if (!window.confirm('Are you sure you want to start model retraining? This may take several minutes.')) {
-      return;
-    }
+    setShowConfirmModal(true);
+  };
+
+  const confirmRetraining = async () => {
+    setShowConfirmModal(false);
 
     try {
-      setLoading(true);
+      setIsRetraining(true);
+      setRetrainingProgress(0);
+      setRetrainingStep('Preparing training data...');
       setError(null);
       setSuccess(null);
 
-      const response = await apiClient.post('/api/admin/model/retrain');
+      // Simulate progress steps
+      setTimeout(() => {
+        setRetrainingProgress(20);
+        setRetrainingStep('Validating annotations...');
+      }, 500);
+
+      setTimeout(() => {
+        setRetrainingProgress(40);
+        setRetrainingStep('Sending data to training service...');
+      }, 1500);
+
+      // Get username from auth context or localStorage
+      const username = localStorage.getItem('username') || 'admin';
+
+      const response = await apiClient.post('/api/admin/retraining/trigger', null, {
+        headers: {
+          'X-Username': username
+        }
+      });
       
       if (response.data.success) {
-        setSuccess('Model retraining started successfully! You will be notified when it completes.');
+        const runId = response.data.runId;
+        setRetrainingProgress(60);
+        setRetrainingStep('Training model in progress...');
         setRetrainingStatus('RUNNING');
         // Poll for status updates
-        pollRetrainingStatus();
+        pollRetrainingStatus(runId);
       } else {
         setError(response.data.message || 'Failed to start retraining');
+        setIsRetraining(false);
       }
     } catch (err) {
       console.error('Error starting retraining:', err);
       setError(err.response?.data?.message || 'Failed to start model retraining');
-    } finally {
-      setLoading(false);
+      setIsRetraining(false);
+      setRetrainingProgress(0);
+      setRetrainingStep('');
     }
   };
 
-  const pollRetrainingStatus = () => {
+  const cancelRetraining = () => {
+    setShowConfirmModal(false);
+  };
+
+  const pollRetrainingStatus = (runId) => {
     const interval = setInterval(async () => {
       try {
-        const response = await apiClient.get('/api/admin/model/retraining/status');
-        if (response.data.success) {
+        const response = await apiClient.get(`/api/admin/retraining/status/${runId}`);
+        if (response.data) {
           setRetrainingStatus(response.data.status);
           
+          // Update progress based on status
+          if (response.data.status === 'RUNNING') {
+            // Gradually increase progress while training
+            setRetrainingProgress(prev => Math.min(prev + 5, 90));
+            setRetrainingStep('Training model... This may take a few minutes.');
+          }
+          
           // Stop polling if completed or failed
-          if (response.data.status !== 'RUNNING') {
+          if (response.data.status === 'COMPLETED' || response.data.status === 'FAILED') {
             clearInterval(interval);
+            
             if (response.data.status === 'COMPLETED') {
-              setSuccess('Model retraining completed successfully!');
-              loadAnnotations(); // Refresh data
+              setRetrainingProgress(100);
+              setRetrainingStep('Retraining completed successfully!');
+              setTimeout(() => {
+                setSuccess('Model retraining completed successfully! The page will now show only new actions.');
+                setIsRetraining(false);
+                setRetrainingProgress(0);
+                setRetrainingStep('');
+                loadAnnotations(); // This will now show only new actions (page may be empty)
+              }, 1500);
             } else if (response.data.status === 'FAILED') {
-              setError('Model retraining failed. Please check logs.');
+              setError(`Model retraining failed: ${response.data.errorMessage || 'Unknown error'}`);
+              setIsRetraining(false);
+              setRetrainingProgress(0);
+              setRetrainingStep('');
             }
           }
         }
       } catch (err) {
         console.error('Error polling status:', err);
-        clearInterval(interval);
+        // Don't stop polling on network errors
       }
     }, 5000); // Poll every 5 seconds
 
@@ -571,8 +631,8 @@ export default function ModelRetrainingPage() {
   const getActionIcon = (action) => {
     switch (action) {
       case 'CREATED': return '➕';
-      case 'EDITED': return '✏️';
-      case 'DELETED': return '🗑️';
+      case 'EDITED': return '✏';
+      case 'DELETED': return '🗑';
       case 'COMMENTED': return '💬';
       case 'APPROVED': return '✅';
       case 'REJECTED': return '❌';
@@ -614,6 +674,62 @@ export default function ModelRetrainingPage() {
 
   return (
     <div className="retraining-container">
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="modal-overlay" onClick={cancelRetraining}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">⚠️</div>
+            <h2>Start Model Retraining?</h2>
+            <p className="modal-message">
+              This will start the model retraining process using all the annotation data below. 
+              The process may take several minutes to complete.
+            </p>
+            <div className="modal-info">
+              <div className="info-item">
+                <span className="info-label">Total Actions:</span>
+                <span className="info-value">{stats.total}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Inspections:</span>
+                <span className="info-value">{stats.inspections}</span>
+              </div>
+            </div>
+            <p className="modal-warning">
+              ⏱️ Please do not close this window during the retraining process.
+            </p>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={cancelRetraining}>
+                Cancel
+              </button>
+              <button className="btn-confirm" onClick={confirmRetraining}>
+                 Start Retraining
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Retraining Loading Overlay */}
+      {isRetraining && (
+        <div className="retraining-overlay">
+          <div className="retraining-modal">
+            <div className="retraining-spinner">
+              <div className="spinner-large"></div>
+            </div>
+            <h2> Model Retraining in Progress</h2>
+            <p className="retraining-message">{retrainingStep}</p>
+            <div className="progress-bar-container">
+              <div className="progress-bar" style={{ width: `${retrainingProgress}%` }}>
+                <span className="progress-text">{retrainingProgress}%</span>
+              </div>
+            </div>
+            <p className="retraining-hint">
+              ☕ This process may take several minutes. Please don't close this window.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="retraining-header">
         <h1>🧠 {isAdmin ? 'Model Retraining' : 'Annotation History'}</h1>
         <p className="subtitle">
@@ -675,14 +791,14 @@ export default function ModelRetrainingPage() {
           </div>
         </div>
         <div className="stat-card stat-edited">
-          <div className="stat-icon">✏️</div>
+          <div className="stat-icon">✏</div>
           <div className="stat-content">
             <h3>{stats.edited}</h3>
             <p>Edited</p>
           </div>
         </div>
         <div className="stat-card stat-deleted">
-          <div className="stat-icon">🗑️</div>
+          <div className="stat-icon">🗑</div>
           <div className="stat-content">
             <h3>{stats.deleted}</h3>
             <p>Deleted</p>
@@ -698,7 +814,7 @@ export default function ModelRetrainingPage() {
             disabled={loading || retrainingStatus === 'RUNNING' || stats.total === 0}
             className="btn-primary btn-retrain"
           >
-            {retrainingStatus === 'RUNNING' ? '⏳ Retraining...' : '🚀 Start Retraining'}
+            {retrainingStatus === 'RUNNING' ? '⏳ Retraining...' : ' Start Retraining'}
           </button>
         )}
         <button
@@ -776,12 +892,12 @@ export default function ModelRetrainingPage() {
                       )}
                       {group.stats.edited > 0 && (
                         <span className="stat-badge stat-edited">
-                          ✏️ {group.stats.edited} Edited
+                          ✏ {group.stats.edited} Edited
                         </span>
                       )}
                       {group.stats.deleted > 0 && (
                         <span className="stat-badge stat-deleted">
-                          🗑️ {group.stats.deleted} Deleted
+                          🗑 {group.stats.deleted} Deleted
                         </span>
                       )}
                       {group.stats.approved > 0 && (
