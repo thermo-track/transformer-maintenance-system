@@ -2,6 +2,7 @@ package com.powergrid.maintenance.tms_backend_application.inspection.service;
 
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.AnnotationAction;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.AnomalyNote;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.*;
 import com.powergrid.maintenance.tms_backend_application.inspection.model.ActionType;
@@ -9,13 +10,14 @@ import com.powergrid.maintenance.tms_backend_application.inspection.model.Anomal
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionAnomalyRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repository.AnnotationActionRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.AnomalyNoteRepository;
+import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +31,7 @@ public class AnnotationService {
     private final InspectionAnomalyRepository anomalyRepository;
     private final AnnotationActionRepository actionRepository;
     private final AnomalyNoteRepository noteRepository;
+    private final InspectionRepo inspectionRepo;
 
     /**
      * Get all annotations for an inspection (AI + User, active + inactive)
@@ -83,10 +86,20 @@ public class AnnotationService {
 
         // Set geometry
         if (request.getGeometry() != null) {
-            anomaly.setBboxX(request.getGeometry().getX());
-            anomaly.setBboxY(request.getGeometry().getY());
-            anomaly.setBboxWidth(request.getGeometry().getWidth());
-            anomaly.setBboxHeight(request.getGeometry().getHeight());
+            Integer bboxX = request.getGeometry().getX();
+            Integer bboxY = request.getGeometry().getY();
+            Integer bboxWidth = request.getGeometry().getWidth();
+            Integer bboxHeight = request.getGeometry().getHeight();
+            
+            anomaly.setBboxX(bboxX);
+            anomaly.setBboxY(bboxY);
+            anomaly.setBboxWidth(bboxWidth);
+            anomaly.setBboxHeight(bboxHeight);
+            
+            // Calculate centroid and area
+            anomaly.setCentroidX(bboxX + bboxWidth / 2.0);
+            anomaly.setCentroidY(bboxY + bboxHeight / 2.0);
+            anomaly.setAreaPx(bboxWidth * bboxHeight);
         }
 
         // Set classification
@@ -140,18 +153,34 @@ public class AnnotationService {
         newAnomaly.setCreatedBy(username);
 
         // Set new geometry
+        Integer bboxX, bboxY, bboxWidth, bboxHeight;
         if (request.getGeometry() != null) {
-            newAnomaly.setBboxX(request.getGeometry().getX());
-            newAnomaly.setBboxY(request.getGeometry().getY());
-            newAnomaly.setBboxWidth(request.getGeometry().getWidth());
-            newAnomaly.setBboxHeight(request.getGeometry().getHeight());
+            bboxX = request.getGeometry().getX();
+            bboxY = request.getGeometry().getY();
+            bboxWidth = request.getGeometry().getWidth();
+            bboxHeight = request.getGeometry().getHeight();
+            
+            newAnomaly.setBboxX(bboxX);
+            newAnomaly.setBboxY(bboxY);
+            newAnomaly.setBboxWidth(bboxWidth);
+            newAnomaly.setBboxHeight(bboxHeight);
         } else {
             // Keep original geometry if not provided
-            newAnomaly.setBboxX(original.getBboxX());
-            newAnomaly.setBboxY(original.getBboxY());
-            newAnomaly.setBboxWidth(original.getBboxWidth());
-            newAnomaly.setBboxHeight(original.getBboxHeight());
+            bboxX = original.getBboxX();
+            bboxY = original.getBboxY();
+            bboxWidth = original.getBboxWidth();
+            bboxHeight = original.getBboxHeight();
+            
+            newAnomaly.setBboxX(bboxX);
+            newAnomaly.setBboxY(bboxY);
+            newAnomaly.setBboxWidth(bboxWidth);
+            newAnomaly.setBboxHeight(bboxHeight);
         }
+        
+        // Calculate centroid and area
+        newAnomaly.setCentroidX(bboxX + bboxWidth / 2.0);
+        newAnomaly.setCentroidY(bboxY + bboxHeight / 2.0);
+        newAnomaly.setAreaPx(bboxWidth * bboxHeight);
 
         // Set new classification
         if (request.getClassification() != null) {
@@ -339,6 +368,79 @@ public class AnnotationService {
      */
     public List<AnnotationAction> getInspectionActions(Long inspectionId) {
         return actionRepository.findByInspectionIdOrderByActionTimestampDesc(inspectionId);
+    }
+
+    /**
+     * Get all annotation actions across all inspections with metadata
+     * This is used by regular users to view annotation history
+     */
+    public Map<String, Object> getAllAnnotationActionsWithMetadata() {
+        log.info("Fetching all annotation actions with metadata");
+        
+        try {
+            // Get all annotation actions ordered by timestamp (newest first)
+            List<AnnotationAction> actions = actionRepository.findAll();
+            actions.sort((a, b) -> b.getActionTimestamp().compareTo(a.getActionTimestamp()));
+            
+            // Enrich with inspection metadata
+            Map<Long, Inspection> inspectionCache = new HashMap<>();
+            List<Map<String, Object>> enrichedActions = new ArrayList<>();
+            
+            for (AnnotationAction action : actions) {
+                Map<String, Object> actionData = new HashMap<>();
+                
+                // Basic action info
+                actionData.put("id", action.getId());
+                actionData.put("anomalyId", action.getAnomalyId());
+                actionData.put("inspectionId", action.getInspectionId());
+                actionData.put("actionType", action.getActionType());
+                actionData.put("username", action.getUsername());
+                actionData.put("actionTimestamp", action.getActionTimestamp());
+                actionData.put("comment", action.getComment());
+                
+                // Before/After data
+                actionData.put("previousBbox", action.getPreviousBbox());
+                actionData.put("newBbox", action.getNewBbox());
+                actionData.put("previousClassification", action.getPreviousClassification());
+                actionData.put("newClassification", action.getNewClassification());
+                
+                // Get inspection metadata (with caching)
+                Long inspectionId = action.getInspectionId();
+                if (!inspectionCache.containsKey(inspectionId)) {
+                    inspectionRepo.findById(inspectionId)
+                            .ifPresent(insp -> inspectionCache.put(inspectionId, insp));
+                }
+                
+                Inspection inspection = inspectionCache.get(inspectionId);
+                if (inspection != null) {
+                    actionData.put("transformerId", inspection.getTransformerNo());
+                    actionData.put("transformerName", inspection.getTransformer() != null ? 
+                            inspection.getTransformer().getLocationDetails() : "Unknown");
+                } else {
+                    actionData.put("transformerId", "N/A");
+                    actionData.put("transformerName", "Unknown");
+                }
+                
+                enrichedActions.add(actionData);
+            }
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("annotations", enrichedActions);
+            result.put("total", enrichedActions.size());
+            
+            log.info("Fetched {} annotation actions with metadata", enrichedActions.size());
+            return result;
+            
+        } catch (Exception e) {
+            log.error("Error fetching annotation actions with metadata", e);
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", e.getMessage());
+            errorResult.put("annotations", Collections.emptyList());
+            errorResult.put("total", 0);
+            return errorResult;
+        }
     }
 
     // Helper methods

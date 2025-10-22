@@ -22,6 +22,7 @@ import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import AnnotationCanvas from '../components/AnnotationCanvas';
 import AnnotationPanel from '../components/AnnotationPanel';
 import AnnotationService from '../services/AnnotationService';
+import { getClassIdForFaultType, FAULT_TYPES } from '../utils/faultTypeUtils';
 import apiClient from '../config/api';
 import './AnnotationPage.css';
 
@@ -47,14 +48,8 @@ const AnnotationPage = () => {
     const [pendingBbox, setPendingBbox] = useState(null);
     const [selectedFaultType, setSelectedFaultType] = useState('');
     
-    // Fault type options (matching YOLO dataset classes)
-    const faultTypes = [
-        'Full wire overload',
-        'Loose Joint -Faulty',
-        'Loose Joint -Potential',
-        'Point Overload - Faulty',
-        'normal'
-    ];
+    // Live editing annotation state (for live updates before save)
+    const [liveEditingAnnotation, setLiveEditingAnnotation] = useState(null);
     
     // Mock user ID - in real app, get from auth context
     const userId = 1;
@@ -62,6 +57,17 @@ const AnnotationPage = () => {
     useEffect(() => {
         loadAnnotations();
     }, [inspectionId]);
+    
+    // Clear live editing annotation when annotations update
+    useEffect(() => {
+        if (liveEditingAnnotation) {
+            // Check if the editing annotation still exists in the updated annotations
+            const stillExists = annotations.find(a => a.id === liveEditingAnnotation.id);
+            if (!stillExists) {
+                setLiveEditingAnnotation(null);
+            }
+        }
+    }, [annotations]);
 
     const loadAnnotations = async () => {
         try {
@@ -124,7 +130,7 @@ const AnnotationPage = () => {
                 classification: {
                     faultType: selectedFaultType,
                     confidence: 1.0, // Default confidence for user annotations
-                    classId: 0
+                    classId: getClassIdForFaultType(selectedFaultType)
                 },
                 comment: 'User-created annotation'
             });
@@ -167,6 +173,12 @@ const AnnotationPage = () => {
             console.error('Error editing annotation:', err);
             showSnackbar('Failed to update annotation', 'error');
         }
+    };
+    
+    const handleAnnotationUpdate = (updatedAnnotation) => {
+        // Live update during drag/resize (before save)
+        console.log('[AnnotationPage] Live update:', updatedAnnotation);
+        setLiveEditingAnnotation(updatedAnnotation);
     };
 
     const handleDrawModeChange = (mode) => {
@@ -227,6 +239,7 @@ const AnnotationPage = () => {
                             onAnnotationSelect={handleAnnotationSelect}
                             onAnnotationCreate={handleAnnotationCreate}
                             onAnnotationEdit={handleAnnotationEdit}
+                            onAnnotationUpdate={handleAnnotationUpdate}
                             drawMode={drawMode}
                         />
                     </Paper>
@@ -243,6 +256,7 @@ const AnnotationPage = () => {
                             drawMode={drawMode}
                             setDrawMode={setDrawMode}
                             selectedAnnotationId={selectedAnnotationId}
+                            liveEditingAnnotation={liveEditingAnnotation}
                             onAnnotationSelect={handleAnnotationSelect}
                             onAnnotationsUpdate={loadAnnotations}
                             onDrawModeChange={handleDrawModeChange}
@@ -277,7 +291,7 @@ const AnnotationPage = () => {
                                 onChange={(e) => setSelectedFaultType(e.target.value)}
                                 label="Fault Type"
                             >
-                                {faultTypes.map((type) => (
+                                {FAULT_TYPES.map((type) => (
                                     <MenuItem key={type} value={type}>
                                         {type}
                                     </MenuItem>

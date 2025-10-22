@@ -1,4 +1,4 @@
-import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck, faBrain, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck, faBrain, faRobot, faHistory } from '@fortawesome/free-solid-svg-icons';
 
 const menuData = [
   {
@@ -18,6 +18,16 @@ const menuData = [
         path: "/transformers/map",
         label: "Transformer Map",
         icon: faClipboardCheck,
+      },
+    ],
+  },
+  {
+    label: "Annotations",  // Regular users can view annotation history
+    subMenu: [
+      {
+        path: "/annotation-history",
+        label: "Annotation History",
+        icon: faHistory,
       },
     ],
   },
