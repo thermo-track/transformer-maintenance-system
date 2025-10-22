@@ -139,6 +139,15 @@ export default function App() {
         </PrivateRoute>
       } />
       
+      {/* Regular users can view annotation history (read-only) */}
+      <Route path="/annotation-history" element={
+        <PrivateRoute>
+          <Layout>
+            <ModelRetrainingPage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
       {/* 404 */}
       <Route path="*" element={<p>Not found</p>} />
     </Routes>
