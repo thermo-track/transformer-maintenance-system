@@ -67,14 +67,48 @@ const AnnotationPanel = ({
     const [deleteComment, setDeleteComment] = useState('');
     const [annotationToDelete, setAnnotationToDelete] = useState(null);
     
+    // Track approved anomalies (anomalyId -> true/false)
+    const [approvedAnomalies, setApprovedAnomalies] = useState(new Set());
+    
     // Inline edit panel state
     const [expandedEditId, setExpandedEditId] = useState(null);
     const [editFaultType, setEditFaultType] = useState('');
+
+    // Check which AI detections have been approved
+    useEffect(() => {
+        const checkApprovedStatus = async () => {
+            const approvedSet = new Set();
+            
+            // Check each AI detection for approval history
+            for (const anomaly of aiDetections) {
+                try {
+                    const history = await AnnotationService.getHistory(anomaly.id);
+                    // Check if there's an APPROVED action in the history
+                    const hasApproval = history.some(action => 
+                        action.actionType === 'APPROVED' || action.action === 'APPROVED'
+                    );
+                    if (hasApproval) {
+                        approvedSet.add(anomaly.id);
+                    }
+                } catch (error) {
+                    console.error(Error checking approval status for anomaly ${anomaly.id}:, error);
+                }
+            }
+            
+            setApprovedAnomalies(approvedSet);
+        };
+        
+        if (aiDetections.length > 0) {
+            checkApprovedStatus();
+        }
+    }, [aiDetections]);
 
     // Handlers
     const handleAcceptAI = async (anomaly) => {
         try {
             await AnnotationService.acceptAiDetection(anomaly.id, inspectionId, userId);
+            // Mark this anomaly as approved
+            setApprovedAnomalies(prev => new Set([...prev, anomaly.id]));
             onAnnotationsUpdate();
         } catch (error) {
             console.error('Error accepting AI detection:', error);
@@ -166,7 +200,7 @@ const AnnotationPanel = ({
                     confidence: anomaly.confidence || 1.0,
                     classId: getClassIdForFaultType(editFaultType)
                 },
-                comment: `Fault type changed to ${editFaultType}`
+                comment: Fault type changed to ${editFaultType}
             });
             
             setExpandedEditId(null);
@@ -229,7 +263,7 @@ const AnnotationPanel = ({
                                             Confidence:
                                         </Typography>
                                         <Chip 
-                                            label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} 
+                                            label={${(anomaly.faultConfidence * 100).toFixed(0)}%} 
                                             size="small" 
                                             color={getConfidenceColor(anomaly.faultConfidence)}
                                             sx={{ height: 18, fontSize: '0.65rem' }}
@@ -237,7 +271,7 @@ const AnnotationPanel = ({
                                     </Box>
                                 )}
                                 <Typography variant="caption" color="text.secondary">
-                                    {anomaly.createdBy ? `By: ${anomaly.createdBy}` : 'System generated'}
+                                    {anomaly.createdBy ? By: ${anomaly.createdBy} : 'System generated'}
                                 </Typography>
                             </Box>
                         }
@@ -246,26 +280,44 @@ const AnnotationPanel = ({
                         <Box display="flex" flexDirection="column" gap={0.5} alignItems="flex-end">
                             {isAI && (
                                 <Box display="flex" gap={0.5}>
-                                    <Tooltip title="Accept" arrow>
-                                        <IconButton 
-                                            size="small" 
-                                            color="success" 
-                                            onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}
-                                            sx={{ padding: '4px' }}
-                                        >
-                                            <CheckIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Reject" arrow>
-                                        <IconButton 
-                                            size="small" 
-                                            color="error" 
-                                            onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}
-                                            sx={{ padding: '4px' }}
-                                        >
-                                            <CloseIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+                                    {approvedAnomalies.has(anomaly.id) ? (
+                                        <Tooltip title="Already Approved" arrow>
+                                            <Chip 
+                                                icon={<CheckIcon />}
+                                                label="Approved" 
+                                                size="small" 
+                                                color="success"
+                                                sx={{ 
+                                                    height: 24, 
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            />
+                                        </Tooltip>
+                                    ) : (
+                                        <>
+                                            <Tooltip title="Accept" arrow>
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="success" 
+                                                    onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}
+                                                    sx={{ padding: '4px' }}
+                                                >
+                                                    <CheckIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Reject" arrow>
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="error" 
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}
+                                                    sx={{ padding: '4px' }}
+                                                >
+                                                    <CloseIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </>
+                                    )}
                                 </Box>
                             )}
                             <Box display="flex" gap={0.5}>
@@ -329,9 +381,9 @@ const AnnotationPanel = ({
                         </Typography>
                         
                         <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                            <InputLabel id={`fault-type-edit-${anomaly.id}`}>Fault Type</InputLabel>
+                            <InputLabel id={fault-type-edit-${anomaly.id}}>Fault Type</InputLabel>
                             <Select
-                                labelId={`fault-type-edit-${anomaly.id}`}
+                                labelId={fault-type-edit-${anomaly.id}}
                                 value={editFaultType}
                                 onChange={(e) => setEditFaultType(e.target.value)}
                                 label="Fault Type"

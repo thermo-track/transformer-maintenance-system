@@ -11,12 +11,12 @@ class AnnotationService {
      * @returns {Promise} - Returns { aiDetections, userAnnotations, inactiveDetections }
      */
     async getAnnotations(inspectionId) {
-        console.log(`[AnnotationService] Fetching annotations for inspection: ${inspectionId}`);
+        console.log([AnnotationService] Fetching annotations for inspection: ${inspectionId});
         try {
             const response = await apiClient.get('/api/annotations', {
                 params: { inspectionId }
             });
-            console.log(`[AnnotationService] Annotations fetched:`, response.data);
+            console.log([AnnotationService] Annotations fetched:, response.data);
             return response.data;
         } catch (error) {
             console.error('[AnnotationService] Error fetching annotations:', error);
@@ -51,7 +51,7 @@ class AnnotationService {
      * @returns {Promise}
      */
     async editAnnotation(anomalyId, editData) {
-        console.log(`[AnnotationService] Editing annotation ${anomalyId}:`, editData);
+        console.log([AnnotationService] Editing annotation ${anomalyId}:, editData);
         try {
             const response = await apiClient.post('/api/annotations', {
                 ...editData,
@@ -75,7 +75,7 @@ class AnnotationService {
      * @returns {Promise}
      */
     async deleteAnnotation(anomalyId, inspectionId, comment, userId) {
-        console.log(`[AnnotationService] Deleting annotation ${anomalyId}`);
+        console.log([AnnotationService] Deleting annotation ${anomalyId});
         try {
             const response = await apiClient.post('/api/annotations', {
                 anomalyId,
@@ -101,7 +101,7 @@ class AnnotationService {
      * @returns {Promise}
      */
     async addComment(anomalyId, inspectionId, comment, userId) {
-        console.log(`[AnnotationService] Adding comment to annotation ${anomalyId}`);
+        console.log([AnnotationService] Adding comment to annotation ${anomalyId});
         try {
             const response = await apiClient.post('/api/annotations', {
                 anomalyId,
@@ -126,7 +126,7 @@ class AnnotationService {
      * @returns {Promise}
      */
     async acceptAiDetection(anomalyId, inspectionId, userId) {
-        console.log(`[AnnotationService] Accepting AI detection ${anomalyId}`);
+        console.log([AnnotationService] Accepting AI detection ${anomalyId});
         try {
             const response = await apiClient.post('/api/annotations', {
                 anomalyId,
@@ -151,7 +151,7 @@ class AnnotationService {
      * @returns {Promise}
      */
     async rejectAiDetection(anomalyId, inspectionId, reason, userId) {
-        console.log(`[AnnotationService] Rejecting AI detection ${anomalyId}`);
+        console.log([AnnotationService] Rejecting AI detection ${anomalyId});
         try {
             const response = await apiClient.post('/api/annotations', {
                 anomalyId,
@@ -174,9 +174,9 @@ class AnnotationService {
      * @returns {Promise}
      */
     async getAnnotationHistory(anomalyId) {
-        console.log(`[AnnotationService] Fetching history for annotation ${anomalyId}`);
+        console.log([AnnotationService] Fetching history for annotation ${anomalyId});
         try {
-            const response = await apiClient.get(`/api/annotations/${anomalyId}/history`);
+            const response = await apiClient.get(/api/annotations/${anomalyId}/history);
             console.log('[AnnotationService] History fetched:', response.data);
             return response.data;
         } catch (error) {
@@ -186,14 +186,23 @@ class AnnotationService {
     }
 
     /**
+     * Alias for getAnnotationHistory
+     * @param {number} anomalyId 
+     * @returns {Promise}
+     */
+    async getHistory(anomalyId) {
+        return this.getAnnotationHistory(anomalyId);
+    }
+
+    /**
      * Get all actions for an inspection
      * @param {number} inspectionId 
      * @returns {Promise}
      */
     async getInspectionActions(inspectionId) {
-        console.log(`[AnnotationService] Fetching actions for inspection ${inspectionId}`);
+        console.log([AnnotationService] Fetching actions for inspection ${inspectionId});
         try {
-            const response = await apiClient.get(`/api/annotations/inspection/${inspectionId}/actions`);
+            const response = await apiClient.get(/api/annotations/inspection/${inspectionId}/actions);
             console.log('[AnnotationService] Actions fetched:', response.data);
             return response.data;
         } catch (error) {
