@@ -9,6 +9,7 @@ import {
     List, 
     ListItem, 
     ListItemText,
+    ListItemSecondaryAction,
     Chip,
     Dialog,
     DialogTitle,
@@ -17,17 +18,27 @@ import {
     TextField,
     ButtonGroup,
     Divider,
-    Tooltip
+    Tooltip,
+    Collapse,
+    Paper,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Grid
 } from '@mui/material';
 import {
     Edit as EditIcon,
     Delete as DeleteIcon,
     Comment as CommentIcon,
     Check as CheckIcon,
+    Close as CloseIcon,
     History as HistoryIcon,
-    Add as AddIcon
+    Add as AddIcon,
+    Save as SaveIcon
 } from '@mui/icons-material';
 import AnnotationService from '../services/AnnotationService';
+import { getClassIdForFaultType, FAULT_TYPES } from '../utils/faultTypeUtils';
 import './AnnotationPanel.css';
 
 /**
@@ -44,7 +55,8 @@ const AnnotationPanel = ({
     onEditClick,
     onAnnotationsUpdate,
     inspectionId,
-    userId
+    userId,
+    liveEditingAnnotation
 }) => {
     // State hooks
     const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -54,6 +66,10 @@ const AnnotationPanel = ({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteComment, setDeleteComment] = useState('');
     const [annotationToDelete, setAnnotationToDelete] = useState(null);
+    
+    // Inline edit panel state
+    const [expandedEditId, setExpandedEditId] = useState(null);
+    const [editFaultType, setEditFaultType] = useState('');
 
     // Handlers
     const handleAcceptAI = async (anomaly) => {
@@ -122,10 +138,43 @@ const AnnotationPanel = ({
     };
     
     const handleEditAnnotation = (anomaly) => {
-        // Select the annotation first
-        onAnnotationSelect(anomaly);
-        // Then switch to edit mode
-        handleDrawModeToggle('edit');
+        // Toggle inline edit panel
+        if (expandedEditId === anomaly.id) {
+            setExpandedEditId(null);
+            handleDrawModeToggle('view');
+        } else {
+            setExpandedEditId(anomaly.id);
+            setEditFaultType(anomaly.faultType);
+            onAnnotationSelect(anomaly);
+            handleDrawModeToggle('edit');
+        }
+    };
+    
+    const handleSaveEdit = async (anomaly) => {
+        try {
+            await AnnotationService.editAnnotation(anomaly.id, {
+                inspectionId,
+                userId,
+                geometry: {
+                    x: anomaly.bboxX,
+                    y: anomaly.bboxY,
+                    width: anomaly.bboxWidth,
+                    height: anomaly.bboxHeight
+                },
+                classification: {
+                    faultType: editFaultType,
+                    confidence: anomaly.confidence || 1.0,
+                    classId: getClassIdForFaultType(editFaultType)
+                },
+                comment: `Fault type changed to ${editFaultType}`
+            });
+            
+            setExpandedEditId(null);
+            handleDrawModeToggle('view');
+            onAnnotationsUpdate();
+        } catch (error) {
+            console.error('Error saving annotation edit:', error);
+        }
     };
 
     const getConfidenceColor = (confidence) => {
@@ -134,70 +183,219 @@ const AnnotationPanel = ({
         return 'error';
     };
 
-    const renderAnnotationItem = (anomaly, isAI = false) => (
-        <ListItem
-            key={anomaly.id}
-            selected={selectedAnnotationId === anomaly.id}
-            onClick={() => onAnnotationSelect(anomaly)}
-            sx={{ 
-                border: selectedAnnotationId === anomaly.id ? '2px solid #1976d2' : '1px solid #ddd',
-                borderRadius: 1,
-                mb: 1,
-                backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : 'white',
-                cursor: 'pointer'
-            }}
-        >
-            <ListItemText
-                primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Typography variant="subtitle2">
-                            {anomaly.faultType || 'Unknown'}
+    const renderAnnotationItem = (anomaly, isAI = false) => {
+        const isExpanded = expandedEditId === anomaly.id;
+        
+        // Use live editing annotation if available, otherwise use the original
+        const displayAnomaly = (liveEditingAnnotation && liveEditingAnnotation.id === anomaly.id) 
+            ? liveEditingAnnotation 
+            : anomaly;
+        
+        // Debug logging
+        if (isExpanded && liveEditingAnnotation) {
+            console.log('[AnnotationPanel] Rendering with live data:', displayAnomaly);
+        }
+        
+        return (
+            <Box key={anomaly.id}>
+                <ListItem
+                    selected={selectedAnnotationId === anomaly.id}
+                    onClick={() => onAnnotationSelect(anomaly)}
+                    sx={{ 
+                        border: selectedAnnotationId === anomaly.id ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                        borderRadius: 1,
+                        mb: 1,
+                        backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : 'white',
+                        cursor: 'pointer',
+                        py: 1.5,
+                        '&:hover': {
+                            backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : '#f5f5f5'
+                        }
+                    }}
+                >
+                    <ListItemText
+                        primary={
+                            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                <Typography variant="subtitle2" fontWeight="medium" sx={{ flex: 1 }}>
+                                    {anomaly.faultType || 'Unknown'}
+                                </Typography>
+                            </Box>
+                        }
+                        secondary={
+                            <Box display="flex" flexDirection="column" gap={0.5}>
+                                {isAI && (
+                                    <Box display="flex" alignItems="center" gap={0.5}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Confidence:
+                                        </Typography>
+                                        <Chip 
+                                            label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} 
+                                            size="small" 
+                                            color={getConfidenceColor(anomaly.faultConfidence)}
+                                            sx={{ height: 18, fontSize: '0.65rem' }}
+                                        />
+                                    </Box>
+                                )}
+                                <Typography variant="caption" color="text.secondary">
+                                    {anomaly.createdBy ? `By: ${anomaly.createdBy}` : 'System generated'}
+                                </Typography>
+                            </Box>
+                        }
+                    />
+                    <ListItemSecondaryAction>
+                        <Box display="flex" flexDirection="column" gap={0.5} alignItems="flex-end">
+                            {isAI && (
+                                <Box display="flex" gap={0.5}>
+                                    <Tooltip title="Accept" arrow>
+                                        <IconButton 
+                                            size="small" 
+                                            color="success" 
+                                            onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}
+                                            sx={{ padding: '4px' }}
+                                        >
+                                            <CheckIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Reject" arrow>
+                                        <IconButton 
+                                            size="small" 
+                                            color="error" 
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}
+                                            sx={{ padding: '4px' }}
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            )}
+                            <Box display="flex" gap={0.5}>
+                                <Tooltip title="Edit" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        color={isExpanded ? "primary" : "default"}
+                                        onClick={(e) => { e.stopPropagation(); handleEditAnnotation(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Comment" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={(e) => { e.stopPropagation(); handleAddComment(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <CommentIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        color="error" 
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="History" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={(e) => { e.stopPropagation(); handleViewHistory(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <HistoryIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        </Box>
+                    </ListItemSecondaryAction>
+                </ListItem>
+                
+                {/* Inline Edit Panel */}
+                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <Paper 
+                        elevation={2}
+                        sx={{ 
+                            m: 2, 
+                            mt: 0, 
+                            p: 2, 
+                            border: '1px solid #1976d2',
+                            backgroundColor: '#f5f5f5'
+                        }}
+                    >
+                        <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                            Edit Annotation
                         </Typography>
-                        {isAI && (
-                            <>
-                                <Chip label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} size="small" color={getConfidenceColor(anomaly.faultConfidence)} />
-                                <Chip label="AI" size="small" color="success" variant="outlined" />
-                            </>
-                        )}
-                    </Box>
-                }
-                secondary={
-                    <Typography variant="caption" color="textSecondary">
-                        {anomaly.createdBy ? `Created by: ${anomaly.createdBy}` : 'AI Generated'}
-                    </Typography>
-                }
-            />
-            <Box display="flex" gap={0.5}>
-                {isAI && (
-                    <Tooltip title="Accept">
-                        <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}>
-                            <CheckIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                )}
-                <Tooltip title="Edit">
-                    <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleEditAnnotation(anomaly); }}>
-                        <EditIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Comment">
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleAddComment(anomaly); }}>
-                        <CommentIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                    <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}>
-                        <DeleteIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="History">
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleViewHistory(anomaly); }}>
-                        <HistoryIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
+                        
+                        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                            <InputLabel id={`fault-type-edit-${anomaly.id}`}>Fault Type</InputLabel>
+                            <Select
+                                labelId={`fault-type-edit-${anomaly.id}`}
+                                value={editFaultType}
+                                onChange={(e) => setEditFaultType(e.target.value)}
+                                label="Fault Type"
+                            >
+                                {FAULT_TYPES.map((type) => (
+                                    <MenuItem key={type} value={type}>
+                                        {type}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        
+                        <Paper variant="outlined" sx={{ p: 1.5, mb: 2, backgroundColor: 'white' }}>
+                            <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+                                Bounding Box Coordinates (Live)
+                            </Typography>
+                            <Grid container spacing={1}>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2">
+                                        <strong>X:</strong> {Math.round(displayAnomaly.bboxX)}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2">
+                                        <strong>Y:</strong> {Math.round(displayAnomaly.bboxY)}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2">
+                                        <strong>Width:</strong> {Math.round(displayAnomaly.bboxWidth)}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2">
+                                        <strong>Height:</strong> {Math.round(displayAnomaly.bboxHeight)}
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+                        </Paper>
+                        
+                        <Box display="flex" gap={1} justifyContent="flex-end">
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setExpandedEditId(null);
+                                    handleDrawModeToggle('view');
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                size="small"
+                                variant="contained"
+                                startIcon={<SaveIcon />}
+                                onClick={() => handleSaveEdit(displayAnomaly)}
+                            >
+                                Save Changes
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Collapse>
             </Box>
-        </ListItem>
-    );
+        );
+    };
 
     return (
         <Card className="annotation-panel">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
-import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle, Settings, Edit3, Trash2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, X, RotateCcw, AlertTriangle, Settings, Edit3, Trash2, Edit } from 'lucide-react';
 import '../styles/thermal-image-comparison.css';
 import { baselineImageService } from '../services/BaselineImageService';
 import { cloudinaryService } from '../services/CloudinaryService';
@@ -556,6 +556,14 @@ const ThermalImageComparison = ({
           </button>
           <button onClick={onUploadNew} className="action-btnT upload-new-btnT" disabled={isLoading}>
             {isLoading ? 'Processing...' : 'Upload New'}
+          </button>
+          <button 
+            onClick={() => navigate(`/annotations/${inspectionId}`)} 
+            className="action-btnT edit-annotation-btnT" 
+            disabled={!inspectionId}
+          >
+            <Edit size={16} />
+            Edit Annotations
           </button>
           <button onClick={() => setShowDeleteConfirm(true)} className="action-btnT delete-btnT" disabled={isLoading}>
             <X size={16} />

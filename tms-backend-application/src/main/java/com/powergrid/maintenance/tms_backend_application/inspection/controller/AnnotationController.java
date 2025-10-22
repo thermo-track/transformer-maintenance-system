@@ -154,6 +154,25 @@ public class AnnotationController {
     }
 
     /**
+     * Get all annotation actions across all inspections
+     * This is accessible to all authenticated users (not admin-only)
+     * GET /api/annotations/history
+     */
+    @GetMapping("/history")
+    public ResponseEntity<?> getAllAnnotationActions() {
+        log.info("Fetching all annotation actions for annotation history view");
+        try {
+            // Use the service method to get all actions with inspection metadata
+            var result = annotationService.getAllAnnotationActionsWithMetadata();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error fetching annotation history", e);
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("success", false, "error", "Failed to fetch annotation history: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Helper method to get current authenticated username
      */
     private String getCurrentUsername() {

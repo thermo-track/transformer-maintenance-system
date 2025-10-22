@@ -5,8 +5,9 @@ import apiClient from '../../config/api';
 import './ModelRetraining.css';
 
 /**
- * Model Retraining Page - Admin only
- * Displays anomaly annotations and allows triggering model retraining
+ * Model Retraining Page
+ * Displays anomaly annotations and allows triggering model retraining (admin only)
+ * Regular users can view annotation history but cannot retrain
  */
 export default function ModelRetrainingPage() {
   const navigate = useNavigate();
@@ -25,12 +26,8 @@ export default function ModelRetrainingPage() {
     inspections: 0
   });
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!hasRole('ROLE_ADMIN')) {
-      navigate('/transformers');
-    }
-  }, [hasRole, navigate]);
+  // Check if user is admin (for hiding retrain button)
+  const isAdmin = hasRole('ROLE_ADMIN');
 
   // Load annotations and stats
   useEffect(() => {
@@ -43,7 +40,12 @@ export default function ModelRetrainingPage() {
       setLoading(true);
       setError(null);
 
-      const response = await apiClient.get('/api/admin/retraining/annotations');
+      // Use different endpoint based on user role
+      const endpoint = isAdmin 
+        ? '/api/admin/retraining/annotations'
+        : '/api/annotations/history';
+      
+      const response = await apiClient.get(endpoint);
       
       if (response.data.success) {
         const grouped = groupByInspection(response.data.annotations || []);
@@ -110,6 +112,9 @@ export default function ModelRetrainingPage() {
   };
 
   const checkRetrainingStatus = async () => {
+    // Only check retraining status for admins
+    if (!isAdmin) return;
+    
     try {
       const response = await apiClient.get('/api/admin/model/retraining/status');
       if (response.data.success) {
@@ -266,8 +271,12 @@ export default function ModelRetrainingPage() {
   return (
     <div className="retraining-container">
       <div className="retraining-header">
-        <h1>🧠 Model Retraining</h1>
-        <p className="subtitle">Manage anomaly annotations and retrain the detection model</p>
+        <h1>🧠 {isAdmin ? 'Model Retraining' : 'Annotation History'}</h1>
+        <p className="subtitle">
+          {isAdmin 
+            ? 'Manage anomaly annotations and retrain the detection model' 
+            : 'View annotation history and user feedback on anomaly detections'}
+        </p>
       </div>
 
       {/* Error/Success Messages */}
@@ -285,8 +294,8 @@ export default function ModelRetrainingPage() {
         </div>
       )}
 
-      {/* Retraining Status */}
-      {retrainingStatus && (
+      {/* Retraining Status - Admin only */}
+      {isAdmin && retrainingStatus && (
         <div className={`status-banner status-${retrainingStatus.toLowerCase()}`}>
           <h3>Current Status: {retrainingStatus}</h3>
           {retrainingStatus === 'RUNNING' && (
@@ -339,13 +348,15 @@ export default function ModelRetrainingPage() {
 
       {/* Action Buttons */}
       <div className="action-section">
-        <button
-          onClick={handleStartRetraining}
-          disabled={loading || retrainingStatus === 'RUNNING' || stats.total === 0}
-          className="btn-primary btn-retrain"
-        >
-          {retrainingStatus === 'RUNNING' ? '⏳ Retraining...' : '🚀 Start Retraining'}
-        </button>
+        {isAdmin && (
+          <button
+            onClick={handleStartRetraining}
+            disabled={loading || retrainingStatus === 'RUNNING' || stats.total === 0}
+            className="btn-primary btn-retrain"
+          >
+            {retrainingStatus === 'RUNNING' ? '⏳ Retraining...' : '🚀 Start Retraining'}
+          </button>
+        )}
         <button
           onClick={loadAnnotations}
           disabled={loading}
