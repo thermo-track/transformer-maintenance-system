@@ -120,7 +120,134 @@ The system uses color temperature analysis from thermal images to classify trans
 - Overlay PNG visualizing anomalies with color-coded labels
 - Detection metrics including IoU, area, and anomaly scores
 
-## 👤 User Management & Authentication
+## Interactive Annotation & Feedback System
+
+A comprehensive annotation system that allows users to interactively correct, validate, and improve AI-generated detections. This creates a feedback loop for continuous model improvement.
+
+### Interactive Annotation Tools
+
+The annotation editor provides intuitive tools for modifying AI detections and adding manual annotations:
+
+#### Canvas-Based Annotation Interface
+- **Konva-Powered Canvas**: High-performance canvas rendering with React-Konva for smooth interactions
+- **Real-time Visual Feedback**: Live updates during bounding box manipulation
+- **Responsive Zoom & Pan**: Navigate thermal images with ease during annotation
+
+#### Bounding Box Manipulation
+- **Resize Annotations**: Drag any corner or edge to resize bounding boxes
+  - All 8 anchor points active (corners + edges)
+  - Precise coordinate calculation during resize
+  - Real-time dimension updates
+- **Reposition Annotations**: Drag bounding boxes to new locations
+  - Smooth dragging
+  - Snap-to-grid option for precise placement
+
+#### Add New Annotations
+- **Draw Mode**: Enter drawing mode to create new bounding boxes
+- **Click & Drag**: Draw rectangular regions around undetected anomalies
+- **Classification Dialog**: Select fault type from dropdown after drawing
+  - Full wire overload
+  - Loose Joint - Faulty
+  - Loose Joint - Potential
+  - Point Overload - Faulty
+  - Normal
+
+#### Delete & Reject Annotations
+- **Delete User Annotations**: Remove incorrectly added annotations
+- **Reject AI Detections**: Mark AI detections as false positives
+  - Requires comment/reason for rejection
+  - Soft delete - retained for model training
+- **Approve AI Detections**: Accept AI detections as correct
+  - Single-click approval with checkmark icon
+  - Approved status displayed with green badge
+
+#### Edit Annotations
+- **Inline Edit Panel**: Edit fault type classification without redrawing
+- **Geometry + Classification**: Modify both bounding box and fault type
+- **Version Control**: Superseded annotations marked as inactive, new version created
+
+#### Annotation Metadata
+All annotation actions automatically capture:
+- **Action Type**: CREATED, EDITED, DELETED, APPROVED, REJECTED, COMMENTED
+- **User Information**: Username and user ID
+- **Timestamp**: Precise action timestamp
+- **Comments**: Optional notes for each action
+- **Before/After State**: Complete audit trail of changes
+  - Previous bounding box coordinates (x, y, width, height)
+  - Previous classification (fault type, confidence, class ID)
+  - New bounding box coordinates
+  - New classification details
+
+#### Annotation Retrieval
+- **Auto-Load on Page Visit**: Previously annotated images load existing annotations
+- **Separate Views**: 
+  - AI Detections: Original AI-generated anomalies
+  - User Annotations: User-created annotations
+
+### Feedback Integration for Model Improvement
+
+Comprehensive feedback logging and export system for model retraining:
+
+#### Feedback Log Maintenance
+- **Complete Action History**: Every annotation action logged with full context
+- **Enriched Metadata**: Each entry includes:
+  - Original AI prediction
+  - Final user-modified annotation
+  - Transformer ID and location
+  - Inspection timestamp
+  - User who made the change
+  - Action type and reason
+
+#### Annotation History Page
+**For All Users**:
+- View complete annotation history across all inspections
+- Statistics dashboard:
+  - Total actions (created, edited, deleted, approved, rejected, commented)
+  - Actions by inspection
+  - Timeline visualization
+- **Advanced Filtering**:
+  - Filter by action type
+  - Filter by date range (Today, Last 7/30/90 days, Custom range)
+  - Filter by transformer ID
+  - Filter by username
+  - Search by inspection ID
+- **Expand/Collapse Views**: Drill down into each inspection's actions
+- **Before/After Comparison**: See what changed for each edit action
+
+**For Admins Only**:
+- Access to model retraining interface
+- Trigger retraining with annotation feedback
+- Monitor retraining status and progress
+
+#### Export Functionality
+
+- CSV Export
+- Excel Export
+- JSON Export
+
+#### Model Training Integration
+- **Ground Truth Annotations**: User corrections serve as ground truth
+- **False Positive Tracking**: Rejected AI detections identified
+- **Missing Detection Tracking**: User-added annotations show gaps in model
+- **Continuous Improvement**: Feedback loop enables iterative model refinement
+
+
+### User Roles & Access Control
+
+#### Regular Users
+- ✅ View and annotate their own inspections
+- ✅ View annotation history (read-only)
+- ✅ Export annotation data
+- ❌ Cannot trigger model retraining
+
+#### Admin Users
+- ✅ All regular user capabilities
+- ✅ Trigger model retraining with feedback data
+- ✅ View retraining status and progress
+- ✅ View all users' annotations
+- ✅ Admin user approvals
+
+## �👤 User Management & Authentication
 
 Comprehensive user authentication and profile management system with secure account handling.
 
@@ -311,6 +438,10 @@ python tms-fault-detection-model/api/inference_api.py
 - **React Router**: Client-side routing
 - **Axios**: HTTP client with interceptors
 - **Lucide React**: Icon library
+- **React-Konva**: Canvas library for interactive annotations
+- **Konva**: HTML5 2D canvas library for high-performance rendering
+- **Material-UI (MUI)**: Component library for dialogs, forms, and UI elements
+- **XLSX**: Excel file generation for data export
 - **JavaScript/JSX**: Primary development language
 
 ### Backend
@@ -349,23 +480,47 @@ transformer-maintenance-system/
 │   ├── src/main/java/                # Java source code
 │   │   ├── config/                   # Security, CORS, DB configs
 │   │   ├── transformer/              # Transformer entities & APIs
-│   │   ├── inspection/               # Inspection entities & APIs
+│   │   ├── inspection/               # Inspection, anomaly & annotation
+│   │   │   ├── controller/           # REST controllers
+│   │   │   │   └── AnnotationController.java
+│   │   │   ├── service/              # Business logic
+│   │   │   │   └── AnnotationService.java
+│   │   │   ├── domain/               # Entities
+│   │   │   │   ├── InspectionAnomaly.java
+│   │   │   │   └── AnnotationAction.java
+│   │   │   ├── repository/           # Data access
+│   │   │   └── dto/                  # Data transfer objects
+│   │   ├── admin/                    # Admin-only features
+│   │   │   ├── controller/           
+│   │   │   │   └── AdminRetrainingController.java
+│   │   │   └── service/
+│   │   │       └── ModelRetrainingService.java
 │   │   └── user/                     # User management & auth
 │   ├── src/main/resources/           # Application properties
 │   └── pom.xml                       # Maven dependencies
 ├── tms-frontend-application/         # React frontend
 │   ├── src/
 │   │   ├── components/               # Reusable components
+│   │   │   ├── AnnotationCanvas.jsx  # Interactive canvas
+│   │   │   └── AnnotationPanel.jsx   # Annotation controls
+│   │   ├── pages/                    # Page components
+│   │   │   └── AnnotationPage.jsx    # Main annotation interface
 │   │   ├── features/                 # Feature modules
 │   │   │   ├── auth/                 # Authentication pages
+│   │   │   ├── admin/                # Admin features
+│   │   │   │   └── ModelRetrainingPage.jsx
 │   │   │   ├── transformers/         # Transformer management
 │   │   │   └── maintenance/          # Inspection management
+│   │   ├── services/                 # API services
+│   │   │   └── AnnotationService.jsx
+│   │   ├── utils/                    # Utilities
+│   │   │   └── faultTypeUtils.js     # Fault type mappings
 │   │   ├── config/                   # API configuration
 │   │   ├── contexts/                 # React contexts
 │   │   └── styles/                   # Global styles
 │   ├── package.json                  # npm dependencies
 │   └── vite.config.js               # Vite configuration
-├── tms-fault-detection-model/                # AI anomaly detection
+├── tms-fault-detection-model/        # AI anomaly detection
 │   ├── api/                          # Inference API
 │   ├── pipeline/                     # Detection pipeline
 │   │   ├── detector.py               # YOLO detector
@@ -374,6 +529,7 @@ transformer-maintenance-system/
 │   ├── weights/                      # YOLO model weights
 │   │   └── best.pt                   # Trained model
 │   └── requirements.txt              # Python dependencies
+├── Annotated_dataset/                # Training dataset
 └── README.md                         # This file
 ```
 
@@ -385,14 +541,21 @@ transformer-maintenance-system/
 
 ### AI & Detection
 - **Model Training**: YOLO model requires retraining for new fault types or improved accuracy
+- **Model Retraining Workflow**: Admin-only model retraining with annotated feedback not yet fully automated
 
-### Data & Validation
+### Annotation System
+- ⚠️ **Concurrent Editing**: No locking mechanism - last edit wins if multiple users edit simultaneously
+- ⚠️ **Undo/Redo**: Not yet implemented (manual reversal of actions required)
+
+### Data & Analytics
 - **Data Backup**: No automated backup strategy for database and images
-- **Data Export**: No bulk export functionality for reports and historical data
+- **Advanced Analytics**: Data visualization dashboard for inspection trends not yet available
+- **Notification System**: Real-time alerts for critical anomalies not implemented
 
 ### Infrastructure & Deployment
 - **IaC Scripts**: No Terraform or Docker Compose for automated deployment
 - **CI/CD Pipeline**: No automated testing and deployment pipeline
+- **API Documentation**: Swagger/OpenAPI integration pending
 
 ### User Experience
 - **Mobile Optimization**: Layout not fully optimized for narrow devices or tablets
@@ -400,14 +563,35 @@ transformer-maintenance-system/
 ## � Key Features Summary
 
 ### ✅ Completed Features
+
+**Phase 1: Foundation**
 - ✅ **Full CRUD Operations**: Transformers, inspections, images, and user accounts
-- ✅ **User Authentication**: Registration, OTP verification, login, and secure logout
-- ✅ **Profile Management**: User profiles with photo upload and account settings
 - ✅ **Thermal Image Storage**: Cloudinary integration for baseline and inspection images
 - ✅ **Map Integration**: Google Maps for transformer locations and directions
-- ✅ **AI Anomaly Detection**: YOLOv11-based fault detection with image comparison
 - ✅ **Search & Filtering**: Efficient data retrieval and filtering mechanisms
 - ✅ **Responsive UI**: Modern React interface with sliding panel navigation
+
+**Phase 2: AI Detection**
+- ✅ **AI Anomaly Detection**: YOLOv11-based fault detection with image comparison
+- ✅ **Multi-Class Fault Classification**: 5 fault types with confidence scores
+- ✅ **Detection Fusion**: IoU-based matching of unsupervised and YOLO detections
+- ✅ **Visual Overlays**: Color-coded bounding boxes with fault labels
+
+**Phase 3: Interactive Annotations**
+- ✅ **Interactive Canvas**: Konva-powered annotation editor with real-time feedback
+- ✅ **Bounding Box Tools**: Resize, reposition, add, delete annotations
+- ✅ **Annotation Actions**: Create, Edit, Delete, Approve, Reject, Comment
+- ✅ **Automatic Persistence**: No manual save - all actions auto-logged
+- ✅ **Complete Audit Trail**: Full before/after tracking with metadata
+- ✅ **Annotation History**: Timeline view with filtering and search
+- ✅ **Multi-Format Export**: CSV, Excel (multi-sheet), and JSON exports
+- ✅ **Advanced Filtering**: Filter by action type, date range, user, transformer, inspection
+- ✅ **Approved Status Tracking**: Visual indicators for approved AI detections
+- ✅ **Role-Based Access**: Separate views for admins and regular users
+
+**User Management**
+- ✅ **User Authentication**: Registration, OTP verification, login, and secure logout
+- ✅ **Profile Management**: User profiles with photo upload and account settings
 - ✅ **Email Verification**: OTP-based email verification system
 - ✅ **Security Features**: BCrypt hashing, session management, 401 error handling
 

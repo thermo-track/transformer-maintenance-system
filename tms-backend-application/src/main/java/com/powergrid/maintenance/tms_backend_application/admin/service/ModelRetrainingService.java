@@ -272,7 +272,6 @@ public class ModelRetrainingService {
             // Count total detections
             int totalDetections = 0;
             for (Map<String, Object> img : images) {
-                @SuppressWarnings("unchecked")
                 List<?> dets = (List<?>) img.get("detections");
                 totalDetections += dets.size();
             }
@@ -289,6 +288,7 @@ public class ModelRetrainingService {
             String endpoint = finetuneServiceUrl + "/api/finetune";
             log.info("Calling Python service at: {}", endpoint);
             
+            @SuppressWarnings("unchecked")
             ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
                     endpoint, request, 
                     (Class<Map<String, Object>>)(Class<?>)Map.class

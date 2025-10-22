@@ -1,6 +1,5 @@
 package com.powergrid.maintenance.tms_backend_application.inspection.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
@@ -40,7 +39,6 @@ public class ThermalInferenceService {
     private final TransformerRepository transformerRepository;
     private final TransformerImageRepository transformerImageRepository;
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
 
     @Value("${inference.api.url:http://localhost:8001}")
     private String pythonApiUrl;
@@ -448,8 +446,6 @@ public class ThermalInferenceService {
                             anomaly.setCentroidX(bboxX + bboxWidth / 2.0);
                             anomaly.setCentroidY(bboxY + bboxHeight / 2.0);
                             anomaly.setAreaPx(bboxWidth * bboxHeight);
-
-                            anomaly.setDetectorBox(objectMapper.writeValueAsString(bboxXywh));
                         }
 
                         anomalyRepository.save(anomaly);
