@@ -32,15 +32,17 @@ export default function ModelRetrainingPage() {
   // Load annotations and stats
   useEffect(() => {
     loadAnnotations();
-    checkRetrainingStatus();
-  }, []);
+    if (isAdmin) {
+      checkRetrainingStatus();
+    }
+  }, [isAdmin]);
 
   const loadAnnotations = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Use different endpoint based on user role
+      // Use admin endpoint if admin, otherwise user endpoint
       const endpoint = isAdmin 
         ? '/api/admin/retraining/annotations'
         : '/api/annotations/history';
@@ -52,11 +54,14 @@ export default function ModelRetrainingPage() {
         setInspectionGroups(grouped);
         calculateStats(response.data.annotations || [], grouped.length);
       } else {
-        setError(response.data.message || 'Failed to load annotations');
+        const errorMsg = response.data.error || response.data.message || 'Failed to load annotations';
+        console.error('Backend returned error:', errorMsg);
+        setError(errorMsg);
       }
     } catch (err) {
       console.error('Error loading annotations:', err);
-      setError(err.response?.data?.message || 'Failed to load annotation data');
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to load annotation data';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -24,13 +24,22 @@ public interface RetrainingHistoryRepository extends JpaRepository<RetrainingHis
      * Find latest completed retraining
      */
     @Query("SELECT r FROM RetrainingHistory r WHERE r.status = 'COMPLETED' ORDER BY r.completedAt DESC")
-    Optional<RetrainingHistory> findLatestCompleted();
+    List<RetrainingHistory> findCompletedOrderByCompletedAtDesc();
+
+    /**
+     * Get latest completed retraining
+     */
+    default Optional<RetrainingHistory> findLatestCompleted() {
+        List<RetrainingHistory> results = findCompletedOrderByCompletedAtDesc();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
 
     /**
      * Find last successful retraining timestamp
      */
-    @Query("SELECT r.completedAt FROM RetrainingHistory r WHERE r.status = 'COMPLETED' ORDER BY r.completedAt DESC")
-    Optional<LocalDateTime> findLastCompletedTimestamp();
+    default Optional<LocalDateTime> findLastCompletedTimestamp() {
+        return findLatestCompleted().map(RetrainingHistory::getCompletedAt);
+    }
 
     /**
      * Find all by status
