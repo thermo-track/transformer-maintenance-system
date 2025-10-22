@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Transformer } from 'react-konva';
-import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { 
-    Save as SaveIcon,
+    Box, 
+    IconButton, 
+    Tooltip
+} from '@mui/material';
+import { 
     ZoomIn as ZoomInIcon,
     ZoomOut as ZoomOutIcon,
     ZoomOutMap as ResetZoomIcon
@@ -20,6 +23,7 @@ const AnnotationCanvas = ({
     onAnnotationSelect, 
     onAnnotationCreate, 
     onAnnotationEdit,
+    onAnnotationUpdate, // For live updates during editing
     drawMode = 'view', // 'view' | 'draw' | 'edit'
     selectedAnnotationId = null
 }) => {
@@ -38,6 +42,15 @@ const AnnotationCanvas = ({
     const containerRef = useRef(null);
     const transformerRef = useRef(null);
     const rectRefs = useRef({}); // Store refs to Rect elements only, not Groups
+    
+    // Fault type options (matching YOLO dataset classes)
+    const faultTypes = [
+        'Full wire overload',
+        'Loose Joint -Faulty',
+        'Loose Joint -Potential',
+        'Point Overload - Faulty',
+        'normal'
+    ];
 
     // Load image with authentication
     useEffect(() => {
@@ -150,14 +163,17 @@ const AnnotationCanvas = ({
         }
     }, [annotations, editingAnnotation]);
 
-    // Reset rect scale after editing annotation changes
+    // Ensure rect is reset when editingAnnotation updates (after transform end)
     useEffect(() => {
-        if (editingAnnotation && selectedAnnotationId) {
+        if (editingAnnotation && selectedAnnotationId === editingAnnotation.id) {
             const rect = rectRefs.current[selectedAnnotationId];
             if (rect) {
-                // Reset any scale that might have been applied during transform
+                // Ensure rect is at (0,0) with scale 1 after state update
+                rect.x(0);
+                rect.y(0);
                 rect.scaleX(1);
                 rect.scaleY(1);
+                rect.getLayer()?.batchDraw();
             }
         }
     }, [editingAnnotation, selectedAnnotationId]);
@@ -339,12 +355,76 @@ const AnnotationCanvas = ({
         // Use editingAnnotation if it exists (preserves any size changes), otherwise use original annotation
         const baseAnnotation = editingAnnotation && editingAnnotation.id === annotation.id ? editingAnnotation : annotation;
 
-        // Store in temporary state, don't save yet
-        setEditingAnnotation({
+        const updatedAnnotation = {
             ...baseAnnotation,
             bboxX: Math.round(newPos.x),
             bboxY: Math.round(newPos.y)
+            // bboxWidth and bboxHeight are preserved from baseAnnotation
+        };
+
+        console.log('[AnnotationCanvas] Drag End - Reposition only:', {
+            oldPosition: { x: baseAnnotation.bboxX, y: baseAnnotation.bboxY },
+            newPosition: { x: updatedAnnotation.bboxX, y: updatedAnnotation.bboxY },
+            dimensions: { width: updatedAnnotation.bboxWidth, height: updatedAnnotation.bboxHeight }
         });
+
+        // Store in temporary state, don't save yet
+        setEditingAnnotation(updatedAnnotation);
+        
+        // Notify parent of live update
+        if (onAnnotationUpdate) {
+            onAnnotationUpdate(updatedAnnotation);
+        }
+    };
+
+    const handleTransform = (e) => {
+        if (drawMode !== 'edit' || !selectedAnnotationId) return;
+
+        const rect = rectRefs.current[selectedAnnotationId];
+        if (!rect) return;
+
+        const scaleX = rect.scaleX();
+        const scaleY = rect.scaleY();
+        
+        // Get the parent group to get position
+        const group = rect.getParent();
+        const annotation = annotations.find(a => a.id === selectedAnnotationId);
+        
+        if (annotation) {
+            // Get the rect's position and size after transformation
+            const rectX = rect.x();
+            const rectY = rect.y();
+            
+            // Get absolute position on stage (this accounts for the group position)
+            const absolutePos = group.getAbsolutePosition();
+            
+            // The rect's position within the group (accounts for any offset during resize)
+            // When resizing from top or left, Konva changes the rect's x,y to keep the opposite corner fixed
+            const groupX = (absolutePos.x - stagePosition.x) / (scale * zoomLevel);
+            const groupY = (absolutePos.y - stagePosition.y) / (scale * zoomLevel);
+            
+            // Calculate the final position in image coordinates
+            // rectX and rectY represent the offset within the group caused by resizing from top/left
+            const imageX = groupX + (rectX / scale);
+            const imageY = groupY + (rectY / scale);
+            
+            // Calculate new dimensions in image coordinates
+            const newWidth = (rect.width() * scaleX) / scale;
+            const newHeight = (rect.height() * scaleY) / scale;
+            
+            const updatedAnnotation = {
+                ...annotation,
+                bboxX: imageX,
+                bboxY: imageY,
+                bboxWidth: newWidth,
+                bboxHeight: newHeight
+            };
+            
+            // Notify parent of live update (without updating React state to avoid re-render during transform)
+            if (onAnnotationUpdate) {
+                onAnnotationUpdate(updatedAnnotation);
+            }
+        }
     };
 
     const handleTransformEnd = (e) => {
@@ -361,27 +441,58 @@ const AnnotationCanvas = ({
         const annotation = annotations.find(a => a.id === selectedAnnotationId);
         
         if (annotation) {
-            // Get absolute position on stage
+            // Get the rect's position and size after transformation
+            const rectX = rect.x();
+            const rectY = rect.y();
+            
+            // Get absolute position on stage (this accounts for the group position)
             const absolutePos = group.getAbsolutePosition();
             
-            // Convert from screen coordinates to image coordinates
-            const imageX = (absolutePos.x - stagePosition.x) / (scale * zoomLevel);
-            const imageY = (absolutePos.y - stagePosition.y) / (scale * zoomLevel);
+            // The rect's position within the group (accounts for any offset during resize)
+            const groupX = (absolutePos.x - stagePosition.x) / (scale * zoomLevel);
+            const groupY = (absolutePos.y - stagePosition.y) / (scale * zoomLevel);
+            
+            // Calculate the final position in image coordinates
+            const imageX = groupX + (rectX / scale);
+            const imageY = groupY + (rectY / scale);
             
             // Calculate new dimensions in image coordinates
             const newWidth = (rect.width() * scaleX) / scale;
             const newHeight = (rect.height() * scaleY) / scale;
             
-            // Store in temporary state, don't save yet
-            setEditingAnnotation({
+            // Now round the values for final storage
+            const updatedAnnotation = {
                 ...annotation,
                 bboxX: Math.round(imageX),
                 bboxY: Math.round(imageY),
                 bboxWidth: Math.round(newWidth),
                 bboxHeight: Math.round(newHeight)
+            };
+            
+            console.log('[AnnotationCanvas] Transform End - Resize detected:', {
+                rectPosition: { x: rectX, y: rectY },
+                groupPosition: { x: groupX, y: groupY },
+                finalPosition: { x: imageX, y: imageY },
+                roundedPosition: { x: updatedAnnotation.bboxX, y: updatedAnnotation.bboxY },
+                scales: { scaleX, scaleY },
+                dimensions: { width: newWidth, height: newHeight }
             });
-
-            // Don't reset scale and dimensions here - let the component re-render with new values
+            
+            // Reset the rect's transformation first
+            rect.x(0);
+            rect.y(0);
+            rect.scaleX(1);
+            rect.scaleY(1);
+            
+            // Store in temporary state with rounded values
+            setEditingAnnotation(updatedAnnotation);
+            
+            // Notify parent of live update
+            if (onAnnotationUpdate) {
+                onAnnotationUpdate(updatedAnnotation);
+            }
+            
+            // Force redraw
             rect.getLayer().batchDraw();
         }
     };
@@ -392,6 +503,15 @@ const AnnotationCanvas = ({
             // Don't clear editingAnnotation immediately - wait for reload to complete
             // This prevents the blink to original position
             // The useEffect will clear it when drawMode changes or component updates
+        }
+    };
+
+    const handleFaultTypeChange = (newFaultType) => {
+        if (editingAnnotation) {
+            setEditingAnnotation({
+                ...editingAnnotation,
+                faultType: newFaultType
+            });
         }
     };
 
@@ -449,28 +569,6 @@ const AnnotationCanvas = ({
                 </Tooltip>
             </Box>
 
-            {/* Save button for edit mode */}
-            {drawMode === 'edit' && editingAnnotation && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 10,
-                        right: 70,
-                        zIndex: 1000
-                    }}
-                >
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<SaveIcon />}
-                        onClick={handleSaveEdit}
-                        size="small"
-                    >
-                        Save Changes
-                    </Button>
-                </Box>
-            )}
-
             <Stage
                 ref={stageRef}
                 width={stageSize.width}
@@ -517,6 +615,8 @@ const AnnotationCanvas = ({
                                             rectRefs.current[annotation.id] = node;
                                         }
                                     }}
+                                    x={0}
+                                    y={0}
                                     width={currentAnnotation.bboxWidth * scale}
                                     height={currentAnnotation.bboxHeight * scale}
                                     stroke={getAnnotationColor(annotation)}
@@ -528,6 +628,7 @@ const AnnotationCanvas = ({
                                     listening={isInteractive}
                                     onClick={() => handleAnnotationClick(annotation)}
                                     onTap={() => handleAnnotationClick(annotation)}
+                                    onTransform={handleTransform}
                                     onTransformEnd={handleTransformEnd}
                                 />
                                 <Text

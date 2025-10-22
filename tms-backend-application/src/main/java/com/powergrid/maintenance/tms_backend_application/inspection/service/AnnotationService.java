@@ -83,10 +83,20 @@ public class AnnotationService {
 
         // Set geometry
         if (request.getGeometry() != null) {
-            anomaly.setBboxX(request.getGeometry().getX());
-            anomaly.setBboxY(request.getGeometry().getY());
-            anomaly.setBboxWidth(request.getGeometry().getWidth());
-            anomaly.setBboxHeight(request.getGeometry().getHeight());
+            Integer bboxX = request.getGeometry().getX();
+            Integer bboxY = request.getGeometry().getY();
+            Integer bboxWidth = request.getGeometry().getWidth();
+            Integer bboxHeight = request.getGeometry().getHeight();
+            
+            anomaly.setBboxX(bboxX);
+            anomaly.setBboxY(bboxY);
+            anomaly.setBboxWidth(bboxWidth);
+            anomaly.setBboxHeight(bboxHeight);
+            
+            // Calculate centroid and area
+            anomaly.setCentroidX(bboxX + bboxWidth / 2.0);
+            anomaly.setCentroidY(bboxY + bboxHeight / 2.0);
+            anomaly.setAreaPx(bboxWidth * bboxHeight);
         }
 
         // Set classification
@@ -140,18 +150,34 @@ public class AnnotationService {
         newAnomaly.setCreatedBy(username);
 
         // Set new geometry
+        Integer bboxX, bboxY, bboxWidth, bboxHeight;
         if (request.getGeometry() != null) {
-            newAnomaly.setBboxX(request.getGeometry().getX());
-            newAnomaly.setBboxY(request.getGeometry().getY());
-            newAnomaly.setBboxWidth(request.getGeometry().getWidth());
-            newAnomaly.setBboxHeight(request.getGeometry().getHeight());
+            bboxX = request.getGeometry().getX();
+            bboxY = request.getGeometry().getY();
+            bboxWidth = request.getGeometry().getWidth();
+            bboxHeight = request.getGeometry().getHeight();
+            
+            newAnomaly.setBboxX(bboxX);
+            newAnomaly.setBboxY(bboxY);
+            newAnomaly.setBboxWidth(bboxWidth);
+            newAnomaly.setBboxHeight(bboxHeight);
         } else {
             // Keep original geometry if not provided
-            newAnomaly.setBboxX(original.getBboxX());
-            newAnomaly.setBboxY(original.getBboxY());
-            newAnomaly.setBboxWidth(original.getBboxWidth());
-            newAnomaly.setBboxHeight(original.getBboxHeight());
+            bboxX = original.getBboxX();
+            bboxY = original.getBboxY();
+            bboxWidth = original.getBboxWidth();
+            bboxHeight = original.getBboxHeight();
+            
+            newAnomaly.setBboxX(bboxX);
+            newAnomaly.setBboxY(bboxY);
+            newAnomaly.setBboxWidth(bboxWidth);
+            newAnomaly.setBboxHeight(bboxHeight);
         }
+        
+        // Calculate centroid and area
+        newAnomaly.setCentroidX(bboxX + bboxWidth / 2.0);
+        newAnomaly.setCentroidY(bboxY + bboxHeight / 2.0);
+        newAnomaly.setAreaPx(bboxWidth * bboxHeight);
 
         // Set new classification
         if (request.getClassification() != null) {

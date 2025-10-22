@@ -47,6 +47,9 @@ const AnnotationPage = () => {
     const [pendingBbox, setPendingBbox] = useState(null);
     const [selectedFaultType, setSelectedFaultType] = useState('');
     
+    // Live editing annotation state (for live updates before save)
+    const [liveEditingAnnotation, setLiveEditingAnnotation] = useState(null);
+    
     // Fault type options (matching YOLO dataset classes)
     const faultTypes = [
         'Full wire overload',
@@ -62,6 +65,17 @@ const AnnotationPage = () => {
     useEffect(() => {
         loadAnnotations();
     }, [inspectionId]);
+    
+    // Clear live editing annotation when annotations update
+    useEffect(() => {
+        if (liveEditingAnnotation) {
+            // Check if the editing annotation still exists in the updated annotations
+            const stillExists = annotations.find(a => a.id === liveEditingAnnotation.id);
+            if (!stillExists) {
+                setLiveEditingAnnotation(null);
+            }
+        }
+    }, [annotations]);
 
     const loadAnnotations = async () => {
         try {
@@ -168,6 +182,12 @@ const AnnotationPage = () => {
             showSnackbar('Failed to update annotation', 'error');
         }
     };
+    
+    const handleAnnotationUpdate = (updatedAnnotation) => {
+        // Live update during drag/resize (before save)
+        console.log('[AnnotationPage] Live update:', updatedAnnotation);
+        setLiveEditingAnnotation(updatedAnnotation);
+    };
 
     const handleDrawModeChange = (mode) => {
         setDrawMode(mode);
@@ -227,6 +247,7 @@ const AnnotationPage = () => {
                             onAnnotationSelect={handleAnnotationSelect}
                             onAnnotationCreate={handleAnnotationCreate}
                             onAnnotationEdit={handleAnnotationEdit}
+                            onAnnotationUpdate={handleAnnotationUpdate}
                             drawMode={drawMode}
                         />
                     </Paper>
@@ -243,6 +264,7 @@ const AnnotationPage = () => {
                             drawMode={drawMode}
                             setDrawMode={setDrawMode}
                             selectedAnnotationId={selectedAnnotationId}
+                            liveEditingAnnotation={liveEditingAnnotation}
                             onAnnotationSelect={handleAnnotationSelect}
                             onAnnotationsUpdate={loadAnnotations}
                             onDrawModeChange={handleDrawModeChange}
