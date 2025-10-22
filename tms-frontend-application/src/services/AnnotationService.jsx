@@ -186,6 +186,15 @@ class AnnotationService {
     }
 
     /**
+     * Alias for getAnnotationHistory
+     * @param {number} anomalyId 
+     * @returns {Promise}
+     */
+    async getHistory(anomalyId) {
+        return this.getAnnotationHistory(anomalyId);
+    }
+
+    /**
      * Get all actions for an inspection
      * @param {number} inspectionId 
      * @returns {Promise}

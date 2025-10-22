@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../config/api';
+import * as XLSX from 'xlsx';
 import './ModelRetraining.css';
 
 /**
@@ -212,6 +213,349 @@ export default function ModelRetrainingPage() {
     setTimeout(() => clearInterval(interval), 600000);
   };
 
+  const handleExportCSV = () => {
+    try {
+      // Flatten all actions from all inspection groups
+      const allActions = [];
+      
+      inspectionGroups.forEach(group => {
+        group.actions.forEach(action => {
+          allActions.push({
+            'Inspection ID': group.inspectionId,
+            'Transformer ID': group.transformerId,
+            'Transformer Name': group.transformerName,
+            'Anomaly ID': action.anomalyId,
+            'Action Type': action.actionType || action.action,
+            'Username': action.username || action.modifiedBy,
+            'Timestamp': formatDate(action.actionTimestamp || action.timestamp),
+            'Fault Type (Before)': action.previousClassification?.faultType || '',
+            'Confidence (Before)': action.previousClassification?.confidence 
+              ? (action.previousClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox (Before)': action.previousBbox 
+              ? `[${action.previousBbox.x},${action.previousBbox.y},${action.previousBbox.width}×${action.previousBbox.height}]`
+              : '',
+            'Fault Type (After)': action.newClassification?.faultType || '',
+            'Confidence (After)': action.newClassification?.confidence 
+              ? (action.newClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox (After)': action.newBbox 
+              ? `[${action.newBbox.x},${action.newBbox.y},${action.newBbox.width}×${action.newBbox.height}]`
+              : '',
+            'Comment': action.comment || ''
+          });
+        });
+      });
+
+      // Convert to CSV
+      const headers = [
+        'Inspection ID', 'Transformer ID', 'Transformer Name', 'Anomaly ID', 
+        'Action Type', 'Username', 'Timestamp', 
+        'Fault Type (Before)', 'Confidence (Before)', 'BBox (Before)',
+        'Fault Type (After)', 'Confidence (After)', 'BBox (After)', 'Comment'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...allActions.map(action => 
+          headers.map(header => {
+            const value = action[header] || '';
+            // Escape commas and quotes in CSV
+            const escaped = String(value).replace(/"/g, '""');
+            return `"${escaped}"`;
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `annotation_history_${timestamp}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setSuccess(`Exported ${allActions.length} annotation actions to CSV`);
+    } catch (err) {
+      console.error('Error exporting CSV:', err);
+      setError('Failed to export CSV file');
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      // Prepare data for Excel with multiple sheets
+      const workbook = XLSX.utils.book_new();
+      
+      // Sheet 1: Summary Statistics
+      const summaryData = [
+        ['Annotation History Summary'],
+        ['Generated:', new Date().toLocaleString()],
+        [],
+        ['Statistics'],
+        ['Total Actions:', stats.total],
+        ['Total Inspections:', stats.inspections],
+        ['Created:', stats.added],
+        ['Edited:', stats.edited],
+        ['Deleted:', stats.deleted],
+        [],
+        ['Breakdown by Inspection'],
+        ['Inspection ID', 'Transformer ID', 'Transformer', 'Total Actions', 'Created', 'Edited', 'Deleted', 'Approved', 'Rejected', 'Commented']
+      ];
+      
+      inspectionGroups.forEach(group => {
+        summaryData.push([
+          group.inspectionId,
+          group.transformerId,
+          group.transformerName,
+          group.actions.length,
+          group.stats.created,
+          group.stats.edited,
+          group.stats.deleted,
+          group.stats.approved,
+          group.stats.rejected,
+          group.stats.commented
+        ]);
+      });
+      
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      
+      // Set column widths for summary sheet
+      summarySheet['!cols'] = [
+        { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, 
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, 
+        { wch: 10 }, { wch: 10 }
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+      
+      // Sheet 2: Detailed Actions
+      const allActions = [];
+      
+      inspectionGroups.forEach(group => {
+        group.actions.forEach(action => {
+          allActions.push({
+            'Inspection ID': group.inspectionId,
+            'Transformer ID': group.transformerId,
+            'Transformer Name': group.transformerName,
+            'Anomaly ID': action.anomalyId,
+            'Action Type': action.actionType || action.action,
+            'Username': action.username || action.modifiedBy,
+            'Timestamp': formatDate(action.actionTimestamp || action.timestamp),
+            'Fault Type (Before)': action.previousClassification?.faultType || '',
+            'Confidence (Before)': action.previousClassification?.confidence 
+              ? (action.previousClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox X (Before)': action.previousBbox?.x || '',
+            'BBox Y (Before)': action.previousBbox?.y || '',
+            'BBox Width (Before)': action.previousBbox?.width || '',
+            'BBox Height (Before)': action.previousBbox?.height || '',
+            'Fault Type (After)': action.newClassification?.faultType || '',
+            'Confidence (After)': action.newClassification?.confidence 
+              ? (action.newClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox X (After)': action.newBbox?.x || '',
+            'BBox Y (After)': action.newBbox?.y || '',
+            'BBox Width (After)': action.newBbox?.width || '',
+            'BBox Height (After)': action.newBbox?.height || '',
+            'Comment': action.comment || ''
+          });
+        });
+      });
+
+      const detailsSheet = XLSX.utils.json_to_sheet(allActions);
+      
+      // Set column widths for details sheet
+      detailsSheet['!cols'] = [
+        { wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, 
+        { wch: 12 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
+        { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, 
+        { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 12 },
+        { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, detailsSheet, 'All Actions');
+      
+      // Sheet 3: Actions by Type
+      const actionsByType = {
+        'CREATED': [],
+        'EDITED': [],
+        'DELETED': [],
+        'APPROVED': [],
+        'REJECTED': [],
+        'COMMENTED': []
+      };
+      
+      allActions.forEach(action => {
+        const type = action['Action Type'];
+        if (actionsByType[type]) {
+          actionsByType[type].push(action);
+        }
+      });
+      
+      Object.keys(actionsByType).forEach(type => {
+        if (actionsByType[type].length > 0) {
+          const typeSheet = XLSX.utils.json_to_sheet(actionsByType[type]);
+          typeSheet['!cols'] = detailsSheet['!cols']; // Same column widths
+          XLSX.utils.book_append_sheet(workbook, typeSheet, type);
+        }
+      });
+      
+      // Generate and download file
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = `annotation_history_${timestamp}.xlsx`;
+      
+      XLSX.writeFile(workbook, filename);
+      
+      setSuccess(`Exported ${allActions.length} annotation actions to Excel with ${Object.keys(actionsByType).filter(k => actionsByType[k].length > 0).length + 2} sheets`);
+    } catch (err) {
+      console.error('Error exporting Excel:', err);
+      setError('Failed to export Excel file');
+    }
+  };
+
+  const handleExportJSON = () => {
+    try {
+      // Create a comprehensive JSON structure
+      const exportData = {
+        metadata: {
+          exportDate: new Date().toISOString(),
+          exportedBy: 'Annotation History System',
+          totalActions: stats.total,
+          totalInspections: stats.inspections,
+          version: '1.0'
+        },
+        summary: {
+          statistics: {
+            total: stats.total,
+            created: stats.added,
+            edited: stats.edited,
+            deleted: stats.deleted,
+            inspections: stats.inspections
+          },
+          inspectionBreakdown: inspectionGroups.map(group => ({
+            inspectionId: group.inspectionId,
+            transformerId: group.transformerId,
+            transformerName: group.transformerName,
+            totalActions: group.actions.length,
+            actionCounts: {
+              created: group.stats.created,
+              edited: group.stats.edited,
+              deleted: group.stats.deleted,
+              approved: group.stats.approved,
+              rejected: group.stats.rejected,
+              commented: group.stats.commented
+            },
+            lastActivity: group.actions[0]?.actionTimestamp || group.actions[0]?.timestamp
+          }))
+        },
+        inspections: inspectionGroups.map(group => ({
+          inspectionId: group.inspectionId,
+          transformerId: group.transformerId,
+          transformerName: group.transformerName,
+          actions: group.actions.map(action => ({
+            id: action.id,
+            anomalyId: action.anomalyId,
+            actionType: action.actionType || action.action,
+            username: action.username || action.modifiedBy,
+            timestamp: action.actionTimestamp || action.timestamp,
+            before: {
+              classification: action.previousClassification ? {
+                faultType: action.previousClassification.faultType,
+                confidence: action.previousClassification.confidence,
+                classId: action.previousClassification.classId
+              } : null,
+              boundingBox: action.previousBbox ? {
+                x: action.previousBbox.x,
+                y: action.previousBbox.y,
+                width: action.previousBbox.width,
+                height: action.previousBbox.height
+              } : null
+            },
+            after: {
+              classification: action.newClassification ? {
+                faultType: action.newClassification.faultType,
+                confidence: action.newClassification.confidence,
+                classId: action.newClassification.classId
+              } : null,
+              boundingBox: action.newBbox ? {
+                x: action.newBbox.x,
+                y: action.newBbox.y,
+                width: action.newBbox.width,
+                height: action.newBbox.height
+              } : null
+            },
+            comment: action.comment || null
+          }))
+        })),
+        actionsByType: {
+          created: [],
+          edited: [],
+          deleted: [],
+          approved: [],
+          rejected: [],
+          commented: []
+        }
+      };
+
+      // Populate actions by type
+      inspectionGroups.forEach(group => {
+        group.actions.forEach(action => {
+          const actionType = (action.actionType || action.action).toLowerCase();
+          const actionData = {
+            inspectionId: group.inspectionId,
+            transformerId: group.transformerId,
+            transformerName: group.transformerName,
+            anomalyId: action.anomalyId,
+            username: action.username || action.modifiedBy,
+            timestamp: action.actionTimestamp || action.timestamp,
+            before: {
+              classification: action.previousClassification,
+              boundingBox: action.previousBbox
+            },
+            after: {
+              classification: action.newClassification,
+              boundingBox: action.newBbox
+            },
+            comment: action.comment
+          };
+
+          if (exportData.actionsByType[actionType]) {
+            exportData.actionsByType[actionType].push(actionData);
+          }
+        });
+      });
+
+      // Convert to pretty-printed JSON (2-space indentation)
+      const jsonString = JSON.stringify(exportData, null, 2);
+
+      // Create and download file
+      const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `annotation_history_${timestamp}.json`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setSuccess(`Exported ${stats.total} annotation actions to formatted JSON`);
+    } catch (err) {
+      console.error('Error exporting JSON:', err);
+      setError('Failed to export JSON file');
+    }
+  };
+
   const getActionBadgeClass = (action) => {
     switch (action) {
       case 'CREATED': return 'badge-created';
@@ -363,6 +707,27 @@ export default function ModelRetrainingPage() {
           className="btn-secondary"
         >
           🔄 Refresh Data
+        </button>
+        <button
+          onClick={handleExportCSV}
+          disabled={loading || inspectionGroups.length === 0}
+          className="btn-secondary"
+        >
+          📥 Export CSV
+        </button>
+        <button
+          onClick={handleExportExcel}
+          disabled={loading || inspectionGroups.length === 0}
+          className="btn-secondary"
+        >
+          📊 Export Excel
+        </button>
+        <button
+          onClick={handleExportJSON}
+          disabled={loading || inspectionGroups.length === 0}
+          className="btn-secondary"
+        >
+          📄 Export JSON
         </button>
       </div>
 
