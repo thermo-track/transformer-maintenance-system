@@ -91,7 +91,7 @@ const AnnotationPanel = ({
                         approvedSet.add(anomaly.id);
                     }
                 } catch (error) {
-                    console.error(Error checking approval status for anomaly ${anomaly.id}:, error);
+                    console.error(`Error checking approval status for anomaly ${anomaly.id}:`, error);
                 }
             }
             
@@ -200,7 +200,7 @@ const AnnotationPanel = ({
                     confidence: anomaly.confidence || 1.0,
                     classId: getClassIdForFaultType(editFaultType)
                 },
-                comment: Fault type changed to ${editFaultType}
+                comment: `Fault type changed to ${editFaultType}`
             });
             
             setExpandedEditId(null);
@@ -263,7 +263,7 @@ const AnnotationPanel = ({
                                             Confidence:
                                         </Typography>
                                         <Chip 
-                                            label={${(anomaly.faultConfidence * 100).toFixed(0)}%} 
+                                            label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} 
                                             size="small" 
                                             color={getConfidenceColor(anomaly.faultConfidence)}
                                             sx={{ height: 18, fontSize: '0.65rem' }}
@@ -271,7 +271,7 @@ const AnnotationPanel = ({
                                     </Box>
                                 )}
                                 <Typography variant="caption" color="text.secondary">
-                                    {anomaly.createdBy ? By: ${anomaly.createdBy} : 'System generated'}
+                                    {anomaly.createdBy ? `By: ${anomaly.createdBy}` : 'System generated'}
                                 </Typography>
                             </Box>
                         }
@@ -381,9 +381,9 @@ const AnnotationPanel = ({
                         </Typography>
                         
                         <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                            <InputLabel id={fault-type-edit-${anomaly.id}}>Fault Type</InputLabel>
+                            <InputLabel id={`fault-type-edit-${anomaly.id}`}>Fault Type</InputLabel>
                             <Select
-                                labelId={fault-type-edit-${anomaly.id}}
+                                labelId={`fault-type-edit-${anomaly.id}`}
                                 value={editFaultType}
                                 onChange={(e) => setEditFaultType(e.target.value)}
                                 label="Fault Type"
