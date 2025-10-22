@@ -451,46 +451,6 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
         {/* Thermal Image Component */}
         {currentInspection ? (
           <div className="thermal-section">
-            {/* Edit Annotations Button */}
-            {hasCloudImage && (
-              <div style={{
-                marginBottom: '20px',
-                display: 'flex',
-                justifyContent: 'flex-end'
-              }}>
-                <button
-                  onClick={() => navigate(`/annotations/${currentInspection.inspectionId}`)}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.backgroundColor = '#1565c0';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.backgroundColor = '#1976d2';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                  }}
-                >
-                  <span style={{ fontSize: '20px' }}>✏️</span>
-                  Edit Annotations
-                </button>
-              </div>
-            )}
             {/* Show red warning if inference failed - now at the top */}
             {hasCloudImage && (inferenceStatus === 'FAILED' || inferenceStatus === 'SKIPPED') && (
               <div style={{

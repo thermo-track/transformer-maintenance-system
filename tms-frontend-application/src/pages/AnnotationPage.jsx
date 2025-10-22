@@ -22,6 +22,7 @@ import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import AnnotationCanvas from '../components/AnnotationCanvas';
 import AnnotationPanel from '../components/AnnotationPanel';
 import AnnotationService from '../services/AnnotationService';
+import { getClassIdForFaultType, FAULT_TYPES } from '../utils/faultTypeUtils';
 import apiClient from '../config/api';
 import './AnnotationPage.css';
 
@@ -49,15 +50,6 @@ const AnnotationPage = () => {
     
     // Live editing annotation state (for live updates before save)
     const [liveEditingAnnotation, setLiveEditingAnnotation] = useState(null);
-    
-    // Fault type options (matching YOLO dataset classes)
-    const faultTypes = [
-        'Full wire overload',
-        'Loose Joint -Faulty',
-        'Loose Joint -Potential',
-        'Point Overload - Faulty',
-        'normal'
-    ];
     
     // Mock user ID - in real app, get from auth context
     const userId = 1;
@@ -138,7 +130,7 @@ const AnnotationPage = () => {
                 classification: {
                     faultType: selectedFaultType,
                     confidence: 1.0, // Default confidence for user annotations
-                    classId: 0
+                    classId: getClassIdForFaultType(selectedFaultType)
                 },
                 comment: 'User-created annotation'
             });
@@ -299,7 +291,7 @@ const AnnotationPage = () => {
                                 onChange={(e) => setSelectedFaultType(e.target.value)}
                                 label="Fault Type"
                             >
-                                {faultTypes.map((type) => (
+                                {FAULT_TYPES.map((type) => (
                                     <MenuItem key={type} value={type}>
                                         {type}
                                     </MenuItem>

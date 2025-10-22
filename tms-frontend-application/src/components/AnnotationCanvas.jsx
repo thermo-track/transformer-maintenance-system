@@ -42,15 +42,6 @@ const AnnotationCanvas = ({
     const containerRef = useRef(null);
     const transformerRef = useRef(null);
     const rectRefs = useRef({}); // Store refs to Rect elements only, not Groups
-    
-    // Fault type options (matching YOLO dataset classes)
-    const faultTypes = [
-        'Full wire overload',
-        'Loose Joint -Faulty',
-        'Loose Joint -Potential',
-        'Point Overload - Faulty',
-        'normal'
-    ];
 
     // Load image with authentication
     useEffect(() => {

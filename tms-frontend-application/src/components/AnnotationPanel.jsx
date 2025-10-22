@@ -38,6 +38,7 @@ import {
     Save as SaveIcon
 } from '@mui/icons-material';
 import AnnotationService from '../services/AnnotationService';
+import { getClassIdForFaultType, FAULT_TYPES } from '../utils/faultTypeUtils';
 import './AnnotationPanel.css';
 
 /**
@@ -69,15 +70,6 @@ const AnnotationPanel = ({
     // Inline edit panel state
     const [expandedEditId, setExpandedEditId] = useState(null);
     const [editFaultType, setEditFaultType] = useState('');
-    
-    // Fault types matching YOLO classes
-    const faultTypes = [
-        'Full wire overload',
-        'Loose Joint -Faulty',
-        'Loose Joint -Potential',
-        'Point Overload - Faulty',
-        'normal'
-    ];
 
     // Handlers
     const handleAcceptAI = async (anomaly) => {
@@ -172,7 +164,7 @@ const AnnotationPanel = ({
                 classification: {
                     faultType: editFaultType,
                     confidence: anomaly.confidence || 1.0,
-                    classId: anomaly.classId || 0
+                    classId: getClassIdForFaultType(editFaultType)
                 },
                 comment: `Fault type changed to ${editFaultType}`
             });
@@ -210,73 +202,112 @@ const AnnotationPanel = ({
                     selected={selectedAnnotationId === anomaly.id}
                     onClick={() => onAnnotationSelect(anomaly)}
                     sx={{ 
-                        border: selectedAnnotationId === anomaly.id ? '2px solid #1976d2' : '1px solid #ddd',
+                        border: selectedAnnotationId === anomaly.id ? '2px solid #1976d2' : '1px solid #e0e0e0',
                         borderRadius: 1,
                         mb: 1,
                         backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : 'white',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        py: 1.5,
+                        '&:hover': {
+                            backgroundColor: selectedAnnotationId === anomaly.id ? '#e3f2fd' : '#f5f5f5'
+                        }
                     }}
                 >
                     <ListItemText
                         primary={
-                            <Box display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2">
+                            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                <Typography variant="subtitle2" fontWeight="medium" sx={{ flex: 1 }}>
                                     {anomaly.faultType || 'Unknown'}
                                 </Typography>
-                                {isAI && (
-                                    <>
-                                        <Chip label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} size="small" color={getConfidenceColor(anomaly.faultConfidence)} />
-                                        <Chip label="AI" size="small" color="success" variant="outlined" />
-                                    </>
-                                )}
                             </Box>
                         }
                         secondary={
-                            <Typography variant="caption" color="textSecondary">
-                                {anomaly.createdBy ? `Created by: ${anomaly.createdBy}` : 'AI Generated'}
-                            </Typography>
+                            <Box display="flex" flexDirection="column" gap={0.5}>
+                                {isAI && (
+                                    <Box display="flex" alignItems="center" gap={0.5}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Confidence:
+                                        </Typography>
+                                        <Chip 
+                                            label={`${(anomaly.faultConfidence * 100).toFixed(0)}%`} 
+                                            size="small" 
+                                            color={getConfidenceColor(anomaly.faultConfidence)}
+                                            sx={{ height: 18, fontSize: '0.65rem' }}
+                                        />
+                                    </Box>
+                                )}
+                                <Typography variant="caption" color="text.secondary">
+                                    {anomaly.createdBy ? `By: ${anomaly.createdBy}` : 'System generated'}
+                                </Typography>
+                            </Box>
                         }
                     />
                     <ListItemSecondaryAction>
-                        <Box display="flex" gap={0.5}>
+                        <Box display="flex" flexDirection="column" gap={0.5} alignItems="flex-end">
                             {isAI && (
-                                <>
-                                    <Tooltip title="Accept">
-                                        <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}>
+                                <Box display="flex" gap={0.5}>
+                                    <Tooltip title="Accept" arrow>
+                                        <IconButton 
+                                            size="small" 
+                                            color="success" 
+                                            onClick={(e) => { e.stopPropagation(); handleAcceptAI(anomaly); }}
+                                            sx={{ padding: '4px' }}
+                                        >
                                             <CheckIcon fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
-                                    <Tooltip title="Reject">
-                                        <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}>
+                                    <Tooltip title="Reject" arrow>
+                                        <IconButton 
+                                            size="small" 
+                                            color="error" 
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}
+                                            sx={{ padding: '4px' }}
+                                        >
                                             <CloseIcon fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
-                                </>
+                                </Box>
                             )}
-                            <Tooltip title="Edit">
-                                <IconButton 
-                                    size="small" 
-                                    color={isExpanded ? "primary" : "default"}
-                                    onClick={(e) => { e.stopPropagation(); handleEditAnnotation(anomaly); }}
-                                >
-                                    <EditIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Comment">
-                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleAddComment(anomaly); }}>
-                                    <CommentIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                                <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}>
-                                    <DeleteIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="History">
-                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleViewHistory(anomaly); }}>
-                                    <HistoryIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
+                            <Box display="flex" gap={0.5}>
+                                <Tooltip title="Edit" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        color={isExpanded ? "primary" : "default"}
+                                        onClick={(e) => { e.stopPropagation(); handleEditAnnotation(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Comment" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={(e) => { e.stopPropagation(); handleAddComment(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <CommentIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        color="error" 
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="History" arrow>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={(e) => { e.stopPropagation(); handleViewHistory(anomaly); }}
+                                        sx={{ padding: '4px' }}
+                                    >
+                                        <HistoryIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
                         </Box>
                     </ListItemSecondaryAction>
                 </ListItem>
@@ -305,7 +336,7 @@ const AnnotationPanel = ({
                                 onChange={(e) => setEditFaultType(e.target.value)}
                                 label="Fault Type"
                             >
-                                {faultTypes.map((type) => (
+                                {FAULT_TYPES.map((type) => (
                                     <MenuItem key={type} value={type}>
                                         {type}
                                     </MenuItem>
