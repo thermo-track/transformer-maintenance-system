@@ -1,45 +1,70 @@
 package com.powergrid.maintenance.tms_backend_application.admin.service;
 
-import com.powergrid.maintenance.tms_backend_application.admin.dto.RetrainingRequest;
+import com.powergrid.maintenance.tms_backend_application.admin.domain.RetrainingHistory;
+import com.powergrid.maintenance.tms_backend_application.admin.repository.RetrainingHistoryRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.AnnotationAction;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
+import com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata;
+import com.powergrid.maintenance.tms_backend_application.inspection.model.ActionType;
 import com.powergrid.maintenance.tms_backend_application.inspection.repository.AnnotationActionRepository;
+import com.powergrid.maintenance.tms_backend_application.inspection.repo.InferenceMetadataRepository;
+import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionAnomalyRepository;
 import com.powergrid.maintenance.tms_backend_application.inspection.repo.InspectionRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing model retraining operations.
- * For now, this is a basic implementation. You can enhance it later with:
- * - Database persistence for training jobs
- * - Background job execution
- * - Metrics tracking
+ * Handles incremental fine-tuning with user corrections.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ModelRetrainingService {
 
-    // In-memory storage for job status (use database in production)
-    private final Map<String, Map<String, Object>> jobStatusMap = new HashMap<>();
-    
     private final AnnotationActionRepository annotationActionRepository;
     private final InspectionRepo inspectionRepo;
+    private final InspectionAnomalyRepository anomalyRepository;
+    private final InferenceMetadataRepository inferenceMetadataRepository;
+    private final RetrainingHistoryRepository retrainingHistoryRepository;
+    private final RestTemplate restTemplate;
+
+    @Value("${finetune.service.url:http://localhost:8002}")
+    private String finetuneServiceUrl;
     
     /**
-     * Get all annotation actions for retraining review
+     * Get annotation actions since last retraining for display
      * Returns annotations grouped with inspection metadata
      */
     public Map<String, Object> getAllAnnotationActions() {
-        log.info("Fetching all annotation actions");
+        log.info("Fetching annotation actions since last retraining");
         
         try {
-            // Get all annotation actions ordered by timestamp (newest first)
-            List<AnnotationAction> actions = annotationActionRepository.findAll();
-            actions.sort((a, b) -> b.getActionTimestamp().compareTo(a.getActionTimestamp()));
+            // Get last completed retraining timestamp
+            LocalDateTime sinceTimestamp = retrainingHistoryRepository
+                    .findLastCompletedTimestamp()
+                    .orElse(LocalDateTime.of(2000, 1, 1, 0, 0)); // Start of time if no retraining yet
+            
+            log.info("Fetching actions since: {}", sinceTimestamp);
+            
+            // Get all annotation actions after last retraining
+            List<AnnotationAction> actions = annotationActionRepository.findAll().stream()
+                    .filter(a -> a.getActionTimestamp().isAfter(sinceTimestamp))
+                    .sorted((a, b) -> b.getActionTimestamp().compareTo(a.getActionTimestamp()))
+                    .collect(Collectors.toList());
             
             // Enrich with inspection metadata
             Map<Long, Inspection> inspectionCache = new HashMap<>();
@@ -87,8 +112,9 @@ public class ModelRetrainingService {
             result.put("success", true);
             result.put("annotations", enrichedActions);
             result.put("total", enrichedActions.size());
+            result.put("sinceTimestamp", sinceTimestamp);
             
-            log.info("Fetched {} annotation actions", enrichedActions.size());
+            log.info("Fetched {} annotation actions since {}", enrichedActions.size(), sinceTimestamp);
             return result;
             
         } catch (Exception e) {
@@ -103,97 +129,254 @@ public class ModelRetrainingService {
     }
     
     /**
+     * Get inspections affected by user actions (for fine-tuning)
+     * Only includes inspections with CREATED, EDITED, DELETED, or REJECTED actions
+     * Excludes APPROVED and COMMENTED only actions
+     */
+    private Set<Long> getAffectedInspections(LocalDateTime since) {
+        List<AnnotationAction> actions = annotationActionRepository.findAll().stream()
+                .filter(a -> a.getActionTimestamp().isAfter(since))
+                .collect(Collectors.toList());
+        
+        // Group actions by inspection
+        Map<Long, List<ActionType>> inspectionActions = new HashMap<>();
+        for (AnnotationAction action : actions) {
+            inspectionActions.computeIfAbsent(action.getInspectionId(), k -> new ArrayList<>())
+                    .add(action.getActionType());
+        }
+        
+        // Filter to only include inspections with meaningful actions
+        Set<Long> affectedInspections = new HashSet<>();
+        for (Map.Entry<Long, List<ActionType>> entry : inspectionActions.entrySet()) {
+            List<ActionType> actionTypes = entry.getValue();
+            
+            // Check if there are any non-passive actions
+            boolean hasSignificantAction = actionTypes.stream()
+                    .anyMatch(type -> type == ActionType.CREATED || 
+                                     type == ActionType.EDITED || 
+                                     type == ActionType.DELETED ||
+                                     type == ActionType.REJECTED);
+            
+            if (hasSignificantAction) {
+                affectedInspections.add(entry.getKey());
+            }
+        }
+        
+        log.info("Found {} affected inspections with user corrections", affectedInspections.size());
+        return affectedInspections;
+    }
+    
+    /**
+     * Export fine-tuning data in format expected by Python service
+     * Includes ALL active anomalies for affected inspections
+     */
+    private Map<String, Object> exportFinetuningData(String username) {
+        LocalDateTime since = retrainingHistoryRepository
+                .findLastCompletedTimestamp()
+                .orElse(LocalDateTime.of(2000, 1, 1, 0, 0));
+        
+        Set<Long> affectedInspections = getAffectedInspections(since);
+        
+        if (affectedInspections.isEmpty()) {
+            log.warn("No affected inspections found for retraining");
+            return Map.of("images", Collections.emptyList());
+        }
+        
+        List<Map<String, Object>> images = new ArrayList<>();
+        int totalDetections = 0;
+        
+        for (Long inspectionId : affectedInspections) {
+            // Get image URL from inference metadata
+            Optional<InferenceMetadata> metadataOpt = inferenceMetadataRepository.findByInspectionId(inspectionId);
+            if (!metadataOpt.isPresent() || metadataOpt.get().getMaintenanceImageUrl() == null) {
+                log.warn("No image URL found for inspection {}, skipping", inspectionId);
+                continue;
+            }
+            
+            String imageUrl = metadataOpt.get().getMaintenanceImageUrl();
+            
+            // Get ALL active anomalies for this inspection (AI + User)
+            List<InspectionAnomaly> activeAnomalies = anomalyRepository.findByInspectionIdAndIsActiveTrue(inspectionId);
+            
+            if (activeAnomalies.isEmpty()) {
+                log.warn("No active anomalies for inspection {}, skipping", inspectionId);
+                continue;
+            }
+            
+            // Convert to Python format
+            List<Map<String, Object>> detections = new ArrayList<>();
+            for (InspectionAnomaly anomaly : activeAnomalies) {
+                // Convert bbox format: (x, y, width, height) -> (x_min, y_min, x_max, y_max)
+                Map<String, Object> box = new HashMap<>();
+                box.put("x_min", anomaly.getBboxX());
+                box.put("y_min", anomaly.getBboxY());
+                box.put("x_max", anomaly.getBboxX() + anomaly.getBboxWidth());
+                box.put("y_max", anomaly.getBboxY() + anomaly.getBboxHeight());
+                
+                Map<String, Object> detection = new HashMap<>();
+                detection.put("box", box);
+                detection.put("class_id", anomaly.getClassId());
+                
+                detections.add(detection);
+            }
+            
+            Map<String, Object> imageData = new HashMap<>();
+            imageData.put("image_url", imageUrl);
+            imageData.put("detections", detections);
+            
+            images.add(imageData);
+            totalDetections += detections.size();
+        }
+        
+        log.info("Exported {} images with {} total detections for retraining", images.size(), totalDetections);
+        
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("images", images);
+        payload.put("train_replay", 50); // Mix in baseline samples
+        payload.put("epochs", 10);
+        
+        return payload;
+    }
+    
+    /**
+     * Trigger incremental retraining with user corrections
+     */
+    @Transactional
+    public String triggerRetraining(String username) {
+        log.info("Starting incremental retraining triggered by user: {}", username);
+        
+        String runId = UUID.randomUUID().toString();
+        
+        // Create retraining history record
+        RetrainingHistory history = new RetrainingHistory();
+        history.setRunId(runId);
+        history.setStatus("RUNNING");
+        history.setStartedAt(LocalDateTime.now());
+        history.setTriggeredBy(username);
+        
+        try {
+            // Export data
+            Map<String, Object> payload = exportFinetuningData(username);
+            
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> images = (List<Map<String, Object>>) payload.get("images");
+            
+            if (images.isEmpty()) {
+                history.setStatus("FAILED");
+                history.setCompletedAt(LocalDateTime.now());
+                history.setErrorMessage("No images available for retraining");
+                retrainingHistoryRepository.save(history);
+                return runId;
+            }
+            
+            // Count total detections
+            int totalDetections = 0;
+            for (Map<String, Object> img : images) {
+                @SuppressWarnings("unchecked")
+                List<?> dets = (List<?>) img.get("detections");
+                totalDetections += dets.size();
+            }
+            
+            history.setImagesCount(images.size());
+            history.setActionsIncluded(totalDetections);
+            retrainingHistoryRepository.save(history);
+            
+            // Call Python fine-tuning service
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+            
+            String endpoint = finetuneServiceUrl + "/api/finetune";
+            log.info("Calling Python service at: {}", endpoint);
+            
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
+                    endpoint, request, 
+                    (Class<Map<String, Object>>)(Class<?>)Map.class
+            );
+            
+            // Update history with results
+            history.setStatus("COMPLETED");
+            history.setCompletedAt(LocalDateTime.now());
+            
+            if (response.getBody() != null) {
+                Map<String, Object> result = response.getBody();
+                history.setWeightsPath((String) result.get("weights_path"));
+                
+                // Store metrics as JSON
+                if (result.containsKey("metrics")) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> metricsMap = (Map<String, Object>) result.get("metrics");
+                    history.setMetrics(metricsMap);
+                }
+                
+                // Store hyperparameters
+                Map<String, Object> hyperparams = new HashMap<>();
+                hyperparams.put("epochs", payload.get("epochs"));
+                hyperparams.put("train_replay", payload.get("train_replay"));
+                history.setHyperparameters(hyperparams);
+            }
+            
+            retrainingHistoryRepository.save(history);
+            log.info("Retraining completed successfully: {}", runId);
+            
+        } catch (Exception e) {
+            log.error("Retraining failed: {}", e.getMessage(), e);
+            history.setStatus("FAILED");
+            history.setCompletedAt(LocalDateTime.now());
+            history.setErrorMessage(e.getMessage());
+            retrainingHistoryRepository.save(history);
+        }
+        
+        return runId;
+    }
+    
+    /**
      * Get statistics about available corrections and training readiness
      */
     public Map<String, Object> getRetrainingStats() {
         Map<String, Object> stats = new HashMap<>();
         
-        // Query actual annotation action count
-        long totalActions = annotationActionRepository.count();
+        // Get last retraining timestamp
+        LocalDateTime lastRetraining = retrainingHistoryRepository
+                .findLastCompletedTimestamp()
+                .orElse(null);
         
-        stats.put("totalCorrections", totalActions);
-        stats.put("readyForTraining", totalActions >= 20);
-        stats.put("minimumRequired", 20);
-        stats.put("lastTrainingDate", null);
-        stats.put("currentModelVersion", "1.0");
+        // Count actions since last retraining
+        long newActions = lastRetraining != null ? 
+                annotationActionRepository.findAll().stream()
+                        .filter(a -> a.getActionTimestamp().isAfter(lastRetraining))
+                        .count() :
+                annotationActionRepository.count();
+        
+        stats.put("totalCorrections", newActions);
+        stats.put("readyForTraining", newActions >= 5);
+        stats.put("minimumRequired", 5);
+        stats.put("lastTrainingDate", lastRetraining);
+        
+        // Get latest retraining info
+        retrainingHistoryRepository.findLatestCompleted()
+                .ifPresent(history -> {
+                    stats.put("lastRunId", history.getRunId());
+                    stats.put("lastWeightsPath", history.getWeightsPath());
+                });
         
         return stats;
     }
 
     /**
-     * Get count of corrections available for training
+     * Get status of a retraining run
      */
-    public int getCorrectionCount() {
-        // TODO: Implement actual query to count corrections from database
-        // Example:
-        // return annotationRepository.countByStatusAndCreatedAtAfter("APPROVED", lastTrainingDate);
-        return 0; // Placeholder
+    public Optional<RetrainingHistory> getRetrainingStatus(String runId) {
+        return retrainingHistoryRepository.findByRunId(runId);
     }
 
     /**
-     * Trigger retraining process
-     * This is a simplified version - you can enhance it to actually spawn the Python process
+     * Get history of recent retraining runs
      */
-    public String triggerRetraining(RetrainingRequest request) {
-        String jobId = UUID.randomUUID().toString();
-        log.info("Starting retraining job: {}", jobId);
-        
-        // Create job status entry
-        Map<String, Object> jobStatus = new HashMap<>();
-        jobStatus.put("jobId", jobId);
-        jobStatus.put("status", "PENDING");
-        jobStatus.put("createdAt", LocalDateTime.now().toString());
-        jobStatus.put("startedAt", null);
-        jobStatus.put("completedAt", null);
-        jobStatus.put("progress", 0);
-        jobStatus.put("request", request);
-        jobStatus.put("error", null);
-        jobStatus.put("metrics", null);
-        
-        jobStatusMap.put(jobId, jobStatus);
-        
-        // TODO: In production, you would:
-        // 1. Export corrections from database to Phase 3 format
-        // 2. Spawn Python training process
-        // 3. Monitor progress
-        // 4. Update job status
-        
-        // For now, just log and mark as completed immediately (for testing)
-        log.info("Retraining job {} created. In production, this would spawn Phase 3 training script.", jobId);
-        log.info("Command would be: python -m phase3_fault_type.incremental_finetune --epochs {} --feedback-replay {} --original-replay {} --device {}",
-                request.getEpochs(), request.getFeedbackReplay(), request.getOriginalReplay(), request.getDevice());
-        
-        // Simulate job completion (remove this in production)
-        jobStatus.put("status", "COMPLETED");
-        jobStatus.put("completedAt", LocalDateTime.now().toString());
-        jobStatus.put("progress", 100);
-        jobStatus.put("message", "Training job created. Implement actual Python process spawning for production.");
-        
-        return jobId;
-    }
-
-    /**
-     * Get status of a training job
-     */
-    public Map<String, Object> getJobStatus(String jobId) {
-        return jobStatusMap.get(jobId);
-    }
-
-    /**
-     * Get history of recent retraining jobs
-     */
-    public List<Map<String, Object>> getRetrainingHistory(int limit) {
-        // In production, query from database
-        List<Map<String, Object>> history = new ArrayList<>(jobStatusMap.values());
-        
-        // Sort by creation date (most recent first)
-        history.sort((a, b) -> {
-            String dateA = (String) a.get("createdAt");
-            String dateB = (String) b.get("createdAt");
-            return dateB.compareTo(dateA);
-        });
-        
-        // Limit results
-        return history.subList(0, Math.min(limit, history.size()));
+    public List<RetrainingHistory> getRetrainingHistory(int limit) {
+        return retrainingHistoryRepository.findAll().stream()
+                .sorted((a, b) -> b.getStartedAt().compareTo(a.getStartedAt()))
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 }

@@ -161,13 +161,21 @@ export default function ModelRetrainingPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await apiClient.post('/api/admin/model/retrain');
+      // Get username from auth context or localStorage
+      const username = localStorage.getItem('username') || 'admin';
+
+      const response = await apiClient.post('/api/admin/retraining/trigger', null, {
+        headers: {
+          'X-Username': username
+        }
+      });
       
       if (response.data.success) {
-        setSuccess('Model retraining started successfully! You will be notified when it completes.');
+        const runId = response.data.runId;
+        setSuccess(`Model retraining started successfully! Run ID: ${runId}`);
         setRetrainingStatus('RUNNING');
         // Poll for status updates
-        pollRetrainingStatus();
+        pollRetrainingStatus(runId);
       } else {
         setError(response.data.message || 'Failed to start retraining');
       }
@@ -179,27 +187,28 @@ export default function ModelRetrainingPage() {
     }
   };
 
-  const pollRetrainingStatus = () => {
+  const pollRetrainingStatus = (runId) => {
     const interval = setInterval(async () => {
       try {
-        const response = await apiClient.get('/api/admin/model/retraining/status');
-        if (response.data.success) {
+        const response = await apiClient.get(`/api/admin/retraining/status/${runId}`);
+        if (response.data) {
           setRetrainingStatus(response.data.status);
           
           // Stop polling if completed or failed
-          if (response.data.status !== 'RUNNING') {
+          if (response.data.status === 'COMPLETED' || response.data.status === 'FAILED') {
             clearInterval(interval);
+            
             if (response.data.status === 'COMPLETED') {
-              setSuccess('Model retraining completed successfully!');
-              loadAnnotations(); // Refresh data
+              setSuccess('Model retraining completed successfully! The page will now show only new actions.');
+              loadAnnotations(); // This will now show only new actions (page may be empty)
             } else if (response.data.status === 'FAILED') {
-              setError('Model retraining failed. Please check logs.');
+              setError(`Model retraining failed: ${response.data.errorMessage || 'Unknown error'}`);
             }
           }
         }
       } catch (err) {
         console.error('Error polling status:', err);
-        clearInterval(interval);
+        // Don't stop polling on network errors
       }
     }, 5000); // Poll every 5 seconds
 

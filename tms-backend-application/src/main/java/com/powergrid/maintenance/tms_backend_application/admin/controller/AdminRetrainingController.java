@@ -1,6 +1,5 @@
 package com.powergrid.maintenance.tms_backend_application.admin.controller;
 
-import com.powergrid.maintenance.tms_backend_application.admin.dto.RetrainingRequest;
 import com.powergrid.maintenance.tms_backend_application.admin.service.ModelRetrainingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,55 +55,60 @@ public class AdminRetrainingController {
     }
 
     /**
-     * Trigger model retraining
+     * Trigger incremental model retraining with user corrections
      */
     @PostMapping("/trigger")
-    public ResponseEntity<?> triggerRetraining(@RequestBody RetrainingRequest request) {
-        log.info("Retraining request received: {}", request);
+    public ResponseEntity<?> triggerRetraining(
+            @RequestHeader("X-Username") String username) {
+        log.info("Retraining triggered by user: {}", username);
         
         try {
-            // Validate minimum corrections
-            int correctionCount = retrainingService.getCorrectionCount();
-            if (correctionCount < request.getMinCorrections()) {
+            // Get stats to check if ready for retraining
+            Map<String, Object> stats = retrainingService.getRetrainingStats();
+            long newCorrections = (Long) stats.get("totalCorrections");
+            
+            if (newCorrections < 1) {
                 return ResponseEntity.badRequest()
                         .body(Map.of(
-                                "error", "Not enough corrections",
-                                "message", String.format("Need at least %d corrections, have %d",
-                                        request.getMinCorrections(), correctionCount)
+                                "success", false,
+                                "error", "No new corrections available",
+                                "message", "There are no new annotation actions to train on"
                         ));
             }
 
             // Trigger retraining
-            String jobId = retrainingService.triggerRetraining(request);
+            String runId = retrainingService.triggerRetraining(username);
 
             return ResponseEntity.ok(Map.of(
-                    "jobId", jobId,
+                    "success", true,
+                    "runId", runId,
                     "status", "started",
-                    "message", "Retraining initiated successfully",
-                    "corrections", correctionCount
+                    "message", "Incremental retraining initiated successfully",
+                    "corrections", newCorrections
             ));
 
         } catch (Exception e) {
             log.error("Error triggering retraining", e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to trigger retraining: " + e.getMessage()));
+                    .body(Map.of(
+                            "success", false,
+                            "error", "Failed to trigger retraining: " + e.getMessage()
+                    ));
         }
     }
 
     /**
-     * Get status of a retraining job
+     * Get status of a retraining run
      */
-    @GetMapping("/status/{jobId}")
-    public ResponseEntity<?> getTrainingStatus(@PathVariable String jobId) {
-        log.info("Fetching status for job: {}", jobId);
+    @GetMapping("/status/{runId}")
+    public ResponseEntity<?> getRetrainingStatus(@PathVariable String runId) {
+        log.info("Fetching status for run: {}", runId);
         try {
-            Map<String, Object> status = retrainingService.getJobStatus(jobId);
-            if (status == null) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.ok(status);
+            return retrainingService.getRetrainingStatus(runId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
-            log.error("Error fetching job status", e);
+            log.error("Error fetching run status", e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Failed to fetch status: " + e.getMessage()));
         }
