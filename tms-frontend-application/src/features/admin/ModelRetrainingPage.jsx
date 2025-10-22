@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../config/api';
+import * as XLSX from 'xlsx';
 import './ModelRetraining.css';
 
 /**
@@ -212,6 +213,213 @@ export default function ModelRetrainingPage() {
     setTimeout(() => clearInterval(interval), 600000);
   };
 
+  const handleExportCSV = () => {
+    try {
+      // Flatten all actions from all inspection groups
+      const allActions = [];
+      
+      inspectionGroups.forEach(group => {
+        group.actions.forEach(action => {
+          allActions.push({
+            'Inspection ID': group.inspectionId,
+            'Transformer ID': group.transformerId,
+            'Transformer Name': group.transformerName,
+            'Anomaly ID': action.anomalyId,
+            'Action Type': action.actionType || action.action,
+            'Username': action.username || action.modifiedBy,
+            'Timestamp': formatDate(action.actionTimestamp || action.timestamp),
+            'Fault Type (Before)': action.previousClassification?.faultType || '',
+            'Confidence (Before)': action.previousClassification?.confidence 
+              ? (action.previousClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox (Before)': action.previousBbox 
+              ? [${action.previousBbox.x},${action.previousBbox.y},${action.previousBbox.width}×${action.previousBbox.height}]
+              : '',
+            'Fault Type (After)': action.newClassification?.faultType || '',
+            'Confidence (After)': action.newClassification?.confidence 
+              ? (action.newClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox (After)': action.newBbox 
+              ? [${action.newBbox.x},${action.newBbox.y},${action.newBbox.width}×${action.newBbox.height}]
+              : '',
+            'Comment': action.comment || ''
+          });
+        });
+      });
+
+      // Convert to CSV
+      const headers = [
+        'Inspection ID', 'Transformer ID', 'Transformer Name', 'Anomaly ID', 
+        'Action Type', 'Username', 'Timestamp', 
+        'Fault Type (Before)', 'Confidence (Before)', 'BBox (Before)',
+        'Fault Type (After)', 'Confidence (After)', 'BBox (After)', 'Comment'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...allActions.map(action => 
+          headers.map(header => {
+            const value = action[header] || '';
+            // Escape commas and quotes in CSV
+            const escaped = String(value).replace(/"/g, '""');
+            return "${escaped}";
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      link.setAttribute('href', url);
+      link.setAttribute('download', annotation_history_${timestamp}.csv);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setSuccess(Exported ${allActions.length} annotation actions to CSV);
+    } catch (err) {
+      console.error('Error exporting CSV:', err);
+      setError('Failed to export CSV file');
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      // Prepare data for Excel with multiple sheets
+      const workbook = XLSX.utils.book_new();
+      
+      // Sheet 1: Summary Statistics
+      const summaryData = [
+        ['Annotation History Summary'],
+        ['Generated:', new Date().toLocaleString()],
+        [],
+        ['Statistics'],
+        ['Total Actions:', stats.total],
+        ['Total Inspections:', stats.inspections],
+        ['Created:', stats.added],
+        ['Edited:', stats.edited],
+        ['Deleted:', stats.deleted],
+        [],
+        ['Breakdown by Inspection'],
+        ['Inspection ID', 'Transformer ID', 'Transformer', 'Total Actions', 'Created', 'Edited', 'Deleted', 'Approved', 'Rejected', 'Commented']
+      ];
+      
+      inspectionGroups.forEach(group => {
+        summaryData.push([
+          group.inspectionId,
+          group.transformerId,
+          group.transformerName,
+          group.actions.length,
+          group.stats.created,
+          group.stats.edited,
+          group.stats.deleted,
+          group.stats.approved,
+          group.stats.rejected,
+          group.stats.commented
+        ]);
+      });
+      
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      
+      // Set column widths for summary sheet
+      summarySheet['!cols'] = [
+        { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, 
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, 
+        { wch: 10 }, { wch: 10 }
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+      
+      // Sheet 2: Detailed Actions
+      const allActions = [];
+      
+      inspectionGroups.forEach(group => {
+        group.actions.forEach(action => {
+          allActions.push({
+            'Inspection ID': group.inspectionId,
+            'Transformer ID': group.transformerId,
+            'Transformer Name': group.transformerName,
+            'Anomaly ID': action.anomalyId,
+            'Action Type': action.actionType || action.action,
+            'Username': action.username || action.modifiedBy,
+            'Timestamp': formatDate(action.actionTimestamp || action.timestamp),
+            'Fault Type (Before)': action.previousClassification?.faultType || '',
+            'Confidence (Before)': action.previousClassification?.confidence 
+              ? (action.previousClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox X (Before)': action.previousBbox?.x || '',
+            'BBox Y (Before)': action.previousBbox?.y || '',
+            'BBox Width (Before)': action.previousBbox?.width || '',
+            'BBox Height (Before)': action.previousBbox?.height || '',
+            'Fault Type (After)': action.newClassification?.faultType || '',
+            'Confidence (After)': action.newClassification?.confidence 
+              ? (action.newClassification.confidence * 100).toFixed(1) + '%' 
+              : '',
+            'BBox X (After)': action.newBbox?.x || '',
+            'BBox Y (After)': action.newBbox?.y || '',
+            'BBox Width (After)': action.newBbox?.width || '',
+            'BBox Height (After)': action.newBbox?.height || '',
+            'Comment': action.comment || ''
+          });
+        });
+      });
+
+      const detailsSheet = XLSX.utils.json_to_sheet(allActions);
+      
+      // Set column widths for details sheet
+      detailsSheet['!cols'] = [
+        { wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, 
+        { wch: 12 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
+        { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, 
+        { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 12 },
+        { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, detailsSheet, 'All Actions');
+      
+      // Sheet 3: Actions by Type
+      const actionsByType = {
+        'CREATED': [],
+        'EDITED': [],
+        'DELETED': [],
+        'APPROVED': [],
+        'REJECTED': [],
+        'COMMENTED': []
+      };
+      
+      allActions.forEach(action => {
+        const type = action['Action Type'];
+        if (actionsByType[type]) {
+          actionsByType[type].push(action);
+        }
+      });
+      
+      Object.keys(actionsByType).forEach(type => {
+        if (actionsByType[type].length > 0) {
+          const typeSheet = XLSX.utils.json_to_sheet(actionsByType[type]);
+          typeSheet['!cols'] = detailsSheet['!cols']; // Same column widths
+          XLSX.utils.book_append_sheet(workbook, typeSheet, type);
+        }
+      });
+      
+      // Generate and download file
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = annotation_history_${timestamp}.xlsx;
+      
+      XLSX.writeFile(workbook, filename);
+      
+      setSuccess(Exported ${allActions.length} annotation actions to Excel with ${Object.keys(actionsByType).filter(k => actionsByType[k].length > 0).length + 2} sheets);
+    } catch (err) {
+      console.error('Error exporting Excel:', err);
+      setError('Failed to export Excel file');
+    }
+  };
+
   const getActionBadgeClass = (action) => {
     switch (action) {
       case 'CREATED': return 'badge-created';
@@ -227,8 +435,8 @@ export default function ModelRetrainingPage() {
   const getActionIcon = (action) => {
     switch (action) {
       case 'CREATED': return '➕';
-      case 'EDITED': return '✏️';
-      case 'DELETED': return '🗑️';
+      case 'EDITED': return '✏';
+      case 'DELETED': return '🗑';
       case 'COMMENTED': return '💬';
       case 'APPROVED': return '✅';
       case 'REJECTED': return '❌';
@@ -251,9 +459,9 @@ export default function ModelRetrainingPage() {
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 60) return ${diffMins}m ago;
+    if (diffHours < 24) return ${diffHours}h ago;
+    if (diffDays < 7) return ${diffDays}d ago;
     return formatDate(dateString);
   };
 
@@ -296,7 +504,7 @@ export default function ModelRetrainingPage() {
 
       {/* Retraining Status - Admin only */}
       {isAdmin && retrainingStatus && (
-        <div className={`status-banner status-${retrainingStatus.toLowerCase()}`}>
+        <div className={status-banner status-${retrainingStatus.toLowerCase()}}>
           <h3>Current Status: {retrainingStatus}</h3>
           {retrainingStatus === 'RUNNING' && (
             <div className="status-progress">
@@ -331,14 +539,14 @@ export default function ModelRetrainingPage() {
           </div>
         </div>
         <div className="stat-card stat-edited">
-          <div className="stat-icon">✏️</div>
+          <div className="stat-icon">✏</div>
           <div className="stat-content">
             <h3>{stats.edited}</h3>
             <p>Edited</p>
           </div>
         </div>
         <div className="stat-card stat-deleted">
-          <div className="stat-icon">🗑️</div>
+          <div className="stat-icon">🗑</div>
           <div className="stat-content">
             <h3>{stats.deleted}</h3>
             <p>Deleted</p>
@@ -363,6 +571,20 @@ export default function ModelRetrainingPage() {
           className="btn-secondary"
         >
           🔄 Refresh Data
+        </button>
+        <button
+          onClick={handleExportCSV}
+          disabled={loading || inspectionGroups.length === 0}
+          className="btn-secondary"
+        >
+          📥 Export CSV
+        </button>
+        <button
+          onClick={handleExportExcel}
+          disabled={loading || inspectionGroups.length === 0}
+          className="btn-secondary"
+        >
+          📊 Export Excel
         </button>
       </div>
 
@@ -411,12 +633,12 @@ export default function ModelRetrainingPage() {
                       )}
                       {group.stats.edited > 0 && (
                         <span className="stat-badge stat-edited">
-                          ✏️ {group.stats.edited} Edited
+                          ✏ {group.stats.edited} Edited
                         </span>
                       )}
                       {group.stats.deleted > 0 && (
                         <span className="stat-badge stat-deleted">
-                          🗑️ {group.stats.deleted} Deleted
+                          🗑 {group.stats.deleted} Deleted
                         </span>
                       )}
                       {group.stats.approved > 0 && (
@@ -448,7 +670,7 @@ export default function ModelRetrainingPage() {
                       <div key={idx} className="action-item">
                         <div className="action-header">
                           <div className="action-meta">
-                            <span className={`action-badge ${getActionBadgeClass(action.actionType || action.action)}`}>
+                            <span className={action-badge ${getActionBadgeClass(action.actionType || action.action)}}>
                               {getActionIcon(action.actionType || action.action)} {action.actionType || action.action}
                             </span>
                             <span className="action-user">
