@@ -60,7 +60,15 @@ public class InspectionMapper {
         dto.setBranch(inspection.getBranch());
         dto.setTransformerNo(inspection.getTransformerNo());
         dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
+        dto.setInspectionDate(inspection.getInspectionTimestamp()); // Alias for frontend compatibility
         dto.setStatus(inspection.getStatus());
+        
+        // Environmental and image data
+        dto.setEnvironmentalCondition(inspection.getEnvironmentalCondition());
+        dto.setCloudImageUrl(inspection.getCloudImageUrl());
+        dto.setThermalImageUrl(inspection.getCloudImageUrl()); // Alias for frontend
+        dto.setCloudUploadedAt(inspection.getCloudUploadedAt());
+        // annotatedImageUrl will be set separately if available
 
         // Safely access transformer properties
         try {

@@ -17,8 +17,21 @@ public class InspectionResponseDTO {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime inspectionTimestamp;
 
+    // Alias for frontend compatibility
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    private ZonedDateTime inspectionDate;
+
     private String poleNo;
     private String region;
     private String type;
     private String locationDetails;
+    
+    // Environmental and image data
+    private String environmentalCondition;
+    private String cloudImageUrl;
+    private String thermalImageUrl; // Alias for cloudImageUrl
+    private String annotatedImageUrl; // For future use with annotated images
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    private ZonedDateTime cloudUploadedAt;
 }
