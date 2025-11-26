@@ -55,6 +55,87 @@ public class Inspection {
     @Column(name = "environmental_condition")
     private String environmentalCondition;
 
+    // --- Digital Form Data (stored as JSON/TEXT) ---
+    @Column(name = "inspected_by")
+    private String inspectedBy;
+
+    @Column(name = "baseline_right")
+    private String baselineRight;
+
+    @Column(name = "baseline_left")
+    private String baselineLeft;
+
+    @Column(name = "baseline_front")
+    private String baselineFront;
+
+    @Column(name = "last_month_kva")
+    private String lastMonthKVA;
+
+    @Column(name = "last_month_date")
+    private String lastMonthDate;
+
+    @Column(name = "last_month_time")
+    private String lastMonthTime;
+
+    @Column(name = "current_month_kva")
+    private String currentMonthKVA;
+
+    @Column(name = "meter_serial")
+    private String meterSerial;
+
+    @Column(name = "meter_ct_ratio")
+    private String meterCTRatio;
+
+    @Column(name = "meter_make")
+    private String meterMake;
+
+    @Column(name = "after_thermal_date")
+    private String afterThermalDate;
+
+    @Column(name = "after_thermal_time")
+    private String afterThermalTime;
+
+    // --- First Inspection Voltage Readings ---
+    @Column(name = "first_voltage_r")
+    private String firstVoltageR;
+
+    @Column(name = "first_voltage_y")
+    private String firstVoltageY;
+
+    @Column(name = "first_voltage_b")
+    private String firstVoltageB;
+
+    @Column(name = "first_current_r")
+    private String firstCurrentR;
+
+    @Column(name = "first_current_y")
+    private String firstCurrentY;
+
+    @Column(name = "first_current_b")
+    private String firstCurrentB;
+
+    // --- Second Inspection Voltage Readings ---
+    @Column(name = "second_voltage_r")
+    private String secondVoltageR;
+
+    @Column(name = "second_voltage_y")
+    private String secondVoltageY;
+
+    @Column(name = "second_voltage_b")
+    private String secondVoltageB;
+
+    @Column(name = "second_current_r")
+    private String secondCurrentR;
+
+    @Column(name = "second_current_y")
+    private String secondCurrentY;
+
+    @Column(name = "second_current_b")
+    private String secondCurrentB;
+
+    @Column(name = "digital_form_data", columnDefinition = "TEXT")
+    private String digitalFormData; // JSON string for checklist only
+
     // --- Cloudinary image metadata ---
     @Column(name = "cloud_image_url")
     private String cloudImageUrl;

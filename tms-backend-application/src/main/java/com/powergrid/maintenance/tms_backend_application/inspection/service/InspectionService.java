@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +13,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.powergrid.maintenance.tms_backend_application.transformer.repo.TransformerRepository;
 import com.powergrid.maintenance.tms_backend_application.transformer.domain.Transformer;
 
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.Inspection;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.CloudImageUploadResponseDTO;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.DigitalFormDataDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
@@ -560,6 +565,200 @@ public class InspectionService {
         } catch (NumberFormatException e) {
             log.error("Invalid inspection ID format: {}", inspectionId);
             return null;
+        }
+    }
+
+    /**
+     * Update digital form data for an inspection
+     */
+    public ResponseEntity<InspectionResponseDTO> updateDigitalFormData(String id, DigitalFormDataDTO formData) {
+        try {
+            Long inspectionId = Long.parseLong(id);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
+            
+            if (optionalInspection.isEmpty()) {
+                log.error("Inspection not found with ID: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            Inspection inspection = optionalInspection.get();
+            
+            // Update individual fields
+            inspection.setInspectedBy(formData.getInspectedBy());
+            inspection.setBaselineRight(formData.getBaselineRight());
+            inspection.setBaselineLeft(formData.getBaselineLeft());
+            inspection.setBaselineFront(formData.getBaselineFront());
+            inspection.setLastMonthKVA(formData.getLastMonthKVA());
+            inspection.setLastMonthDate(formData.getLastMonthDate());
+            inspection.setLastMonthTime(formData.getLastMonthTime());
+            inspection.setCurrentMonthKVA(formData.getCurrentMonthKVA());
+            inspection.setMeterSerial(formData.getMeterSerial());
+            inspection.setMeterCTRatio(formData.getMeterCTRatio());
+            inspection.setMeterMake(formData.getMeterMake());
+            inspection.setAfterThermalDate(formData.getAfterThermalDate());
+            inspection.setAfterThermalTime(formData.getAfterThermalTime());
+            
+            // Update environmental condition if provided
+            if (formData.getBaselineCondition() != null) {
+                inspection.setEnvironmentalCondition(formData.getBaselineCondition());
+            }
+            
+            // Save voltage and current readings to individual columns
+            if (formData.getFirstInspection() != null) {
+                log.info("Setting first inspection readings: {}", formData.getFirstInspection());
+                // Handle empty strings by converting them to null or keeping the value
+                String vR = formData.getFirstInspection().getVR();
+                String vY = formData.getFirstInspection().getVY();
+                String vB = formData.getFirstInspection().getVB();
+                String iR = formData.getFirstInspection().getIR();
+                String iY = formData.getFirstInspection().getIY();
+                String iB = formData.getFirstInspection().getIB();
+                
+                inspection.setFirstVoltageR((vR != null && !vR.trim().isEmpty()) ? vR : null);
+                inspection.setFirstVoltageY((vY != null && !vY.trim().isEmpty()) ? vY : null);
+                inspection.setFirstVoltageB((vB != null && !vB.trim().isEmpty()) ? vB : null);
+                inspection.setFirstCurrentR((iR != null && !iR.trim().isEmpty()) ? iR : null);
+                inspection.setFirstCurrentY((iY != null && !iY.trim().isEmpty()) ? iY : null);
+                inspection.setFirstCurrentB((iB != null && !iB.trim().isEmpty()) ? iB : null);
+                
+                log.info("Saved first inspection - VR: {}, VY: {}, VB: {}, IR: {}, IY: {}, IB: {}",
+                    inspection.getFirstVoltageR(), inspection.getFirstVoltageY(), inspection.getFirstVoltageB(),
+                    inspection.getFirstCurrentR(), inspection.getFirstCurrentY(), inspection.getFirstCurrentB());
+            }
+            
+            if (formData.getSecondInspection() != null) {
+                log.info("Setting second inspection readings: {}", formData.getSecondInspection());
+                // Handle empty strings by converting them to null or keeping the value
+                String vR = formData.getSecondInspection().getVR();
+                String vY = formData.getSecondInspection().getVY();
+                String vB = formData.getSecondInspection().getVB();
+                String iR = formData.getSecondInspection().getIR();
+                String iY = formData.getSecondInspection().getIY();
+                String iB = formData.getSecondInspection().getIB();
+                
+                inspection.setSecondVoltageR((vR != null && !vR.trim().isEmpty()) ? vR : null);
+                inspection.setSecondVoltageY((vY != null && !vY.trim().isEmpty()) ? vY : null);
+                inspection.setSecondVoltageB((vB != null && !vB.trim().isEmpty()) ? vB : null);
+                inspection.setSecondCurrentR((iR != null && !iR.trim().isEmpty()) ? iR : null);
+                inspection.setSecondCurrentY((iY != null && !iY.trim().isEmpty()) ? iY : null);
+                inspection.setSecondCurrentB((iB != null && !iB.trim().isEmpty()) ? iB : null);
+                
+                log.info("Saved second inspection - VR: {}, VY: {}, VB: {}, IR: {}, IY: {}, IB: {}",
+                    inspection.getSecondVoltageR(), inspection.getSecondVoltageY(), inspection.getSecondVoltageB(),
+                    inspection.getSecondCurrentR(), inspection.getSecondCurrentY(), inspection.getSecondCurrentB());
+            }
+            
+            // Convert checklist only to JSON and store
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                Map<String, Object> jsonData = new HashMap<>();
+                jsonData.put("checklist", formData.getChecklist());
+                String jsonString = objectMapper.writeValueAsString(jsonData);
+                
+                log.info("Saving checklist data as JSON for inspection {}", id);
+                inspection.setDigitalFormData(jsonString);
+            } catch (Exception e) {
+                log.error("Error converting checklist data to JSON", e);
+            }
+
+            Inspection updatedInspection = inspectionRepo.save(inspection);
+            InspectionResponseDTO responseDTO = inspectionMapper.toResponseDTO(updatedInspection);
+            
+            log.info("Digital form data updated successfully for inspection: {}", id);
+            return ResponseEntity.ok(responseDTO);
+            
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", id);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
+
+    /**
+     * Get digital form data for an inspection
+     */
+    public ResponseEntity<DigitalFormDataDTO> getDigitalFormData(String id) {
+        try {
+            Long inspectionId = Long.parseLong(id);
+            Optional<Inspection> optionalInspection = inspectionRepo.findById(inspectionId);
+            
+            if (optionalInspection.isEmpty()) {
+                log.error("Inspection not found with ID: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            Inspection inspection = optionalInspection.get();
+            DigitalFormDataDTO formData = new DigitalFormDataDTO();
+            
+            // Set inspection ID
+            formData.setInspectionId(id);
+            
+            // Map individual fields
+            formData.setInspectedBy(inspection.getInspectedBy());
+            formData.setBaselineRight(inspection.getBaselineRight());
+            formData.setBaselineLeft(inspection.getBaselineLeft());
+            formData.setBaselineFront(inspection.getBaselineFront());
+            formData.setLastMonthKVA(inspection.getLastMonthKVA());
+            formData.setLastMonthDate(inspection.getLastMonthDate());
+            formData.setLastMonthTime(inspection.getLastMonthTime());
+            formData.setCurrentMonthKVA(inspection.getCurrentMonthKVA());
+            formData.setBaselineCondition(inspection.getEnvironmentalCondition());
+            formData.setMeterSerial(inspection.getMeterSerial());
+            formData.setMeterCTRatio(inspection.getMeterCTRatio());
+            formData.setMeterMake(inspection.getMeterMake());
+            formData.setAfterThermalDate(inspection.getAfterThermalDate());
+            formData.setAfterThermalTime(inspection.getAfterThermalTime());
+            
+            // Load voltage and current readings from individual columns
+            DigitalFormDataDTO.InspectionReadingsDTO firstInspection = new DigitalFormDataDTO.InspectionReadingsDTO();
+            firstInspection.setVR(inspection.getFirstVoltageR());
+            firstInspection.setVY(inspection.getFirstVoltageY());
+            firstInspection.setVB(inspection.getFirstVoltageB());
+            firstInspection.setIR(inspection.getFirstCurrentR());
+            firstInspection.setIY(inspection.getFirstCurrentY());
+            firstInspection.setIB(inspection.getFirstCurrentB());
+            formData.setFirstInspection(firstInspection);
+            log.info("Loaded first inspection readings from columns: {}", firstInspection);
+            
+            DigitalFormDataDTO.InspectionReadingsDTO secondInspection = new DigitalFormDataDTO.InspectionReadingsDTO();
+            secondInspection.setVR(inspection.getSecondVoltageR());
+            secondInspection.setVY(inspection.getSecondVoltageY());
+            secondInspection.setVB(inspection.getSecondVoltageB());
+            secondInspection.setIR(inspection.getSecondCurrentR());
+            secondInspection.setIY(inspection.getSecondCurrentY());
+            secondInspection.setIB(inspection.getSecondCurrentB());
+            formData.setSecondInspection(secondInspection);
+            log.info("Loaded second inspection readings from columns: {}", secondInspection);
+            
+            // Parse JSON data for checklist only
+            if (inspection.getDigitalFormData() != null && !inspection.getDigitalFormData().isEmpty()) {
+                try {
+                    log.info("Retrieved checklist JSON data for inspection {}", id);
+                    
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {};
+                    Map<String, Object> jsonData = objectMapper.readValue(inspection.getDigitalFormData(), typeRef);
+                    
+                    // Parse checklist
+                    if (jsonData.containsKey("checklist")) {
+                        TypeReference<List<DigitalFormDataDTO.ChecklistItemDTO>> checklistTypeRef = 
+                            new TypeReference<List<DigitalFormDataDTO.ChecklistItemDTO>>() {};
+                        List<DigitalFormDataDTO.ChecklistItemDTO> checklist = 
+                            objectMapper.convertValue(jsonData.get("checklist"), checklistTypeRef);
+                        formData.setChecklist(checklist);
+                        log.info("Loaded {} checklist items", checklist.size());
+                    }
+                } catch (Exception e) {
+                    log.error("Error parsing checklist JSON data", e);
+                }
+            } else {
+                log.info("No checklist data found in database for inspection {}", id);
+            }
+            
+            return ResponseEntity.ok(formData);
+            
+        } catch (NumberFormatException e) {
+            log.error("Invalid inspection ID format: {}", id);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 }

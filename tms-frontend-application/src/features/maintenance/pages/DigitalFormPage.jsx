@@ -17,11 +17,13 @@ const DigitalFormPage = () => {
   const [anomalies, setAnomalies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Form data state
   const [formData, setFormData] = useState({
-    inspectionDate: new Date().toISOString().split('T')[0],
-    inspectionTime: '12:05',
+    inspectionDate: '',
+    inspectionTime: '',
     inspectedBy: '',
     baselineRight: '',
     baselineLeft: '',
@@ -31,19 +33,16 @@ const DigitalFormPage = () => {
     lastMonthTime: '',
     currentMonthKVA: '',
     baselineCondition: 'Sunny',
-    transformerType: 'Bulk',
+    transformerType: '',
     meterSerial: '',
     meterCTRatio: '',
     meterMake: 'Microstar',
     checklist: [
-      { no: 1, c: false, cl: false, t: false, r: false, other: '' },
-      { no: 2, c: false, cl: false, t: false, r: false, other: '' },
-      { no: 3, c: false, cl: false, t: false, r: false, other: '' },
-      { no: 4, c: false, cl: false, t: false, r: false, other: '' }
+      { no: 1, c: false, cl: false, t: false, r: false, other: '', ok: false, notOk: false, irNos: '' },
+      { no: 2, c: false, cl: false, t: false, r: false, other: '', ok: false, notOk: false, irNos: '' },
+      { no: 3, c: false, cl: false, t: false, r: false, other: '', ok: false, notOk: false, irNos: '' },
+      { no: 4, c: false, cl: false, t: false, r: false, other: '', ok: false, notOk: false, irNos: '' }
     ],
-    afterInspectionOK: false,
-    afterInspectionNotOK: false,
-    afterInspectionIRNos: '',
     afterThermalDate: '',
     afterThermalTime: '',
     firstInspection: {
@@ -91,6 +90,11 @@ const DigitalFormPage = () => {
         const transformerData = await transformerService.getTransformerById(transformerId);
         console.log('Fetched transformer data:', transformerData);
         setTransformer(transformerData);
+        
+        // Set transformer type from database
+        if (transformerData.type) {
+          setFormData(prev => ({ ...prev, transformerType: transformerData.type }));
+        }
 
         // Fetch inspections for this transformer using transformerNo
         const inspectionsData = await inspectionService.getInspectionsByTransformer(transformerData.transformerNo);
@@ -134,6 +138,67 @@ const DigitalFormPage = () => {
         // Fetch inspection details
         const inspectionData = await inspectionService.getInspectionById(selectedInspectionId);
         setSelectedInspection(inspectionData);
+
+        // Populate form fields from inspection data
+        if (inspectionData) {
+          const timestamp = new Date(inspectionData.inspectionTimestamp || inspectionData.inspectionDate);
+          const date = timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+          const time = timestamp.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+          
+          setFormData(prev => ({
+            ...prev,
+            inspectionDate: date,
+            inspectionTime: time,
+            inspectedBy: inspectionData.branch || '', // Using branch as inspector identifier
+            baselineCondition: inspectionData.environmentalCondition || prev.baselineCondition
+          }));
+        }
+
+        // Fetch saved digital form data
+        const savedFormData = await inspectionService.getDigitalFormData(selectedInspectionId);
+        if (savedFormData) {
+          console.log('Loaded saved form data:', savedFormData);
+          console.log('First inspection readings:', savedFormData.firstInspection);
+          console.log('Second inspection readings:', savedFormData.secondInspection);
+          
+          // Merge saved data with current form data
+          setFormData(prev => ({
+            ...prev,
+            inspectedBy: savedFormData.inspectedBy || prev.inspectedBy,
+            baselineRight: savedFormData.baselineRight || prev.baselineRight,
+            baselineLeft: savedFormData.baselineLeft || prev.baselineLeft,
+            baselineFront: savedFormData.baselineFront || prev.baselineFront,
+            lastMonthKVA: savedFormData.lastMonthKVA || prev.lastMonthKVA,
+            lastMonthDate: savedFormData.lastMonthDate || prev.lastMonthDate,
+            lastMonthTime: savedFormData.lastMonthTime || prev.lastMonthTime,
+            currentMonthKVA: savedFormData.currentMonthKVA || prev.currentMonthKVA,
+            baselineCondition: savedFormData.baselineCondition || prev.baselineCondition,
+            meterSerial: savedFormData.meterSerial || prev.meterSerial,
+            meterCTRatio: savedFormData.meterCTRatio || prev.meterCTRatio,
+            meterMake: savedFormData.meterMake || prev.meterMake,
+            checklist: savedFormData.checklist || prev.checklist,
+            afterThermalDate: savedFormData.afterThermalDate || prev.afterThermalDate,
+            afterThermalTime: savedFormData.afterThermalTime || prev.afterThermalTime,
+            firstInspection: savedFormData.firstInspection ? {
+              vR: savedFormData.firstInspection.vR || '',
+              vY: savedFormData.firstInspection.vY || '',
+              vB: savedFormData.firstInspection.vB || '',
+              iR: savedFormData.firstInspection.iR || '',
+              iY: savedFormData.firstInspection.iY || '',
+              iB: savedFormData.firstInspection.iB || ''
+            } : prev.firstInspection,
+            secondInspection: savedFormData.secondInspection ? {
+              vR: savedFormData.secondInspection.vR || '',
+              vY: savedFormData.secondInspection.vY || '',
+              vB: savedFormData.secondInspection.vB || '',
+              iR: savedFormData.secondInspection.iR || '',
+              iY: savedFormData.secondInspection.iY || '',
+              iB: savedFormData.secondInspection.iB || ''
+            } : prev.secondInspection
+          }));
+        } else {
+          console.log('No saved form data found for this inspection');
+        }
 
         // Fetch anomalies/annotations for this inspection
         const annotationsData = await AnnotationService.getAnnotations(selectedInspectionId);
@@ -204,6 +269,69 @@ const DigitalFormPage = () => {
       }
     };
   }, [anomalies]);
+
+  const handleSave = async () => {
+    if (!selectedInspectionId) {
+      alert('Please select an inspection first');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setSaveSuccess(false);
+      
+      console.log('Saving form data:', formData);
+      
+      // Helper function to convert empty strings to null for proper backend handling
+      const cleanInspectionReadings = (readings) => {
+        if (!readings) return null;
+        return {
+          vR: readings.vR && readings.vR.trim() !== '' ? readings.vR : null,
+          vY: readings.vY && readings.vY.trim() !== '' ? readings.vY : null,
+          vB: readings.vB && readings.vB.trim() !== '' ? readings.vB : null,
+          iR: readings.iR && readings.iR.trim() !== '' ? readings.iR : null,
+          iY: readings.iY && readings.iY.trim() !== '' ? readings.iY : null,
+          iB: readings.iB && readings.iB.trim() !== '' ? readings.iB : null
+        };
+      };
+      
+      // Prepare data for backend - explicitly structure all fields
+      const dataToSave = {
+        inspectionId: selectedInspectionId,
+        inspectedBy: formData.inspectedBy,
+        baselineRight: formData.baselineRight,
+        baselineLeft: formData.baselineLeft,
+        baselineFront: formData.baselineFront,
+        lastMonthKVA: formData.lastMonthKVA,
+        lastMonthDate: formData.lastMonthDate,
+        lastMonthTime: formData.lastMonthTime,
+        currentMonthKVA: formData.currentMonthKVA,
+        baselineCondition: formData.baselineCondition,
+        meterSerial: formData.meterSerial,
+        meterCTRatio: formData.meterCTRatio,
+        meterMake: formData.meterMake,
+        checklist: formData.checklist,
+        afterThermalDate: formData.afterThermalDate,
+        afterThermalTime: formData.afterThermalTime,
+        firstInspection: cleanInspectionReadings(formData.firstInspection),
+        secondInspection: cleanInspectionReadings(formData.secondInspection)
+      };
+      
+      console.log('Structured data to save:', dataToSave);
+      
+      await inspectionService.saveDigitalFormData(selectedInspectionId, dataToSave);
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000); // Clear success message after 3 seconds
+      
+      console.log('Form data saved successfully');
+    } catch (error) {
+      console.error('Error saving form data:', error);
+      alert(`Failed to save form data: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handlePrint = () => {
     // Create a custom print sequence that ensures canvas is drawn correctly
@@ -438,6 +566,18 @@ const DigitalFormPage = () => {
                     </option>
                   ))}
                 </select>
+                
+                <button 
+                  onClick={handleSave} 
+                  className="save-button"
+                  disabled={saving || !selectedInspectionId}
+                >
+                  {saving ? 'Saving...' : 'Save Form Data'}
+                </button>
+                
+                {saveSuccess && (
+                  <span className="save-success-message">✓ Saved successfully!</span>
+                )}
               </div>
 
               {/* Selected inspection info (shown in print) */}
@@ -493,6 +633,472 @@ const DigitalFormPage = () => {
             </div>
           </section>
         )}
+
+        {/* Inspection Header Section */}
+        <section className="form-section">
+          <h2 className="section-title">Inspection Header</h2>
+          <div className="form-row-3">
+            <div className="form-field">
+              <label>Date of Inspection</label>
+              <input 
+                type="date" 
+                value={formData.inspectionDate}
+                onChange={(e) => handleFormChange('inspectionDate', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Time</label>
+              <input 
+                type="time" 
+                value={formData.inspectionTime}
+                onChange={(e) => handleFormChange('inspectionTime', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Inspected By</label>
+              <input 
+                type="text" 
+                value={formData.inspectedBy}
+                onChange={(e) => handleFormChange('inspectedBy', e.target.value)}
+                placeholder="eg: A-110"
+                className="form-input"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Base Line Imaging Section */}
+        <section className="form-section">
+          <h2 className="section-title">Base Line Imaging nos (IR)</h2>
+          <div className="form-row-3">
+            <div className="form-field">
+              <label>Right</label>
+              <input 
+                type="text" 
+                value={formData.baselineRight}
+                onChange={(e) => handleFormChange('baselineRight', e.target.value)}
+                placeholder="eg: IR 02052"
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Left</label>
+              <input 
+                type="text" 
+                value={formData.baselineLeft}
+                onChange={(e) => handleFormChange('baselineLeft', e.target.value)}
+                placeholder="eg: IR 02053"
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Front</label>
+              <input 
+                type="text" 
+                value={formData.baselineFront}
+                onChange={(e) => handleFormChange('baselineFront', e.target.value)}
+                placeholder="eg: IR 02054"
+                className="form-input"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Historical & Current Data Section */}
+        <section className="form-section">
+          <h2 className="section-title">Historical & Current Data</h2>
+          <div className="form-row-3">
+            <div className="form-field">
+              <label>Last Month kVA</label>
+              <input 
+                type="text" 
+                value={formData.lastMonthKVA}
+                onChange={(e) => handleFormChange('lastMonthKVA', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Date</label>
+              <input 
+                type="date" 
+                value={formData.lastMonthDate}
+                onChange={(e) => handleFormChange('lastMonthDate', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Time</label>
+              <input 
+                type="time" 
+                value={formData.lastMonthTime}
+                onChange={(e) => handleFormChange('lastMonthTime', e.target.value)}
+                className="form-input"
+              />
+            </div>
+          </div>
+          <div className="form-row-3" style={{ marginTop: '12px' }}>
+            <div className="form-field">
+              <label>Current Month kVA</label>
+              <input 
+                type="text" 
+                value={formData.currentMonthKVA}
+                onChange={(e) => handleFormChange('currentMonthKVA', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Base Line Condition</label>
+              <select 
+                value={formData.baselineCondition}
+                onChange={(e) => handleFormChange('baselineCondition', e.target.value)}
+                className="form-input"
+              >
+                <option>Sunny</option>
+                <option>Cloudy</option>
+                <option>Rainy</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Transformer Type</label>
+              <select 
+                value={formData.transformerType}
+                onChange={(e) => handleFormChange('transformerType', e.target.value)}
+                className="form-input"
+              >
+                <option>Bulk</option>
+                <option>Distribution</option>
+                <option>Power</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Meter Details Section */}
+        <section className="form-section">
+          <h2 className="section-title">Meter Details</h2>
+          <div className="form-row-3">
+            <div className="form-field">
+              <label>Serial</label>
+              <input 
+                type="text" 
+                value={formData.meterSerial}
+                onChange={(e) => handleFormChange('meterSerial', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-field">
+              <label>Meter CT Ratio</label>
+              <div className="input-with-suffix">
+                <input 
+                  type="number" 
+                  value={formData.meterCTRatio}
+                  onChange={(e) => handleFormChange('meterCTRatio', e.target.value)}
+                  className="form-input"
+                />
+                <span className="input-suffix">/5A</span>
+              </div>
+            </div>
+            <div className="form-field">
+              <label>Make</label>
+              <select 
+                value={formData.meterMake}
+                onChange={(e) => handleFormChange('meterMake', e.target.value)}
+                className="form-input"
+              >
+                <option>Microstar</option>
+                <option>Landis+Gyr</option>
+                <option>Siemens</option>
+                <option>ABB</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Inspection Checklist Grid */}
+        <section className="form-section">
+          <h2 className="section-title">Inspection Checklist</h2>
+          <div className="checklist-container">
+            <div className="checklist-left">
+              <h3 className="checklist-subtitle">Work Content</h3>
+              <table className="checklist-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>C</th>
+                    <th>Cl</th>
+                    <th>T</th>
+                    <th>R</th>
+                    <th>Other</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.checklist.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.no}</td>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={item.c}
+                          onChange={(e) => handleChecklistChange(index, 'c', e.target.checked)}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={item.cl}
+                          onChange={(e) => handleChecklistChange(index, 'cl', e.target.checked)}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={item.t}
+                          onChange={(e) => handleChecklistChange(index, 't', e.target.checked)}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={item.r}
+                          onChange={(e) => handleChecklistChange(index, 'r', e.target.checked)}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          value={item.other}
+                          onChange={(e) => handleChecklistChange(index, 'other', e.target.value)}
+                          className="other-input"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="checklist-legend">
+                <strong>Legend:</strong> C- Check, Cl- Clean, T- Tight, R- Replace
+              </p>
+            </div>
+            
+            <div className="checklist-right">
+              <h3 className="checklist-subtitle">After Inspection Report</h3>
+              <table className="checklist-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>OK</th>
+                    <th>NOT OK</th>
+                    <th>IR No(s)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.checklist.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.no}</td>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={item.ok}
+                          onChange={(e) => {
+                            handleChecklistChange(index, 'ok', e.target.checked);
+                            if (e.target.checked) handleChecklistChange(index, 'notOk', false);
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={item.notOk}
+                          onChange={(e) => {
+                            handleChecklistChange(index, 'notOk', e.target.checked);
+                            if (e.target.checked) handleChecklistChange(index, 'ok', false);
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          value={item.irNos}
+                          onChange={(e) => handleChecklistChange(index, 'irNos', e.target.value)}
+                          className="other-input"
+                          placeholder="eg: IR-001"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="form-row-2" style={{ marginTop: '16px' }}>
+                <div className="form-field">
+                  <label>After Thermal Date</label>
+                  <input 
+                    type="date" 
+                    value={formData.afterThermalDate}
+                    onChange={(e) => handleFormChange('afterThermalDate', e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Time</label>
+                  <input 
+                    type="time" 
+                    value={formData.afterThermalTime}
+                    onChange={(e) => handleFormChange('afterThermalTime', e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Voltage and Current Readings Section */}
+        <section className="form-section">
+          <h2 className="section-title">Voltage and Current Readings</h2>
+          <div className="readings-container">
+            <div className="reading-card">
+              <h3 className="reading-title">First Inspection Voltage and Current Readings</h3>
+              <table className="readings-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>R</th>
+                    <th>Y</th>
+                    <th>B</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="reading-label">V</td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.firstInspection.vR}
+                        onChange={(e) => handleInspectionReadingChange('firstInspection', 'vR', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.firstInspection.vY}
+                        onChange={(e) => handleInspectionReadingChange('firstInspection', 'vY', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.firstInspection.vB}
+                        onChange={(e) => handleInspectionReadingChange('firstInspection', 'vB', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="reading-label">I</td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.firstInspection.iR}
+                        onChange={(e) => handleInspectionReadingChange('firstInspection', 'iR', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.firstInspection.iY}
+                        onChange={(e) => handleInspectionReadingChange('firstInspection', 'iY', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.firstInspection.iB}
+                        onChange={(e) => handleInspectionReadingChange('firstInspection', 'iB', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="reading-card">
+              <h3 className="reading-title">Second Inspection Voltage and Current Readings</h3>
+              <table className="readings-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>R</th>
+                    <th>Y</th>
+                    <th>B</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="reading-label">V</td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.secondInspection.vR}
+                        onChange={(e) => handleInspectionReadingChange('secondInspection', 'vR', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.secondInspection.vY}
+                        onChange={(e) => handleInspectionReadingChange('secondInspection', 'vY', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.secondInspection.vB}
+                        onChange={(e) => handleInspectionReadingChange('secondInspection', 'vB', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="reading-label">I</td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.secondInspection.iR}
+                        onChange={(e) => handleInspectionReadingChange('secondInspection', 'iR', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.secondInspection.iY}
+                        onChange={(e) => handleInspectionReadingChange('secondInspection', 'iY', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        value={formData.secondInspection.iB}
+                        onChange={(e) => handleInspectionReadingChange('secondInspection', 'iB', e.target.value)}
+                        className="reading-input"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
         {/* Anomalies Section */}
         <section className="form-section">

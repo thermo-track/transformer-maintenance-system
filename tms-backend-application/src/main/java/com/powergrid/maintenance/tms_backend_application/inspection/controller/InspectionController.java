@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InspectionAnomaly;
 import com.powergrid.maintenance.tms_backend_application.inspection.domain.InferenceMetadata;
+import com.powergrid.maintenance.tms_backend_application.inspection.dto.DigitalFormDataDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionCreateRequestDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionResponseDTO;
 import com.powergrid.maintenance.tms_backend_application.inspection.dto.InspectionStatusResponseDTO;
@@ -219,5 +220,36 @@ public class InspectionController {
     public ResponseEntity<List<InspectionResponseDTO>> getLatestInspectionPerTransformer() {
         log.info("Retrieving latest inspection for each transformer");
         return inspectionService.getLatestInspectionPerTransformer();
+    }
+
+    @Operation(summary = "Update digital form data", description = "Updates the digital form data for a specific inspection")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Digital form data updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Inspection not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PutMapping("/{inspectionId}/digital-form")
+    public ResponseEntity<InspectionResponseDTO> updateDigitalFormData(
+            @Parameter(description = "Inspection ID", required = true)
+            @PathVariable String inspectionId,
+            @Valid @RequestBody DigitalFormDataDTO formData) {
+        log.info("Updating digital form data for inspection: {}", inspectionId);
+        log.info("Received form data: {}", formData);
+        return inspectionService.updateDigitalFormData(inspectionId, formData);
+    }
+
+    @Operation(summary = "Get digital form data", description = "Retrieves the digital form data for a specific inspection")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Digital form data retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Inspection not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/{inspectionId}/digital-form")
+    public ResponseEntity<DigitalFormDataDTO> getDigitalFormData(
+            @Parameter(description = "Inspection ID", required = true)
+            @PathVariable String inspectionId) {
+        log.info("Retrieving digital form data for inspection: {}", inspectionId);
+        return inspectionService.getDigitalFormData(inspectionId);
     }
 }
