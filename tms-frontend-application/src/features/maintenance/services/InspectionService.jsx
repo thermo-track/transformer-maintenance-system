@@ -330,6 +330,76 @@ getStatusOptions() {
   ];
 }
 
+/**
+ * Save digital form data for an inspection
+ * @param {string} inspectionId - The inspection ID
+ * @param {Object} formData - Form data object
+ * @returns {Promise<Object>} Updated inspection data
+ */
+async saveDigitalFormData(inspectionId, formData) {
+  try {
+    console.log(`Saving digital form data for inspection: ${inspectionId}`, formData);
+    
+    const response = await authFetch(`${API_BASE_URL}/${inspectionId}/digital-form`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error("Digital form save error:", errorData);
+      throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log("Digital form save response:", responseData);
+    return responseData;
+  } catch (error) {
+    console.error('Error saving digital form data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get digital form data for an inspection
+ * @param {string} inspectionId - The inspection ID
+ * @returns {Promise<Object>} Digital form data
+ */
+async getDigitalFormData(inspectionId) {
+  try {
+    console.log(`Fetching digital form data for inspection: ${inspectionId}`);
+    
+    const response = await authFetch(`${API_BASE_URL}/${inspectionId}/digital-form`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      // If no form data exists yet, return null
+      if (response.status === 404) {
+        console.log('No digital form data found for inspection:', inspectionId);
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Digital form data response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching digital form data:', error);
+    if (error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 
 
 }

@@ -141,7 +141,7 @@ const PageHeaderIns = ({
         {/* Right Section */}
         <div className="header-right-section">
           <p className="last-inspected-text">
-            Last Updated Date: {formatLastUpdatedText()}
+            {formatLastUpdatedText()}
           </p>
 
           {/* Baseline Images Navigation Button */}

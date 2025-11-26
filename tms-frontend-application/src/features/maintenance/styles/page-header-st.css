@@ -87,9 +87,9 @@
 /* Button Groups */
 .button-group {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: flex-end;
+  flex-direction: column; /* stack buttons vertically */
+  align-items: flex-end; /* keep buttons aligned to the right */
+  gap: 8px;
 }
 
 .baseline-button {
@@ -138,6 +138,33 @@
 .baseline-images-nav-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Digital Form Button (stacked below baseline button) */
+.digital-form-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #10b981; /* teal/green */
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.digital-form-nav-btn:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.digital-form-nav-btn:active {
+  transform: translateY(0);
 }
 
 .new-element-button {
@@ -220,7 +247,7 @@
 
   .button-group {
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-end;
   }
 

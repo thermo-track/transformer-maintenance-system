@@ -144,7 +144,7 @@ const PageHeaderST = ({
         {/* Right Section */}
         <div className="header-right-section">
           <p className="last-inspected-text">
-            Last Updated Date: {formatLastUpdatedText()}
+            {formatLastUpdatedText()}
           </p>
 
           {/* Baseline Images Navigation Button */}
@@ -155,6 +155,13 @@ const PageHeaderST = ({
             >
               <Camera size={20} />
               Manage Baseline Images
+            </button>
+            <button
+              onClick={() => navigate(`/transformer/${transformerId}/digital-form`)}
+              className="digital-form-nav-btn"
+            >
+              📝
+              Digital Form
             </button>
           </div>
         </div>
