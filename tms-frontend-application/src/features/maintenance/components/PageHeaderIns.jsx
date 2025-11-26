@@ -5,6 +5,7 @@ import { baselineImageService } from '../services/BaselineImageService';
 import '../styles/page-header-st.css';
 import { formatInspectedDateTime } from '../utils/dataUtils';
 import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const PageHeaderIns = ({
   transformerId,
@@ -14,13 +15,11 @@ const PageHeaderIns = ({
   inspectionTimestamp,
   inspectionBranch
 }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const inspectors = ['John Silva', 'Priya Perera', 'Nuwan Fernando', 'Ayesha Kumari', 'Ravi Jayasuriya'];
-  const randomInspector = inspectors[Math.floor(Math.random() * inspectors.length)];
 
   console.log('🛑 transformerId in PageHeaderIns:', transformerId);
 
@@ -129,7 +128,7 @@ const PageHeaderIns = ({
             </span>
 
             <span className="badge">
-              {randomInspector}
+              {user?.username || 'Unknown'}
               <span className="badge-label">Inpected By</span>
             </span>
 

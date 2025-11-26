@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { inspectionService } from '../services/InspectionService';
 import { transformerService } from '../services/TransformerService';
 import AnnotationService from '../../../services/AnnotationService';
+import { useAuth } from '../../../contexts/AuthContext';
 import '../styles/digital-form.css';
 
 const DigitalFormPage = () => {
+  const { user } = useAuth();
   const { transformerId } = useParams();
   const navigate = useNavigate();
   
@@ -149,7 +151,7 @@ const DigitalFormPage = () => {
             ...prev,
             inspectionDate: date,
             inspectionTime: time,
-            inspectedBy: inspectionData.branch || '', // Using branch as inspector identifier
+            inspectedBy: user?.username || savedFormData?.inspectedBy || '', // Use authenticated user
             baselineCondition: inspectionData.environmentalCondition || prev.baselineCondition
           }));
         }

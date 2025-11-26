@@ -8,8 +8,10 @@ import { inspectionService } from '../services/InspectionService';
 import PageHeaderIns from "../components/PageHeaderIns";
 import { transformerService } from '../services/TransformerService';
 import { cloudinaryService } from '../services/CloudinaryService';
+import { useAuth } from '../../../contexts/AuthContext';
 
 function InspectionsSTImage() {
+  const { user } = useAuth();
   const { transformerNo, inspectionId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,7 +99,7 @@ function InspectionsSTImage() {
         status: 'pending',
         branch: 'COLOMBO',
         type: 'thermal_inspection',
-        inspector: 'System Admin'
+        inspector: user?.username || 'Unknown'
       }
     ];
   };
