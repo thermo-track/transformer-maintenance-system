@@ -1,7 +1,7 @@
 FROM node:20-slim AS build
     WORKDIR /app
     COPY package.json package-lock.json ./
-    RUN npm install --legacy-peer-dep
+    RUN npm install --legacy-peer-deps
     COPY . .
     # Set build-time environment variables
     ARG VITE_CLOUDINARY_CLOUD_NAME=dxqmzslkb

@@ -26,8 +26,12 @@ class InferenceRequest(BaseModel):
 def resolve_weights_path() -> Path:
     """
     Resolve the weights path with the following priority:
-    1. Fine-tuned model from tms-model-finetune/finetune_weight/best_finetune.pt
-    2. Original model from tms-fault-detection-model/weights/best.pt
+    1. Fine-tuned model from environment variable or default path
+    2. Original model from environment variable or default path
+    
+    Environment Variables (for Docker):
+    - FINETUNED_WEIGHTS_PATH: Path to fine-tuned model (e.g., /app/shared_weights/best_finetune.pt)
+    - ORIGINAL_WEIGHTS_PATH: Path to original model (e.g., /app/original_weights/best.pt)
     
     Returns:
         Path: Absolute path to the weights file to use
@@ -35,17 +39,32 @@ def resolve_weights_path() -> Path:
     Raises:
         FileNotFoundError: If no weights file is found in either location
     """
-    api_dir = Path(__file__).parent.absolute()
-    repo_root = api_dir.parent.parent  # Go up to repository root
+    # Check for Docker environment variable paths first
+    finetuned_env = os.getenv("FINETUNED_WEIGHTS_PATH")
+    original_env = os.getenv("ORIGINAL_WEIGHTS_PATH")
     
     # Priority 1: Fine-tuned model
-    finetuned_weights = repo_root / "tms-model-finetune" / "finetune_weight" / "best_finetune.pt"
+    if finetuned_env:
+        finetuned_weights = Path(finetuned_env)
+    else:
+        # Fallback to local development path
+        api_dir = Path(__file__).parent.absolute()
+        repo_root = api_dir.parent.parent
+        finetuned_weights = repo_root / "tms-model-finetune" / "finetune_weight" / "best_finetune.pt"
+    
     if finetuned_weights.exists():
         print(f"✓ Using fine-tuned model: {finetuned_weights}")
         return finetuned_weights
     
     # Priority 2: Original model
-    original_weights = repo_root / "tms-fault-detection-model" / "weights" / "best.pt"
+    if original_env:
+        original_weights = Path(original_env)
+    else:
+        # Fallback to local development path
+        api_dir = Path(__file__).parent.absolute()
+        repo_root = api_dir.parent.parent
+        original_weights = repo_root / "tms-fault-detection-model" / "weights" / "best.pt"
+    
     if original_weights.exists():
         print(f"✓ Using original model: {original_weights}")
         return original_weights
