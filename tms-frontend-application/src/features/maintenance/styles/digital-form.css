@@ -185,19 +185,20 @@
 
 /* Image Container */
 .image-container {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
 }
 
 .thermal-image {
-  max-width: 300px;
+  width: 100%;
   height: auto;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: block;
+  border-radius: 8px;
 }
 
 .thermal-image.annotated {
@@ -416,6 +417,7 @@
   display: none;
 }
 
+/* Print Styles */
 @media print {
   /* Hide non-essential elements */
   .no-print {
@@ -424,6 +426,12 @@
 
   /* Show print-only elements */
   .print-only {
+    display: block !important;
+  }
+  
+  /* First page header - ensure it only appears once */
+  .first-page-header {
+    position: static;
     display: block !important;
   }
 
@@ -437,6 +445,7 @@
     background: #ffffff;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+    counter-reset: page;
   }
 
   .digital-form-container {
@@ -453,10 +462,55 @@
     padding: 8px;
   }
   
-  /* Ensure print header stays at top of first page only */
-  .print-header {
-    position: static;
+  /* Ensure print header appears only once on first page */
+  .print-header-once {
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #1f2937;
+    page-break-inside: avoid;
     page-break-after: avoid;
+    position: static !important;
+    display: block !important;
+    /* Prevent it from being a running header */
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    /* Force overflow to hide any repetitions */
+    overflow: visible;
+    height: auto;
+  }
+  
+  /* Hide the print header on all pages except the very first element */
+  .digital-form-container > .print-header-once:not(:first-child) {
+    display: none !important;
+  }
+  
+  /* Alternative: hide after first page using page break */
+  .print-header-once ~ .print-header-once {
+    display: none !important;
+  }
+  
+  .print-header-once h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 6px 0;
+  }
+  
+  .print-header-once .print-subtitle {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  /* Force content after header to stay below it */
+  .form-content {
+    page-break-before: avoid;
+    clear: both;
   }
 
   .section-title {
@@ -480,9 +534,33 @@
   }
 
   /* Image adjustments */
-  .thermal-image {
-    max-width: 250px;
+  .image-container {
+    max-width: 400px;
     page-break-inside: avoid;
+    position: relative;
+    overflow: visible !important;
+    display: inline-block;
+    background: transparent !important;
+  }
+  
+  .thermal-image {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    page-break-inside: avoid;
+    display: block;
+    position: relative;
+  }
+  
+  /* Ensure canvas overlay prints correctly - match image size exactly */
+  .image-container canvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    pointer-events: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: transparent !important;
   }
 
   /* Ensure colors print */
@@ -556,4 +634,37 @@
   .thermal-image {
     max-width: 200px;
   }
+}
+
+/* Apply print styles when body has printing class (for pre-print layout calculation) */
+body.printing .image-container {
+  max-width: 400px !important;
+  position: relative !important;
+  overflow: visible !important;
+  display: inline-block !important;
+  background: transparent !important;
+}
+
+body.printing .thermal-image {
+  max-width: 400px !important;
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  position: relative !important;
+}
+
+body.printing .image-container canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  background: transparent !important;
+}
+
+body.printing .no-print {
+  display: none !important;
+}
+
+body.printing .print-only {
+  display: block !important;
 }

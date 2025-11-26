@@ -24,11 +24,11 @@ const Layout = ({ children }) => {
   return (
     <div className="app-layout">
       {/* Header Bar with Toggle Button, Title, and User Corner */}
-      <div className="top-header">
+      <div className="top-header print-header-first">
         <div className="header-left">
-          {/* Toggle Button */}
+          {/* Toggle Button - hidden in print */}
           <button 
-            className="sidebar-toggle" 
+            className="sidebar-toggle no-print" 
             onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
               padding: '8px 12px',
@@ -44,13 +44,15 @@ const Layout = ({ children }) => {
             ☰
           </button>
 
-          {/* Main Title */}
+          {/* Main Title - hidden in print */}
           <h1 className="app-title">POWER GRID</h1>
         </div>
 
         {/* User Corner on the right */}
         <div className="header-right">
-          <UserCorner />
+          <div className="no-print">
+            <UserCorner />
+          </div>
         </div>
       </div>
 

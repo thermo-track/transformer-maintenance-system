@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { inspectionService } from '../services/InspectionService';
 import { transformerService } from '../services/TransformerService';
@@ -17,6 +17,68 @@ const DigitalFormPage = () => {
   const [anomalies, setAnomalies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Form data state
+  const [formData, setFormData] = useState({
+    inspectionDate: new Date().toISOString().split('T')[0],
+    inspectionTime: '12:05',
+    inspectedBy: '',
+    baselineRight: '',
+    baselineLeft: '',
+    baselineFront: '',
+    lastMonthKVA: '',
+    lastMonthDate: '',
+    lastMonthTime: '',
+    currentMonthKVA: '',
+    baselineCondition: 'Sunny',
+    transformerType: 'Bulk',
+    meterSerial: '',
+    meterCTRatio: '',
+    meterMake: 'Microstar',
+    checklist: [
+      { no: 1, c: false, cl: false, t: false, r: false, other: '' },
+      { no: 2, c: false, cl: false, t: false, r: false, other: '' },
+      { no: 3, c: false, cl: false, t: false, r: false, other: '' },
+      { no: 4, c: false, cl: false, t: false, r: false, other: '' }
+    ],
+    afterInspectionOK: false,
+    afterInspectionNotOK: false,
+    afterInspectionIRNos: '',
+    afterThermalDate: '',
+    afterThermalTime: '',
+    firstInspection: {
+      vR: '', vY: '', vB: '',
+      iR: '', iY: '', iB: ''
+    },
+    secondInspection: {
+      vR: '', vY: '', vB: '',
+      iR: '', iY: '', iB: ''
+    }
+  });
+  
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
+  const containerRef = useRef(null);
+  
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleChecklistChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      checklist: prev.checklist.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+  
+  const handleInspectionReadingChange = (inspectionType, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [inspectionType]: { ...prev[inspectionType], [field]: value }
+    }));
+  };
 
   // Fetch transformer details and inspections on mount
   useEffect(() => {
@@ -83,6 +145,9 @@ const DigitalFormPage = () => {
         ];
         
         setAnomalies(allAnomalies);
+        
+        // Draw bounding boxes after anomalies are loaded
+        setTimeout(() => drawBoundingBoxes(allAnomalies), 100);
 
       } catch (err) {
         console.error('Error fetching inspection details:', err);
@@ -94,9 +159,176 @@ const DigitalFormPage = () => {
 
     fetchInspectionDetails();
   }, [selectedInspectionId]);
+  
+  // Add print event listeners to redraw canvas
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      // Wait for print layout to settle, then redraw
+      setTimeout(() => {
+        if (imageRef.current && canvasRef.current) {
+          drawBoundingBoxes();
+        }
+      }, 250);
+    };
+    
+    const handleAfterPrint = () => {
+      // Redraw after printing to restore screen layout
+      setTimeout(() => {
+        if (imageRef.current && canvasRef.current) {
+          drawBoundingBoxes();
+        }
+      }, 100);
+    };
+    
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    
+    // Also listen for media query changes
+    const printMediaQuery = window.matchMedia('print');
+    const handleMediaChange = (e) => {
+      if (e.matches) {
+        // Switched to print media
+        setTimeout(() => drawBoundingBoxes(), 250);
+      }
+    };
+    
+    if (printMediaQuery.addEventListener) {
+      printMediaQuery.addEventListener('change', handleMediaChange);
+    }
+    
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+      if (printMediaQuery.removeEventListener) {
+        printMediaQuery.removeEventListener('change', handleMediaChange);
+      }
+    };
+  }, [anomalies]);
 
   const handlePrint = () => {
-    window.print();
+    // Create a custom print sequence that ensures canvas is drawn correctly
+    const printSequence = async () => {
+      // Step 1: Apply print styles by adding a class
+      document.body.classList.add('printing');
+      
+      // Step 2: Force a complete layout recalculation
+      await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
+      });
+      
+      // Step 3: Wait for images to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Step 4: Clear and redraw canvas with print dimensions
+      if (canvasRef.current && imageRef.current && containerRef.current) {
+        const canvas = canvasRef.current;
+        const image = imageRef.current;
+        const ctx = canvas.getContext('2d');
+        
+        // Get the print layout dimensions
+        const imageRect = image.getBoundingClientRect();
+        
+        // Completely recreate the canvas
+        canvas.width = imageRect.width;
+        canvas.height = imageRect.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Redraw with current dimensions
+        drawBoundingBoxes();
+      }
+      
+      // Step 5: Wait a bit more for canvas to render
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Step 6: Trigger print
+      window.print();
+      
+      // Step 7: Cleanup after print dialog closes
+      setTimeout(() => {
+        document.body.classList.remove('printing');
+        // Redraw canvas for screen view
+        drawBoundingBoxes();
+      }, 500);
+    };
+    
+    printSequence();
+  };
+  
+  const drawBoundingBoxes = (anomalyList = anomalies) => {
+    const canvas = canvasRef.current;
+    const image = imageRef.current;
+    const container = containerRef.current;
+    
+    if (!canvas || !image || !container || !image.complete || !image.naturalWidth) {
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    // Get the actual rendered dimensions of the image element
+    const imageRect = image.getBoundingClientRect();
+    
+    // Set canvas to match the IMAGE size exactly, not container
+    canvas.width = imageRect.width;
+    canvas.height = imageRect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Calculate scale based on actual rendered image size vs natural size
+    const scaleX = imageRect.width / image.naturalWidth;
+    const scaleY = imageRect.height / image.naturalHeight;
+
+    anomalyList.forEach((detection) => {
+      if (detection.bboxX === null || detection.bboxY === null) return;
+      
+      // No offset needed since canvas matches image exactly
+      const x = detection.bboxX * scaleX;
+      const y = detection.bboxY * scaleY;
+      const width = detection.bboxWidth * scaleX;
+      const height = detection.bboxHeight * scaleY;
+      
+      // Check if the bounding box is within the canvas bounds
+      if (x + width < 0 || y + height < 0 || 
+          x > canvas.width || y > canvas.height) {
+        return;
+      }
+      
+      const confidence = detection.faultConfidence || 0;
+      const faultType = detection.faultType || detection.anomalyType || '';
+      
+      let color = '#ff4444';
+      if (confidence >= 0.8) color = '#ff4444';
+      else if (confidence >= 0.6) color = '#ffa500';
+      else color = '#ffff00';
+      
+      if (detection.source === 'USER_ADDED') {
+        color = '#00ff00';
+      }
+      
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, width, height);
+      
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.2;
+      ctx.fillRect(x, y, width, height);
+      ctx.globalAlpha = 1.0;
+      
+      const label = `${faultType} ${(confidence * 100).toFixed(0)}%`;
+      ctx.font = '14px Arial';
+      const textWidth = ctx.measureText(label).width;
+      
+      const labelY = y > 25 ? y - 5 : y + height + 20;
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(x, labelY - 18, textWidth + 10, 22);
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(label, x + 5, labelY - 3);
+    });
   };
 
   const formatDate = (dateString) => {
@@ -146,12 +378,6 @@ const DigitalFormPage = () => {
         <button onClick={() => navigate(-1)} className="back-button">← Back</button>
         <h1>Digital Maintenance Form</h1>
         <button onClick={handlePrint} className="print-button">🖨️ Print / Save PDF</button>
-      </div>
-
-      {/* Print-only header */}
-      <div className="print-only print-header">
-        <h1>Transformer Maintenance Record</h1>
-        <p className="print-subtitle">Generated on {new Date().toLocaleDateString()}</p>
       </div>
 
       {/* Main form content */}
@@ -244,23 +470,26 @@ const DigitalFormPage = () => {
         {/* Thermal Image Section */}
         {selectedInspection && selectedInspection.thermalImageUrl && (
           <section className="form-section">
-            <h2 className="section-title">Thermal Image</h2>
-            <div className="image-container">
+            <h2 className="section-title">Thermal Image with Anomaly Annotations</h2>
+            <div className="image-container" ref={containerRef}>
               <img 
+                ref={imageRef}
                 src={selectedInspection.thermalImageUrl} 
                 alt="Thermal inspection" 
                 className="thermal-image"
+                onLoad={() => drawBoundingBoxes()}
               />
-              {selectedInspection.annotatedImageUrl && (
-                <div className="annotated-image-note">
-                  <p>📊 Annotated image with anomaly markers available</p>
-                  <img 
-                    src={selectedInspection.annotatedImageUrl} 
-                    alt="Annotated thermal inspection" 
-                    className="thermal-image annotated"
-                  />
-                </div>
-              )}
+              <canvas
+                ref={canvasRef}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  pointerEvents: 'none',
+                  width: '100%',
+                  height: '100%'
+                }}
+              />
             </div>
           </section>
         )}
@@ -299,9 +528,9 @@ const DigitalFormPage = () => {
                         </span>
                       </td>
                       <td>
-                        {anomaly.xCoordinate && anomaly.yCoordinate ? (
+                        {(anomaly.xCoordinate || anomaly.centroidX) && (anomaly.yCoordinate || anomaly.centroidY) ? (
                           <span className="coordinates">
-                            ({Math.round(anomaly.xCoordinate)}, {Math.round(anomaly.yCoordinate)})
+                            ({Math.round(anomaly.xCoordinate || anomaly.centroidX)}, {Math.round(anomaly.yCoordinate || anomaly.centroidY)})
                           </span>
                         ) : 'N/A'}
                       </td>
