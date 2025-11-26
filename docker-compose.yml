@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: tms-postgres
+    environment:
+      - POSTGRES_DB=${DB_NAME:-tms_db}
+      - POSTGRES_USER=${DB_USERNAME:-tms_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-tms_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tms_user} -d ${DB_NAME:-tms_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tms-network
+    restart: unless-stopped
+
+  # Backend Spring Boot Application
+  backend:
+    build:
+      context: ./tms-backend-application
+      dockerfile: Dockerfile
+    container_name: tms-backend
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/${DB_NAME:-tms_db}
+      - DB_USERNAME=${DB_USERNAME:-tms_user}
+      - DB_PASSWORD=${DB_PASSWORD:-tms_password}
+      - INFERENCE_API_URL=http://inference-api:8001
+      - FINETUNE_API_URL=http://finetune-api:8002
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - ADMIN_SECRET_KEY=${ADMIN_SECRET_KEY}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@tms.local}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      # Container management settings
+      # Backend automatically starts finetune container when needed and stops it after training
+      - ML_FINETUNE_CONTAINER_ENABLED=true
+      - ML_FINETUNE_CONTAINER_NAME=tms-finetune-api
+      - ML_FINETUNE_CONTAINER_TIMEOUT=300
+      - ML_FINETUNE_CONTAINER_AUTO_STOP=true
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow backend to control Docker
+      - ./docker-compose.yml:/docker-compose.yml:ro  # Mount compose file for container management
+    working_dir: /  # Set working directory so docker-compose can find the file
+    depends_on:
+      postgres:
+        condition: service_healthy
+      inference-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - tms-network
+    restart: unless-stopped
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./tms-frontend-application
+      dockerfile: Dockerfile
+    container_name: tms-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - tms-network
+    restart: unless-stopped
+
+  # Inference API (Always Running)
+  inference-api:
+    build:
+      context: ./tms-fault-detection-model
+      dockerfile: Dockerfile
+    container_name: tms-inference-api
+    ports:
+      - "8001:8001"
+    volumes:
+      # Shared weights directory - reads fine-tuned models
+      - ml-weights:/app/shared_weights:ro
+      # Original weights as fallback
+      - ./tms-fault-detection-model/weights:/app/original_weights:ro
+      # Output directory for inference results
+      - ./tms-fault-detection-model/outputs:/app/outputs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FINETUNED_WEIGHTS_PATH=/app/shared_weights/best_finetune.pt
+      - ORIGINAL_WEIGHTS_PATH=/app/original_weights/best.pt
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tms-network
+    restart: unless-stopped
+
+  # Fine-tuning API (On-Demand - Automatically Managed by Backend)
+  # Backend automatically starts this container when retraining is triggered
+  # and stops it after training completes to save resources
+  finetune-api:
+    profiles: ["finetune"]
+    build:
+      context: ./tms-model-finetune
+      dockerfile: Dockerfile
+    container_name: tms-finetune-api
+    ports:
+      - "8002:8002"
+    volumes:
+      # Shared weights directory - writes fine-tuned models here
+      - ml-weights:/app/shared_weights
+      # Original dataset for training
+      - ./Annotated_dataset:/app/Annotated_dataset:ro
+      # Finetune-specific directories
+      - ./tms-model-finetune/feedback_cache:/app/feedback_cache
+      - ./tms-model-finetune/logs:/app/logs
+      - ./tms-model-finetune/runs:/app/runs
+      # Mount original model weights
+      - ./tms-fault-detection-model/weights/best.pt:/app/pretrained_weights/best.pt:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OUTPUT_WEIGHTS_PATH=/app/shared_weights/best_finetune.pt
+      - PRETRAINED_WEIGHTS_PATH=/app/pretrained_weights/best.pt
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tms-network
+    restart: "no"  # Never auto-restart - backend controls lifecycle
+
+volumes:
+  postgres-data:
+    driver: local
+  ml-weights:
+    driver: local
+
+networks:
+  tms-network:
+    driver: bridge

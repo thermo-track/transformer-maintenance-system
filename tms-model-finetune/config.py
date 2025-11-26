@@ -2,13 +2,25 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import List
 
-REPO_ROOT: Path = Path(__file__).resolve().parents[1]
-MODULE_ROOT: Path = REPO_ROOT / "tms-model-finetune"
+# In Docker, the working directory is /app, and dataset is mounted at /app/Annotated_dataset
+# In local dev, we need to go up one level from tms-model-finetune
+if os.path.exists("/app/Annotated_dataset"):
+    # Running in Docker
+    REPO_ROOT: Path = Path("/app")
+    MODULE_ROOT: Path = Path("/app")
+else:
+    # Running locally
+    REPO_ROOT: Path = Path(__file__).resolve().parents[1]
+    MODULE_ROOT: Path = REPO_ROOT / "tms-model-finetune"
 
-PRETRAINED_WEIGHTS: Path = REPO_ROOT / "tms-fault-detection-model" / "weights" / "best.pt"
+# Support Docker environment variables
+PRETRAINED_WEIGHTS: Path = Path(os.getenv("PRETRAINED_WEIGHTS_PATH", REPO_ROOT / "tms-fault-detection-model" / "weights" / "best.pt"))
+OUTPUT_WEIGHTS_DIR: Path = Path(os.getenv("OUTPUT_WEIGHTS_PATH", MODULE_ROOT / "finetune_weight" / "best_finetune.pt")).parent
+
 ANNOTATED_DATASET_ROOT: Path = REPO_ROOT / "Annotated_dataset"
 TRAIN_IMAGES_DIR: Path = ANNOTATED_DATASET_ROOT / "train" / "images"
 TRAIN_LABELS_DIR: Path = ANNOTATED_DATASET_ROOT / "train" / "labels"
@@ -19,7 +31,6 @@ WORK_DIR: Path = MODULE_ROOT / "workdir"
 DOWNLOAD_CACHE_DIR: Path = MODULE_ROOT / "feedback_cache"
 RUNS_DIR: Path = MODULE_ROOT / "runs"
 LOGS_DIR: Path = MODULE_ROOT / "logs"
-OUTPUT_WEIGHTS_DIR: Path = MODULE_ROOT / "finetune_weight"
 LAST_METRICS_PATH: Path = OUTPUT_WEIGHTS_DIR / "last_metrics.json"
 
 DEFAULT_EPOCHS: int = 8

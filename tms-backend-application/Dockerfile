@@ -1,36 +1,40 @@
 # Use the official OpenJDK 21 image as base
-FROM openjdk:21-jdk-slim as build
+FROM eclipse-temurin:21-jdk-alpine AS build
 
 # Set the working directory
 WORKDIR /app
 
-# Install Maven
-RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
-
-# Copy the Maven configuration files
-COPY pom.xml .
+# Copy the Maven wrapper files
 COPY mvnw .
 COPY mvnw.cmd .
 COPY .mvn .mvn
 
+# Make the Maven wrapper executable
+RUN chmod +x mvnw
+
+# Copy the Maven configuration files
+COPY pom.xml .
+
 # Download dependencies (this layer will be cached if pom.xml doesn't change)
-RUN mvn dependency:resolve
+RUN ./mvnw dependency:resolve
 
 # Copy the source code
 COPY src ./src
 
 # Build the application
-RUN mvn clean package -DskipTests
+RUN ./mvnw clean package -DskipTests
 
 # Runtime stage
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-alpine
 
-# Install curl (required by HEALTHCHECK) and cleanup apt lists
-RUN apt-get update && apt-get install -y curl \
-  && rm -rf /var/lib/apt/lists/*
+# Install curl (required by HEALTHCHECK) and Docker CLI (for container management)
+RUN apk add --no-cache curl docker-cli docker-cli-compose
 
-# Create a non-root user
-RUN groupadd -r spring && useradd -r -g spring spring
+# Create spring user and add to root group (needed for Docker socket access)
+# Docker socket is typically owned by root group (GID 0)
+RUN addgroup -S spring && \
+    adduser -S spring -G spring && \
+    adduser spring root
 
 # Set the working directory
 WORKDIR /app

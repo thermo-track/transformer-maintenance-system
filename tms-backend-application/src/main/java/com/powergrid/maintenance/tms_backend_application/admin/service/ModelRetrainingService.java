@@ -41,6 +41,7 @@ public class ModelRetrainingService {
     private final InferenceMetadataRepository inferenceMetadataRepository;
     private final RetrainingHistoryRepository retrainingHistoryRepository;
     private final RestTemplate restTemplate;
+    private final DockerContainerService dockerContainerService;
 
     @Value("${finetune.service.url:http://localhost:8002}")
     private String finetuneServiceUrl;
@@ -255,6 +256,12 @@ public class ModelRetrainingService {
         history.setTriggeredBy(username);
         
         try {
+            // Start finetune container if container management is enabled
+            log.info("Starting finetune container (if needed)...");
+            if (!dockerContainerService.startFinetuneContainer()) {
+                throw new RuntimeException("Failed to start finetune container");
+            }
+            
             // Export data
             Map<String, Object> payload = exportFinetuningData(username);
             
@@ -325,6 +332,10 @@ public class ModelRetrainingService {
             history.setCompletedAt(LocalDateTime.now());
             history.setErrorMessage(e.getMessage());
             retrainingHistoryRepository.save(history);
+        } finally {
+            // Stop finetune container to save resources (if auto-stop enabled)
+            log.info("Stopping finetune container to save resources...");
+            dockerContainerService.stopFinetuneContainer();
         }
         
         return runId;
