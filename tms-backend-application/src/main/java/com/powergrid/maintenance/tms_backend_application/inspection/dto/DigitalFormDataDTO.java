@@ -25,6 +25,32 @@ public class DigitalFormDataDTO {
     private InspectionReadingsDTO firstInspection;
     private InspectionReadingsDTO secondInspection;
 
+    // Work Data Sheet fields
+    // Time & Supervision Section
+    private String startTime;
+    private String completionTime;
+    private String supervisedBy;
+    
+    // Gang Composition Section
+    private String techI;
+    private String techII;
+    private String techIII;
+    private String helpers;
+    
+    // Inspection & Rectification Log Section
+    private String inspectedByWds;
+    private String inspectedDate;
+    private String rectifiedBy;
+    private String rectifiedDate;
+    private String reInspectedBy;
+    private String reInspectedDate;
+    private String cssPerson;
+    private String cssDate;
+    
+    // Final Verification Section
+    private String finalCssPerson;
+    private String finalCssDate;
+
     @Data
     public static class ChecklistItemDTO {
         private Integer no;

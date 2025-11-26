@@ -29,7 +29,8 @@ public class InspectionMapper {
         inspection.setBranch(dto.getBranch());
         inspection.setTransformerNo(dto.getTransformerNo());
         inspection.setInspectionTimestamp(dto.getInspectionTimestamp());
-        inspection.setStatus(dto.getStatus());  
+        inspection.setStatus(dto.getStatus());
+        inspection.setInspectedBy(dto.getInspectedBy()); // Save inspector who created the inspection
 
         return inspection;
     }
@@ -62,6 +63,7 @@ public class InspectionMapper {
         dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
         dto.setInspectionDate(inspection.getInspectionTimestamp()); // Alias for frontend compatibility
         dto.setStatus(inspection.getStatus());
+        dto.setInspectedBy(inspection.getInspectedBy()); // Include inspector in response
         
         // Environmental and image data
         dto.setEnvironmentalCondition(inspection.getEnvironmentalCondition());

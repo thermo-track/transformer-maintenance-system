@@ -8,9 +8,12 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import { inspectionService } from '../services/InspectionService';
 import SegmentedNav from '../../../components/SegmentedNav';
+import { useAuth } from '../../../contexts/AuthContext';
 import '../styles/inspections.css';
 
 const InspectionsPage = () => {
+  const { user } = useAuth();
+  
   // Define branches as a constant at the top
   const branches = ['KANDY', 'COLOMBO', 'GALLE', 'JAFFNA', 'MATARA', 'KURUNEGALA', 'ANURADHAPURA'];
   
@@ -47,7 +50,7 @@ const InspectionsPage = () => {
       ...inspection,
       // Add dummy data for additional fields
       maintenanceDateTime: getRandomMaintenanceDateTime(),
-      inspectorName: getRandomInspector(),
+      inspectorName: user?.username || 'Unknown',
       status: getRandomStatus(),
       priority: getRandomPriority(),
       findings: getRandomFindings(),
@@ -88,11 +91,6 @@ const InspectionsPage = () => {
   };
 
   // Helper functions for dummy data
-  const getRandomInspector = () => {
-    const inspectors = ['John Silva', 'Mary Fernando', 'David Perera', 'Sarah Wickramasinghe', 'Mike Rajapaksa'];
-    return inspectors[Math.floor(Math.random() * inspectors.length)];
-  };
-
   const getRandomStatus = () => {
     const statuses = ['Completed', 'In Progress', 'Pending', 'Scheduled'];
     return statuses[Math.floor(Math.random() * statuses.length)];
@@ -189,7 +187,11 @@ const InspectionsPage = () => {
 
   const handleCreate = async (formData) => {
     try {
-      await inspectionService.createInspection(formData);
+      const payload = {
+        ...formData,
+        inspectedBy: user?.username // Save authenticated user as inspector
+      };
+      await inspectionService.createInspection(payload);
       fetchInspections();
       setShowCreateModal(false);
     } catch (error) {

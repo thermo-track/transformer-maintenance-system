@@ -3,11 +3,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { inspectionService } from '../services/InspectionService';
 import { transformerService } from '../services/TransformerService';
 import AnnotationService from '../../../services/AnnotationService';
+import { useAuth } from '../../../contexts/AuthContext';
+import WorkDataSheet from '../components/WorkDataSheet';
 import '../styles/digital-form.css';
 
 const DigitalFormPage = () => {
+  const { user } = useAuth();
   const { transformerId } = useParams();
   const navigate = useNavigate();
+  
+  // Check if user is maintenance engineer (can edit) or just viewer
+  const canEdit = user?.role === 'ROLE_MAINTENANCE_ENGINEER' || user?.role === 'ROLE_ADMIN';
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance' or 'workdata'
+  const [formType, setFormType] = useState('digital'); // 'digital' or 'scanned'
   
   // State management
   const [transformer, setTransformer] = useState(null);
@@ -52,7 +62,25 @@ const DigitalFormPage = () => {
     secondInspection: {
       vR: '', vY: '', vB: '',
       iR: '', iY: '', iB: ''
-    }
+    },
+    // Work Data Sheet fields
+    startTime: '',
+    completionTime: '',
+    supervisedBy: '',
+    techI: '',
+    techII: '',
+    techIII: '',
+    helpers: '',
+    inspectedByWds: '',
+    inspectedDate: '',
+    rectifiedBy: '',
+    rectifiedDate: '',
+    reInspectedBy: '',
+    reInspectedDate: '',
+    cssPerson: '',
+    cssDate: '',
+    finalCssPerson: '',
+    finalCssDate: ''
   });
   
   const canvasRef = useRef(null);
@@ -139,6 +167,9 @@ const DigitalFormPage = () => {
         const inspectionData = await inspectionService.getInspectionById(selectedInspectionId);
         setSelectedInspection(inspectionData);
 
+        // Fetch saved digital form data first
+        const savedFormData = await inspectionService.getDigitalFormData(selectedInspectionId);
+
         // Populate form fields from inspection data
         if (inspectionData) {
           const timestamp = new Date(inspectionData.inspectionTimestamp || inspectionData.inspectionDate);
@@ -149,13 +180,12 @@ const DigitalFormPage = () => {
             ...prev,
             inspectionDate: date,
             inspectionTime: time,
-            inspectedBy: inspectionData.branch || '', // Using branch as inspector identifier
+            inspectedBy: savedFormData?.inspectedBy || inspectionData.inspectedBy || user?.username || '', // Use saved data first, then inspection's inspector
             baselineCondition: inspectionData.environmentalCondition || prev.baselineCondition
           }));
         }
 
-        // Fetch saved digital form data
-        const savedFormData = await inspectionService.getDigitalFormData(selectedInspectionId);
+        // Process saved digital form data
         if (savedFormData) {
           console.log('Loaded saved form data:', savedFormData);
           console.log('First inspection readings:', savedFormData.firstInspection);
@@ -194,10 +224,33 @@ const DigitalFormPage = () => {
               iR: savedFormData.secondInspection.iR || '',
               iY: savedFormData.secondInspection.iY || '',
               iB: savedFormData.secondInspection.iB || ''
-            } : prev.secondInspection
+            } : prev.secondInspection,
+            // Work Data Sheet fields
+            startTime: savedFormData.startTime || prev.startTime,
+            completionTime: savedFormData.completionTime || prev.completionTime,
+            supervisedBy: savedFormData.supervisedBy || prev.supervisedBy,
+            techI: savedFormData.techI || prev.techI,
+            techII: savedFormData.techII || prev.techII,
+            techIII: savedFormData.techIII || prev.techIII,
+            helpers: savedFormData.helpers || prev.helpers,
+            inspectedByWds: savedFormData.inspectedByWds || selectedInspection?.inspectedBy || user?.username || prev.inspectedByWds, // Default to inspection's inspector
+            inspectedDate: savedFormData.inspectedDate || prev.inspectedDate,
+            rectifiedBy: savedFormData.rectifiedBy || prev.rectifiedBy,
+            rectifiedDate: savedFormData.rectifiedDate || prev.rectifiedDate,
+            reInspectedBy: savedFormData.reInspectedBy || prev.reInspectedBy,
+            reInspectedDate: savedFormData.reInspectedDate || prev.reInspectedDate,
+            cssPerson: savedFormData.cssPerson || prev.cssPerson,
+            cssDate: savedFormData.cssDate || prev.cssDate,
+            finalCssPerson: savedFormData.finalCssPerson || prev.finalCssPerson,
+            finalCssDate: savedFormData.finalCssDate || prev.finalCssDate
           }));
         } else {
           console.log('No saved form data found for this inspection');
+          // Set default value for inspectedByWds to inspection's inspector
+          setFormData(prev => ({
+            ...prev,
+            inspectedByWds: selectedInspection?.inspectedBy || user?.username || prev.inspectedByWds
+          }));
         }
 
         // Fetch anomalies/annotations for this inspection
@@ -314,7 +367,25 @@ const DigitalFormPage = () => {
         afterThermalDate: formData.afterThermalDate,
         afterThermalTime: formData.afterThermalTime,
         firstInspection: cleanInspectionReadings(formData.firstInspection),
-        secondInspection: cleanInspectionReadings(formData.secondInspection)
+        secondInspection: cleanInspectionReadings(formData.secondInspection),
+        // Work Data Sheet fields
+        startTime: formData.startTime,
+        completionTime: formData.completionTime,
+        supervisedBy: formData.supervisedBy,
+        techI: formData.techI,
+        techII: formData.techII,
+        techIII: formData.techIII,
+        helpers: formData.helpers,
+        inspectedByWds: formData.inspectedByWds,
+        inspectedDate: formData.inspectedDate,
+        rectifiedBy: formData.rectifiedBy,
+        rectifiedDate: formData.rectifiedDate,
+        reInspectedBy: formData.reInspectedBy,
+        reInspectedDate: formData.reInspectedDate,
+        cssPerson: formData.cssPerson,
+        cssDate: formData.cssDate,
+        finalCssPerson: formData.finalCssPerson,
+        finalCssDate: formData.finalCssDate
       };
       
       console.log('Structured data to save:', dataToSave);
@@ -570,10 +641,23 @@ const DigitalFormPage = () => {
                 <button 
                   onClick={handleSave} 
                   className="save-button"
-                  disabled={saving || !selectedInspectionId}
+                  disabled={saving || !selectedInspectionId || !canEdit}
+                  style={{ display: canEdit ? 'block' : 'none' }}
                 >
                   {saving ? 'Saving...' : 'Save Form Data'}
                 </button>
+                
+                {!canEdit && (
+                  <div className="view-only-message" style={{ 
+                    padding: '0.5rem 1rem', 
+                    background: '#fff3cd', 
+                    color: '#856404', 
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}>
+                    ℹ️ View-only mode. Only Maintenance Engineers can edit this form.
+                  </div>
+                )}
                 
                 {saveSuccess && (
                   <span className="save-success-message">✓ Saved successfully!</span>
@@ -645,6 +729,7 @@ const DigitalFormPage = () => {
                 value={formData.inspectionDate}
                 onChange={(e) => handleFormChange('inspectionDate', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -654,6 +739,7 @@ const DigitalFormPage = () => {
                 value={formData.inspectionTime}
                 onChange={(e) => handleFormChange('inspectionTime', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -664,6 +750,7 @@ const DigitalFormPage = () => {
                 onChange={(e) => handleFormChange('inspectedBy', e.target.value)}
                 placeholder="eg: A-110"
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
           </div>
@@ -681,6 +768,7 @@ const DigitalFormPage = () => {
                 onChange={(e) => handleFormChange('baselineRight', e.target.value)}
                 placeholder="eg: IR 02052"
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -691,6 +779,7 @@ const DigitalFormPage = () => {
                 onChange={(e) => handleFormChange('baselineLeft', e.target.value)}
                 placeholder="eg: IR 02053"
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -701,6 +790,7 @@ const DigitalFormPage = () => {
                 onChange={(e) => handleFormChange('baselineFront', e.target.value)}
                 placeholder="eg: IR 02054"
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
           </div>
@@ -717,6 +807,7 @@ const DigitalFormPage = () => {
                 value={formData.lastMonthKVA}
                 onChange={(e) => handleFormChange('lastMonthKVA', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -726,6 +817,7 @@ const DigitalFormPage = () => {
                 value={formData.lastMonthDate}
                 onChange={(e) => handleFormChange('lastMonthDate', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -735,6 +827,7 @@ const DigitalFormPage = () => {
                 value={formData.lastMonthTime}
                 onChange={(e) => handleFormChange('lastMonthTime', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
           </div>
@@ -746,6 +839,7 @@ const DigitalFormPage = () => {
                 value={formData.currentMonthKVA}
                 onChange={(e) => handleFormChange('currentMonthKVA', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -754,6 +848,7 @@ const DigitalFormPage = () => {
                 value={formData.baselineCondition}
                 onChange={(e) => handleFormChange('baselineCondition', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               >
                 <option>Sunny</option>
                 <option>Cloudy</option>
@@ -766,6 +861,7 @@ const DigitalFormPage = () => {
                 value={formData.transformerType}
                 onChange={(e) => handleFormChange('transformerType', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               >
                 <option>Bulk</option>
                 <option>Distribution</option>
@@ -786,6 +882,7 @@ const DigitalFormPage = () => {
                 value={formData.meterSerial}
                 onChange={(e) => handleFormChange('meterSerial', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               />
             </div>
             <div className="form-field">
@@ -796,6 +893,7 @@ const DigitalFormPage = () => {
                   value={formData.meterCTRatio}
                   onChange={(e) => handleFormChange('meterCTRatio', e.target.value)}
                   className="form-input"
+                  disabled={!canEdit}
                 />
                 <span className="input-suffix">/5A</span>
               </div>
@@ -806,6 +904,7 @@ const DigitalFormPage = () => {
                 value={formData.meterMake}
                 onChange={(e) => handleFormChange('meterMake', e.target.value)}
                 className="form-input"
+                disabled={!canEdit}
               >
                 <option>Microstar</option>
                 <option>Landis+Gyr</option>
@@ -842,6 +941,7 @@ const DigitalFormPage = () => {
                           type="checkbox" 
                           checked={item.c}
                           onChange={(e) => handleChecklistChange(index, 'c', e.target.checked)}
+                          disabled={!canEdit}
                         />
                       </td>
                       <td>
@@ -849,6 +949,7 @@ const DigitalFormPage = () => {
                           type="checkbox" 
                           checked={item.cl}
                           onChange={(e) => handleChecklistChange(index, 'cl', e.target.checked)}
+                          disabled={!canEdit}
                         />
                       </td>
                       <td>
@@ -856,6 +957,7 @@ const DigitalFormPage = () => {
                           type="checkbox" 
                           checked={item.t}
                           onChange={(e) => handleChecklistChange(index, 't', e.target.checked)}
+                          disabled={!canEdit}
                         />
                       </td>
                       <td>
@@ -863,6 +965,7 @@ const DigitalFormPage = () => {
                           type="checkbox" 
                           checked={item.r}
                           onChange={(e) => handleChecklistChange(index, 'r', e.target.checked)}
+                          disabled={!canEdit}
                         />
                       </td>
                       <td>
@@ -871,6 +974,7 @@ const DigitalFormPage = () => {
                           value={item.other}
                           onChange={(e) => handleChecklistChange(index, 'other', e.target.value)}
                           className="other-input"
+                          disabled={!canEdit}
                         />
                       </td>
                     </tr>
@@ -905,6 +1009,7 @@ const DigitalFormPage = () => {
                             handleChecklistChange(index, 'ok', e.target.checked);
                             if (e.target.checked) handleChecklistChange(index, 'notOk', false);
                           }}
+                          disabled={!canEdit}
                         />
                       </td>
                       <td>
@@ -915,6 +1020,7 @@ const DigitalFormPage = () => {
                             handleChecklistChange(index, 'notOk', e.target.checked);
                             if (e.target.checked) handleChecklistChange(index, 'ok', false);
                           }}
+                          disabled={!canEdit}
                         />
                       </td>
                       <td>
@@ -924,6 +1030,7 @@ const DigitalFormPage = () => {
                           onChange={(e) => handleChecklistChange(index, 'irNos', e.target.value)}
                           className="other-input"
                           placeholder="eg: IR-001"
+                          disabled={!canEdit}
                         />
                       </td>
                     </tr>
@@ -938,6 +1045,7 @@ const DigitalFormPage = () => {
                     value={formData.afterThermalDate}
                     onChange={(e) => handleFormChange('afterThermalDate', e.target.value)}
                     className="form-input"
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="form-field">
@@ -947,6 +1055,7 @@ const DigitalFormPage = () => {
                     value={formData.afterThermalTime}
                     onChange={(e) => handleFormChange('afterThermalTime', e.target.value)}
                     className="form-input"
+                    disabled={!canEdit}
                   />
                 </div>
               </div>
@@ -978,6 +1087,7 @@ const DigitalFormPage = () => {
                         value={formData.firstInspection.vR}
                         onChange={(e) => handleInspectionReadingChange('firstInspection', 'vR', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -986,6 +1096,7 @@ const DigitalFormPage = () => {
                         value={formData.firstInspection.vY}
                         onChange={(e) => handleInspectionReadingChange('firstInspection', 'vY', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -994,6 +1105,7 @@ const DigitalFormPage = () => {
                         value={formData.firstInspection.vB}
                         onChange={(e) => handleInspectionReadingChange('firstInspection', 'vB', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                   </tr>
@@ -1005,6 +1117,7 @@ const DigitalFormPage = () => {
                         value={formData.firstInspection.iR}
                         onChange={(e) => handleInspectionReadingChange('firstInspection', 'iR', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -1013,6 +1126,7 @@ const DigitalFormPage = () => {
                         value={formData.firstInspection.iY}
                         onChange={(e) => handleInspectionReadingChange('firstInspection', 'iY', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -1021,6 +1135,7 @@ const DigitalFormPage = () => {
                         value={formData.firstInspection.iB}
                         onChange={(e) => handleInspectionReadingChange('firstInspection', 'iB', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                   </tr>
@@ -1048,6 +1163,7 @@ const DigitalFormPage = () => {
                         value={formData.secondInspection.vR}
                         onChange={(e) => handleInspectionReadingChange('secondInspection', 'vR', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -1056,6 +1172,7 @@ const DigitalFormPage = () => {
                         value={formData.secondInspection.vY}
                         onChange={(e) => handleInspectionReadingChange('secondInspection', 'vY', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -1064,6 +1181,7 @@ const DigitalFormPage = () => {
                         value={formData.secondInspection.vB}
                         onChange={(e) => handleInspectionReadingChange('secondInspection', 'vB', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                   </tr>
@@ -1075,6 +1193,7 @@ const DigitalFormPage = () => {
                         value={formData.secondInspection.iR}
                         onChange={(e) => handleInspectionReadingChange('secondInspection', 'iR', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -1083,6 +1202,7 @@ const DigitalFormPage = () => {
                         value={formData.secondInspection.iY}
                         onChange={(e) => handleInspectionReadingChange('secondInspection', 'iY', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                     <td>
@@ -1091,6 +1211,7 @@ const DigitalFormPage = () => {
                         value={formData.secondInspection.iB}
                         onChange={(e) => handleInspectionReadingChange('secondInspection', 'iB', e.target.value)}
                         className="reading-input"
+                        disabled={!canEdit}
                       />
                     </td>
                   </tr>
@@ -1147,12 +1268,12 @@ const DigitalFormPage = () => {
                         }
                       </td>
                       <td>
-                        <span className={`source-badge ${anomaly.isAiDetection ? 'ai' : 'manual'}`}>
-                          {anomaly.isAiDetection ? 'AI' : 'Manual'}
+                        <span className={`source-badge ${anomaly.isAiDetection ? 'source-ai' : 'source-manual'}`}>
+                          {anomaly.isAiDetection ? '🤖 AI' : '👤 Manual'}
                         </span>
                       </td>
-                      <td className="details-cell">
-                        {anomaly.description || 'No description available'}
+                      <td>
+                        {anomaly.description || 'No description'}
                       </td>
                     </tr>
                   ))}
@@ -1184,6 +1305,47 @@ const DigitalFormPage = () => {
             </div>
           </div>
         </section>
+
+        {/* Tab Navigation for Maintenance Record and Work Data Sheet */}
+        <section className="tab-navigation-section no-print" style={{ marginTop: '2rem' }}>
+          <div className="tab-nav-container">
+            <div className="tabs-left">
+              <button
+                className={`tab-btn ${activeTab === 'maintenance' ? 'active' : ''}`}
+                onClick={() => setActiveTab('maintenance')}
+              >
+                Maintenance Record
+              </button>
+            </div>
+            <div className="tabs-right">
+              <div className="form-type-toggle">
+                <button
+                  className={`toggle-btn ${formType === 'digital' ? 'active' : ''}`}
+                  onClick={() => setFormType('digital')}
+                >
+                  Digital Form
+                </button>
+                <button
+                  className={`toggle-btn ${formType === 'scanned' ? 'active' : ''}`}
+                  onClick={() => setFormType('scanned')}
+                >
+                  Scanned Form
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Maintenance Record Tab Content */}
+        {activeTab === 'maintenance' && (
+          <section className="form-section">
+            <WorkDataSheet
+              formData={formData}
+              onInputChange={(e) => handleFormChange(e.target.name, e.target.value)}
+              canEdit={canEdit}
+            />
+          </section>
+        )}
 
         {/* Print-only signature section */}
         <section className="form-section print-only signature-section">

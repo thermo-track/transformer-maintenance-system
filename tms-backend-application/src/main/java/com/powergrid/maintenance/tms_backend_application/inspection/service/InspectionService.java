@@ -648,6 +648,25 @@ public class InspectionService {
                     inspection.getSecondCurrentR(), inspection.getSecondCurrentY(), inspection.getSecondCurrentB());
             }
             
+            // Save Work Data Sheet fields
+            inspection.setStartTime(formData.getStartTime());
+            inspection.setCompletionTime(formData.getCompletionTime());
+            inspection.setSupervisedBy(formData.getSupervisedBy());
+            inspection.setTechI(formData.getTechI());
+            inspection.setTechII(formData.getTechII());
+            inspection.setTechIII(formData.getTechIII());
+            inspection.setHelpers(formData.getHelpers());
+            inspection.setInspectedByWds(formData.getInspectedByWds());
+            inspection.setInspectedDate(formData.getInspectedDate());
+            inspection.setRectifiedBy(formData.getRectifiedBy());
+            inspection.setRectifiedDate(formData.getRectifiedDate());
+            inspection.setReInspectedBy(formData.getReInspectedBy());
+            inspection.setReInspectedDate(formData.getReInspectedDate());
+            inspection.setCssPerson(formData.getCssPerson());
+            inspection.setCssDate(formData.getCssDate());
+            inspection.setFinalCssPerson(formData.getFinalCssPerson());
+            inspection.setFinalCssDate(formData.getFinalCssDate());
+            
             // Convert checklist only to JSON and store
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -728,6 +747,25 @@ public class InspectionService {
             secondInspection.setIB(inspection.getSecondCurrentB());
             formData.setSecondInspection(secondInspection);
             log.info("Loaded second inspection readings from columns: {}", secondInspection);
+            
+            // Load Work Data Sheet fields
+            formData.setStartTime(inspection.getStartTime());
+            formData.setCompletionTime(inspection.getCompletionTime());
+            formData.setSupervisedBy(inspection.getSupervisedBy());
+            formData.setTechI(inspection.getTechI());
+            formData.setTechII(inspection.getTechII());
+            formData.setTechIII(inspection.getTechIII());
+            formData.setHelpers(inspection.getHelpers());
+            formData.setInspectedByWds(inspection.getInspectedByWds());
+            formData.setInspectedDate(inspection.getInspectedDate());
+            formData.setRectifiedBy(inspection.getRectifiedBy());
+            formData.setRectifiedDate(inspection.getRectifiedDate());
+            formData.setReInspectedBy(inspection.getReInspectedBy());
+            formData.setReInspectedDate(inspection.getReInspectedDate());
+            formData.setCssPerson(inspection.getCssPerson());
+            formData.setCssDate(inspection.getCssDate());
+            formData.setFinalCssPerson(inspection.getFinalCssPerson());
+            formData.setFinalCssDate(inspection.getFinalCssDate());
             
             // Parse JSON data for checklist only
             if (inspection.getDigitalFormData() != null && !inspection.getDigitalFormData().isEmpty()) {

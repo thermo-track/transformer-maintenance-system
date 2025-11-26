@@ -8,8 +8,10 @@ import InspectionsTable from '../components/InspectionsTableST';
 import FilterSection from '../components/FilterSection';
 import Pagination from '../components/Pagination';
 import PageHeaderST from '../components/PageHeaderST';
+import { useAuth } from '../../../contexts/AuthContext';
 
 function InspectionsST() {
+  const { user } = useAuth();
   const { transformerNo } = useParams();
   const { state } = useLocation(); // may contain: { id, transformerNo, poleNo, region, type, locationDetails }
 
@@ -97,7 +99,7 @@ function InspectionsST() {
             inspection.timeOfInspection
           ),
         maintenanceDateTime: getRandomMaintenanceDateTime(),
-        inspectorName: getRandomInspector(),
+        inspectorName: user?.username || 'Unknown',
         priority: getRandomPriority(),
         findings: getRandomFindings(),
         nextInspectionDate: getNextInspectionDate(inspection), // Pass whole inspection object
@@ -144,10 +146,6 @@ function InspectionsST() {
   };
 
   // helpers (unchanged)
-  const getRandomInspector = () => {
-    const xs = ["John Silva","Mary Fernando","David Perera","Sarah Wickramasinghe","Mike Rajapaksa"];
-    return xs[Math.floor(Math.random() * xs.length)];
-  };
   const getRandomStatus = () => {
     const xs = ["Completed","In Progress","Pending","Scheduled"];
     return xs[Math.floor(Math.random() * xs.length)];
@@ -285,7 +283,12 @@ function InspectionsST() {
   // create/edit/delete
   const handleCreate = async (formData) => {
     try {
-      const payload = { ...formData, transformerNo, status: 'PENDING' };
+      const payload = { 
+        ...formData, 
+        transformerNo, 
+        status: 'PENDING',
+        inspectedBy: user?.username // Save authenticated user as inspector
+      };
       await inspectionService.createInspection(payload);
       fetchInspectionsByTransformer(transformerNo);
       setShowCreateModal(false);

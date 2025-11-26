@@ -23,4 +23,5 @@ public class InspectionCreateRequestDTO {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime inspectionTimestamp;
     private String status;
+    private String inspectedBy; // Username of the inspector who created this inspection
 }

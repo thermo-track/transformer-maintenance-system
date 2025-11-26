@@ -13,6 +13,7 @@ public class InspectionResponseDTO {
     private String branch;
     private String transformerNo;
     private String status;
+    private String inspectedBy; // Username of the inspector who created this inspection
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime inspectionTimestamp;

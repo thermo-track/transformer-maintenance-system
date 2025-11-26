@@ -133,6 +133,62 @@ public class Inspection {
     @Column(name = "second_current_b")
     private String secondCurrentB;
 
+    // --- Work Data Sheet Fields ---
+    // Time & Supervision Section
+    @Column(name = "start_time")
+    private String startTime;
+
+    @Column(name = "completion_time")
+    private String completionTime;
+
+    @Column(name = "supervised_by")
+    private String supervisedBy;
+
+    // Gang Composition Section
+    @Column(name = "tech_i")
+    private String techI;
+
+    @Column(name = "tech_ii")
+    private String techII;
+
+    @Column(name = "tech_iii")
+    private String techIII;
+
+    @Column(name = "helpers")
+    private String helpers;
+
+    // Inspection & Rectification Log Section
+    @Column(name = "inspected_by_wds")
+    private String inspectedByWds;
+
+    @Column(name = "inspected_date")
+    private String inspectedDate;
+
+    @Column(name = "rectified_by")
+    private String rectifiedBy;
+
+    @Column(name = "rectified_date")
+    private String rectifiedDate;
+
+    @Column(name = "re_inspected_by")
+    private String reInspectedBy;
+
+    @Column(name = "re_inspected_date")
+    private String reInspectedDate;
+
+    @Column(name = "css_person")
+    private String cssPerson;
+
+    @Column(name = "css_date")
+    private String cssDate;
+
+    // Final Verification Section
+    @Column(name = "final_css_person")
+    private String finalCssPerson;
+
+    @Column(name = "final_css_date")
+    private String finalCssDate;
+
     @Column(name = "digital_form_data", columnDefinition = "TEXT")
     private String digitalFormData; // JSON string for checklist only
 
