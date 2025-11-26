@@ -50,7 +50,7 @@ const InspectionsPage = () => {
       ...inspection,
       // Add dummy data for additional fields
       maintenanceDateTime: getRandomMaintenanceDateTime(),
-      inspectorName: user?.username || 'Unknown',
+      inspectorName: inspection.inspectedBy || 'Unknown', // Use inspector from database
       status: getRandomStatus(),
       priority: getRandomPriority(),
       findings: getRandomFindings(),

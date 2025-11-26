@@ -99,7 +99,7 @@ function InspectionsST() {
             inspection.timeOfInspection
           ),
         maintenanceDateTime: getRandomMaintenanceDateTime(),
-        inspectorName: user?.username || 'Unknown',
+        inspectorName: inspection.inspectedBy || 'Unknown', // Use inspector from database
         priority: getRandomPriority(),
         findings: getRandomFindings(),
         nextInspectionDate: getNextInspectionDate(inspection), // Pass whole inspection object

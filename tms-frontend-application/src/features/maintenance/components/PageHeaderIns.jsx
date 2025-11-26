@@ -13,7 +13,8 @@ const PageHeaderIns = ({
   transformerPoleno,
   inspectionId,
   inspectionTimestamp,
-  inspectionBranch
+  inspectionBranch,
+  inspectedBy
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -128,8 +129,8 @@ const PageHeaderIns = ({
             </span>
 
             <span className="badge">
-              {user?.username || 'Unknown'}
-              <span className="badge-label">Inpected By</span>
+              {inspectedBy || 'Unknown'}
+              <span className="badge-label">Inspected By</span>
             </span>
 
 
