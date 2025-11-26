@@ -108,9 +108,15 @@ public class RoleChangeRequestController {
     
     // Simple error response class
     private static class ErrorResponse {
-        public final String error;
+        private final String error;
+        
         public ErrorResponse(String error) {
             this.error = error;
+        }
+        
+        @SuppressWarnings("unused") // Used by Jackson for JSON serialization
+        public String getError() {
+            return error;
         }
     }
 
