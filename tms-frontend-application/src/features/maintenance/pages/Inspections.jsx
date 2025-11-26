@@ -187,7 +187,11 @@ const InspectionsPage = () => {
 
   const handleCreate = async (formData) => {
     try {
-      await inspectionService.createInspection(formData);
+      const payload = {
+        ...formData,
+        inspectedBy: user?.username // Save authenticated user as inspector
+      };
+      await inspectionService.createInspection(payload);
       fetchInspections();
       setShowCreateModal(false);
     } catch (error) {

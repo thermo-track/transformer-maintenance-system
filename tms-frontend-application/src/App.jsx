@@ -19,6 +19,8 @@ import TransformerLocationWrapper from './features/transformers/components/Trans
 import TransformersMapWrapper from './features/transformers/components/TransformersMapWrapper';
 import UserSettings from './components/UserSettings/UserSettings.jsx';
 import AnnotationPage from './pages/AnnotationPage.jsx';
+import UserManagement from './features/admin/UserManagement.jsx';
+import RequestRoleChange from './features/profile/RequestRoleChange.jsx';
 
 import './App.css';
 
@@ -144,6 +146,23 @@ export default function App() {
         <PrivateRoute>
           <Layout>
             <ModelRetrainingPage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/admin/user-management" element={
+        <PrivateRoute>
+          <Layout>
+            <UserManagement />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      {/* Profile routes */}
+      <Route path="/profile/request-role-change" element={
+        <PrivateRoute>
+          <Layout>
+            <RequestRoleChange />
           </Layout>
         </PrivateRoute>
       } />

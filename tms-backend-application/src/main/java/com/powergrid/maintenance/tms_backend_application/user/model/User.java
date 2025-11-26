@@ -36,10 +36,10 @@ public class User {
     private boolean emailVerified = false;
 
     /**
-     * Role of the user (e.g., ROLE_USER, ROLE_ADMIN)
+     * Role of the user (e.g., ROLE_USER, ROLE_ADMIN, ROLE_MAINTENANCE_ENGINEER)
      * Default is ROLE_USER
      */
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 50)
     private String role = "ROLE_USER";
 
     /**

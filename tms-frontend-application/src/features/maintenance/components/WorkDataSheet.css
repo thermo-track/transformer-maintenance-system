@@ -1,0 +1,126 @@
+/* Work Data Sheet Styles */
+
+.work-data-sheet {
+  padding: 1rem 0;
+}
+
+.wds-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.wds-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+/* Grid Layouts */
+.wds-three-col-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.wds-two-col-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* Split Layout for Inspection Log (Person | Date) */
+.wds-split-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wds-split-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Form Fields */
+.wds-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wds-form-field label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wds-form-field input,
+.wds-form-field select {
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.wds-form-field input:focus,
+.wds-form-field select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.wds-form-field input:disabled,
+.wds-form-field select:disabled {
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.wds-form-field input[type="date"],
+.wds-form-field input[type="time"] {
+  font-family: inherit;
+}
+
+.wds-form-field select {
+  cursor: pointer;
+}
+
+.wds-form-field select:disabled {
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .wds-three-col-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .wds-split-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .wds-three-col-grid,
+  .wds-two-col-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .wds-split-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .wds-section {
+    padding: 1rem;
+  }
+}

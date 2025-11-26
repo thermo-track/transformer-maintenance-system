@@ -283,7 +283,12 @@ function InspectionsST() {
   // create/edit/delete
   const handleCreate = async (formData) => {
     try {
-      const payload = { ...formData, transformerNo, status: 'PENDING' };
+      const payload = { 
+        ...formData, 
+        transformerNo, 
+        status: 'PENDING',
+        inspectedBy: user?.username // Save authenticated user as inspector
+      };
       await inspectionService.createInspection(payload);
       fetchInspectionsByTransformer(transformerNo);
       setShowCreateModal(false);

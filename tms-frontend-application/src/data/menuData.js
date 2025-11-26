@@ -1,4 +1,4 @@
-import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck, faBrain, faRobot, faHistory } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faBolt, faTools, faChartLine, faGear, faCogs, faPlug, faClipboardCheck, faEye, faUserShield, faUserCheck, faBrain, faRobot, faHistory, faUsers, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 
 const menuData = [
   {
@@ -40,6 +40,11 @@ const menuData = [
         label: "Admin Approvals",
         icon: faUserCheck,
       },
+      {
+        path: "/admin/user-management",
+        label: "Role Requests",
+        icon: faUsers,
+      },
     ],
   },
   {
@@ -65,6 +70,11 @@ const menuData = [
         path: "/settings/user",
         label: "User Settings",
         icon: faTools,
+      },
+      {
+        path: "/profile/request-role-change",
+        label: "Request Role Change",
+        icon: faUserPlus,
       },
     ],
   },
