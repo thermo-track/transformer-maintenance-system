@@ -44,6 +44,9 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@tms.local}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - ADMIN_FULL_NAME=${ADMIN_FULL_NAME:-System Administrator}
+      - ADMIN_EMPLOYEE_ID=${ADMIN_EMPLOYEE_ID:-ADMIN001}
+      - ADMIN_DEPARTMENT=${ADMIN_DEPARTMENT:-IT Department}
       # Container management settings
       # Backend automatically starts finetune container when needed and stops it after training
       - ML_FINETUNE_CONTAINER_ENABLED=true

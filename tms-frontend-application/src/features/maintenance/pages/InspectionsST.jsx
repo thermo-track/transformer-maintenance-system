@@ -367,6 +367,13 @@ function InspectionsST() {
           <Plus className="icon-plus" />
           Add Inspection
         </button>
+        <button
+          onClick={() => navigate(`/maintenance/transformer/${transformerNo}/history`)}
+          className="history-button"
+          style={{ marginLeft: 10, background: '#52c41a' }}
+        >
+          📋 View Maintenance History
+        </button>
       </div>
 
       {showCreateModal && (

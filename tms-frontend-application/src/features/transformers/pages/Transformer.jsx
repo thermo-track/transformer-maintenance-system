@@ -176,6 +176,15 @@ export default function Transformer() {
                       <div className="menu-popover" role="menu">
                         <button
                           className="menu-itemL"
+                          onClick={() => { 
+                            setMenuOpenId(null); 
+                            nav(`/maintenance/transformer/${row.transformerNo}/history`);
+                          }}
+                        >
+                          View History
+                        </button>
+                        <button
+                          className="menu-itemL"
                           onClick={() => handleEditClick(row)}
                         >
                           Edit
