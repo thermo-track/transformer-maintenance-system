@@ -407,6 +407,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
           onNewInspection={() => setShowCreateModal(true)}
           transformerNo={transformerNo}
           transformerId={transformer?.id}
+          inspectedBy={currentInspection?.inspectedBy}
         />
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -427,6 +428,7 @@ const handleImageUpload = async (fileInput, environmentalCondition = 'sunny') =>
         inspectionId={currentInspection?.inspectionId}
         inspectionTimestamp={currentInspection?.inspectionTimestamp}
         inspectionBranch={currentInspection?.branch}
+        inspectedBy={currentInspection?.inspectedBy}
       />
 
 

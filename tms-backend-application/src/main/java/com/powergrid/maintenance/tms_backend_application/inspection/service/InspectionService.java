@@ -271,6 +271,7 @@ public class InspectionService {
                     dto.setTransformerNo(inspection.getTransformerNo());
                     dto.setInspectionTimestamp(inspection.getInspectionTimestamp());
                     dto.setStatus(inspection.getStatus());
+                    dto.setInspectedBy(inspection.getInspectedBy());
                     
                     // Set transformer details from the fetched transformer
                     if (transformer != null) {

@@ -233,7 +233,7 @@ const DigitalFormPage = () => {
             techII: savedFormData.techII || prev.techII,
             techIII: savedFormData.techIII || prev.techIII,
             helpers: savedFormData.helpers || prev.helpers,
-            inspectedByWds: savedFormData.inspectedByWds || selectedInspection?.inspectedBy || user?.username || prev.inspectedByWds, // Default to inspection's inspector
+            inspectedByWds: savedFormData.inspectedByWds || inspectionData?.inspectedBy || user?.username || prev.inspectedByWds, // Default to inspection's inspector from database
             inspectedDate: savedFormData.inspectedDate || prev.inspectedDate,
             rectifiedBy: savedFormData.rectifiedBy || prev.rectifiedBy,
             rectifiedDate: savedFormData.rectifiedDate || prev.rectifiedDate,
@@ -246,10 +246,10 @@ const DigitalFormPage = () => {
           }));
         } else {
           console.log('No saved form data found for this inspection');
-          // Set default value for inspectedByWds to inspection's inspector
+          // Set default value for inspectedByWds to inspection's inspector from database
           setFormData(prev => ({
             ...prev,
-            inspectedByWds: selectedInspection?.inspectedBy || user?.username || prev.inspectedByWds
+            inspectedByWds: inspectionData?.inspectedBy || user?.username || prev.inspectedByWds
           }));
         }
 
