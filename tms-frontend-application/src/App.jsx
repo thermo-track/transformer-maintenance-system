@@ -13,6 +13,7 @@ import InspectionsPage from './features/maintenance/pages/Inspections.jsx';
 import InspectionsSTImage from "./features/maintenance/pages/InspectionsSTImage.jsx";
 import BaselineImage from "./features/maintenance/pages/BaselineImage.jsx";
 import DigitalFormPage from './features/maintenance/pages/DigitalFormPage.jsx';
+import MaintenanceHistoryPage from './features/maintenance/pages/MaintenanceHistoryPage.jsx';
 import TransformerLocations from "./features/maintenance/pages/TransformerLocation.jsx";
 import TransformerLocationPage from './features/transformers/components/TransformerLocationPage.jsx';
 import TransformerLocationWrapper from './features/transformers/components/TransformerLocationWrapper';
@@ -97,6 +98,14 @@ export default function App() {
         <PrivateRoute>
           <Layout>
             <DigitalFormPage />
+          </Layout>
+        </PrivateRoute>
+      } />
+      
+      <Route path="/maintenance/transformer/:transformerNo/history" element={
+        <PrivateRoute>
+          <Layout>
+            <MaintenanceHistoryPage />
           </Layout>
         </PrivateRoute>
       } />
