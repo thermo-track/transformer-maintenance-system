@@ -247,7 +247,57 @@ Comprehensive feedback logging and export system for model retraining:
 - ✅ View all users' annotations
 - ✅ Admin user approvals
 
-## �👤 User Management & Authentication
+## 🔵 Phase 4: Automated Maintenance Record Generation & Cloud Deployment
+
+Phase 4 introduces automated maintenance record generation capabilities and full system containerization with cloud deployment.
+
+### Automated Maintenance Record Form Generation
+
+#### Digital Record Creation
+- **Auto-Generated Forms**: Automatically generate maintenance record forms based on inspection data
+- **Pre-Populated Fields**: Form fields auto-filled with transformer and inspection metadata
+- **AI Detection Integration**: Detected anomalies and fault classifications automatically included in records
+
+#### Editable Engineer Input Fields
+- **Flexible Data Entry**: Engineers can edit and customize all form fields
+- **Manual Observations**: Add custom notes, observations, and recommendations
+- **Action Items**: Document corrective actions and follow-up requirements
+- **Timestamp Tracking**: Automatic recording of form creation and modification times
+
+#### Record Management
+- **Save and Retrieve**: Complete CRUD operations for maintenance records
+- **Historical Records**: Access and review all past maintenance documentation
+- **Search and Filter**: Efficiently locate specific records by date, transformer, or inspector
+- **Export Capabilities**: Generate PDF reports for offline storage and sharing
+
+### Cloud Deployment & Containerization
+
+#### Docker Containerization
+- **Multi-Service Architecture**: Fully containerized application stack
+  - Frontend (React/Vite)
+  - Backend (Spring Boot)
+  - PostgreSQL Database
+  - AI Inference Service (FastAPI)
+  - Model Fine-Tuning Service (FastAPI)
+- **Docker Compose Orchestration**: Simplified multi-container deployment
+- **Environment Configuration**: Container-specific environment variables
+- **Volume Management**: Persistent data storage for database and model weights
+
+#### Oracle Cloud Infrastructure Deployment
+- **Production Instance**: Deployed on Oracle Cloud minimal instance
+- **Public Access**: Available at **141.148.71.2**
+- **Resource Optimization**: Configured for minimal instance specifications
+- **Network Configuration**: Proper security group and firewall rules
+- **Reverse Proxy**: Nginx configuration for efficient request routing
+
+#### Deployment Features
+- **Automated Scripts**: Build and push scripts for streamlined deployment
+  - `build_and_push.py`: Automated Docker image building
+  - `tag_and_push.py`: Image versioning and registry management
+- **Health Monitoring**: Service health checks and uptime monitoring
+- **Log Management**: Centralized logging for debugging and monitoring
+
+## 👤 User Management & Authentication
 
 Comprehensive user authentication and profile management system with secure account handling.
 
@@ -414,10 +464,61 @@ python api/app.py
 
 **Note:** The fine-tuning service requires the base YOLO weights at `tms-fault-detection-model/weights/best.pt`. Updated weights are saved to `tms-model-finetune/finetune_weight/best_finetune.pt`.
 
-### 5. Access the Application
+### 6. Docker Deployment
 
+**Build and Run with Docker Compose**
+```bash
+# Build all services
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+**Individual Service Builds**
+```bash
+# Backend
+cd tms-backend-application
+docker build -t tms-backend .
+
+# Frontend
+cd tms-frontend-application
+docker build -t tms-frontend .
+
+# AI Inference Service
+cd tms-fault-detection-model
+docker build -t tms-inference .
+
+# Fine-Tuning Service
+cd tms-model-finetune
+docker build -t tms-finetune .
+```
+
+**Automated Build Scripts**
+```bash
+# Build and push all images
+python build_and_push.py
+
+# Tag and push specific version
+python tag_and_push.py
+```
+
+### 7. Access the Application
+
+**Local Development:**
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080/api
+- **AI Inference API**: http://localhost:8001
+- **Fine-Tuning API**: http://localhost:8002
+
+**Production (Oracle Cloud):**
+- **Public IP**: http://141.148.71.2
 
 ### System Architecture
 
@@ -470,13 +571,22 @@ python api/app.py
 ### AI/ML
 - **Python**: AI pipeline runtime
 - **YOLOv11 (Ultralytics)**: Object detection for fault classification
+- **FastAPI**: RESTful API framework for Python services
 - **OpenCV**: Image processing and computer vision
 - **NumPy**: Numerical computations
 - **scikit-image**: SSIM and image analysis
+- **PyTorch**: Deep learning framework for model training
 
 ### Cloud & Storage
 - **Cloudinary**: Cloud-based image storage and CDN
-- **PostgreSQL**: Metadata and relational data storage
+- **PostgreSQL**: Relational database for metadata storage
+- **Oracle Cloud Infrastructure**: Cloud hosting platform
+
+### DevOps & Deployment
+- **Docker**: Container platform for application packaging
+- **Docker Compose**: Multi-container orchestration
+- **Nginx**: Reverse proxy and web server
+- **Python Scripts**: Automated build and deployment workflows
 
 ### Build & Development Tools
 - **Maven**: Backend build tool
@@ -501,11 +611,14 @@ python api/app.py
 - **Notification System**: Real-time alerts for critical anomalies not implemented
 
 ### Infrastructure & Deployment
-- **IaC Scripts**: No Terraform for automated deployment
+- **IaC Scripts**: No Terraform or automated infrastructure provisioning
 - **CI/CD Pipeline**: No automated testing and deployment pipeline
+- **High Availability**: No load balancing or redundancy setup
+- **SSL/TLS**: HTTPS not yet configured for production deployment
 
 ### User Experience
 - **Mobile Optimization**: Layout not fully optimized for narrow devices or tablets
+- **PDF Report Templates**: Limited customization options for maintenance record exports
 
 ## � Key Features Summary
 
@@ -535,6 +648,15 @@ python api/app.py
 - ✅ **Advanced Filtering**: Filter by action type, date range, user, transformer, inspection
 - ✅ **Approved Status Tracking**: Visual indicators for approved AI detections
 - ✅ **Role-Based Access**: Separate views for admins and regular users
+
+**Phase 4: Maintenance Records & Deployment**
+- ✅ **Auto-Generated Forms**: Digital maintenance record form generation from inspection data
+- ✅ **Editable Engineer Fields**: Flexible input fields for engineer observations and notes
+- ✅ **Record Persistence**: Save and retrieve completed maintenance records
+- ✅ **Docker Containerization**: Full multi-service Docker deployment
+- ✅ **Cloud Deployment**: Production deployment on Oracle Cloud Infrastructure
+- ✅ **Public Access**: Live system accessible at 141.148.71.2
+- ✅ **Automated Build Scripts**: Streamlined Docker image building and versioning
 
 **User Management**
 - ✅ **User Authentication**: Registration, OTP verification, login, and secure logout
