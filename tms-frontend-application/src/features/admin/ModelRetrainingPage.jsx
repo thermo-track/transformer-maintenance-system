@@ -146,7 +146,7 @@ export default function ModelRetrainingPage() {
     if (!isAdmin) return;
     
     try {
-      const response = await apiClient.get('/api/admin/model/retraining/status');
+      const response = await apiClient.get('/api/admin/retraining/status');
       if (response.data.success) {
         setRetrainingStatus(response.data.status);
       }
