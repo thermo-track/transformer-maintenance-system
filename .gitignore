@@ -79,3 +79,8 @@ tune/*
 ANNOTATION_IMPLEMENTATION_GUIDE.md
 IMPLEMENTATION_SUMMARY.md
 PHASE3_ARCHITECTURE_PLAN.md
+
+runs/*
+Annotated_dataset\test\labels.cache
+Annotated_dataset\train\labels.cache
+Annotated_dataset\valid\labels.cache

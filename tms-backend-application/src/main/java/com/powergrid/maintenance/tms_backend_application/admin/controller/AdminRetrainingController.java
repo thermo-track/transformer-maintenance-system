@@ -55,6 +55,26 @@ public class AdminRetrainingController {
     }
 
     /**
+     * Get general retraining status
+     */
+    @GetMapping("/status")
+    public ResponseEntity<?> getGeneralRetrainingStatus() {
+        log.info("Fetching general retraining status");
+        try {
+            Map<String, Object> stats = retrainingService.getRetrainingStats();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "status", stats.getOrDefault("isRetraining", false).equals(true) ? "IN_PROGRESS" : "IDLE",
+                "stats", stats
+            ));
+        } catch (Exception e) {
+            log.error("Error fetching retraining status", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Failed to fetch status: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Trigger incremental model retraining with user corrections
      */
     @PostMapping("/trigger")
@@ -82,8 +102,8 @@ public class AdminRetrainingController {
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "runId", runId,
-                    "status", "started",
-                    "message", "Incremental retraining initiated successfully",
+                    "status", "PENDING",
+                    "message", "Incremental retraining initiated successfully. Check status using the runId.",
                     "corrections", newCorrections
             ));
 

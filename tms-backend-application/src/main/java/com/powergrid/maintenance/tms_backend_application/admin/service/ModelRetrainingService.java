@@ -18,6 +18,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -240,20 +241,39 @@ public class ModelRetrainingService {
     }
     
     /**
-     * Trigger incremental retraining with user corrections
+     * Trigger incremental retraining with user corrections (async)
      */
-    @Transactional
     public String triggerRetraining(String username) {
-        log.info("Starting incremental retraining triggered by user: {}", username);
+        log.info("Triggering incremental retraining for user: {}", username);
         
         String runId = UUID.randomUUID().toString();
         
         // Create retraining history record
         RetrainingHistory history = new RetrainingHistory();
         history.setRunId(runId);
-        history.setStatus("RUNNING");
+        history.setStatus("PENDING");
         history.setStartedAt(LocalDateTime.now());
         history.setTriggeredBy(username);
+        retrainingHistoryRepository.save(history);
+        
+        // Start async retraining
+        executeRetrainingAsync(runId, username);
+        
+        return runId;
+    }
+    
+    /**
+     * Execute retraining asynchronously
+     */
+    @Async
+    @Transactional
+    public void executeRetrainingAsync(String runId, String username) {
+        log.info("Starting async retraining execution for runId: {}", runId);
+        
+        RetrainingHistory history = retrainingHistoryRepository.findByRunId(runId)
+                .orElseThrow(() -> new RuntimeException("Retraining history not found: " + runId));
+        
+        history.setStatus("RUNNING");
         
         try {
             // Start finetune container if container management is enabled
@@ -273,7 +293,7 @@ public class ModelRetrainingService {
                 history.setCompletedAt(LocalDateTime.now());
                 history.setErrorMessage("No images available for retraining");
                 retrainingHistoryRepository.save(history);
-                return runId;
+                return;
             }
             
             // Count total detections
@@ -337,8 +357,6 @@ public class ModelRetrainingService {
             log.info("Stopping finetune container to save resources...");
             dockerContainerService.stopFinetuneContainer();
         }
-        
-        return runId;
     }
     
     /**
