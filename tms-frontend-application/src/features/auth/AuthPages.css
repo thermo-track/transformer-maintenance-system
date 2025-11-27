@@ -52,6 +52,89 @@
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 14px;
+  display: flex;
+  gap: 12px;
+}
+
+.auth-error-warning {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.auth-error-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.auth-error-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-error-message {
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.auth-error-suggestions {
+  font-size: 13px;
+  line-height: 1.6;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.auth-error-suggestion-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.auth-error-suggestions ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.auth-error-suggestions li {
+  margin-bottom: 4px;
+}
+
+.auth-error-suggestions p {
+  margin: 0;
+}
+
+.auth-clear-button {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.auth-clear-button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-inline-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.auth-inline-link:hover {
+  opacity: 0.8;
 }
 
 .auth-success {
@@ -275,16 +358,6 @@
 
 .auth-button-admin:hover:not(:disabled) {
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-}
-
-.auth-error {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.auth-error svg {
-  flex-shrink: 0;
 }
 
 .auth-spinner {

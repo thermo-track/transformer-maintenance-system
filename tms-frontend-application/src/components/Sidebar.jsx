@@ -11,15 +11,24 @@ const Sidebar = ({ isOpen, onClose }) => {
   console.log('[Sidebar] Rendering with user:', user);
 
   // Filter menu sections based on role requirements
-  const filteredMenuData = menuData.filter((menu) => {
+  const filteredMenuData = menuData.map((menu) => {
     // If menu requires admin role, check if user is admin
     if (menu.adminOnly) {
       const isAdmin = hasRole('ROLE_ADMIN');
       console.log('[Sidebar] Menu:', menu.label, 'adminOnly:', menu.adminOnly, 'isAdmin:', isAdmin);
-      return isAdmin;
+      if (!isAdmin) return null;
     }
-    return true; // Show non-admin menus to everyone
-  });
+    
+    // Filter submenu items based on excludeRoles
+    const filteredSubMenu = menu.subMenu.filter((item) => {
+      if (item.excludeRoles && item.excludeRoles.some(role => hasRole(role))) {
+        return false; // Exclude this item for users with excluded roles
+      }
+      return true;
+    });
+    
+    return { ...menu, subMenu: filteredSubMenu };
+  }).filter(menu => menu !== null);
 
   console.log('[Sidebar] Filtered menus:', filteredMenuData.map(m => m.label));
 

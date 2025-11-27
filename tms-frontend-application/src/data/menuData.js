@@ -75,6 +75,7 @@ const menuData = [
         path: "/profile/request-role-change",
         label: "Request Role Change",
         icon: faUserPlus,
+        excludeRoles: ['ROLE_ADMIN'],  // Hide from admins - they can directly manage roles
       },
     ],
   },
