@@ -49,16 +49,18 @@ public class DockerContainerService {
                 return true;
             }
 
-            // Start the container using docker-compose with profile
-            // Try root docker-compose.yml first, then fall back to docker-compose-ml-services.yml
+            // Start the container using docker compose with profile
+            // Use docker compose (v2) without explicit project name to inherit from existing compose project
             ProcessBuilder pb = new ProcessBuilder(
-                "docker-compose",
+                "docker",
+                "compose",
                 "-f", "/docker-compose.yml",  // Explicitly specify the mounted compose file
-                "-p", "transformer-maintenance-system",  // Set project name
                 "--profile", "finetune",
                 "up", "-d", "finetune-api"
             );
             pb.directory(new java.io.File("/"));  // Set working directory to root
+            // Set environment to use the host's docker context
+            pb.environment().put("COMPOSE_PROJECT_NAME", System.getenv().getOrDefault("COMPOSE_PROJECT_NAME", "thermo-track"));
             pb.redirectErrorStream(true);
             Process process = pb.start();
             
@@ -105,12 +107,13 @@ public class DockerContainerService {
 
             // Stop and remove the container
             ProcessBuilder pb = new ProcessBuilder(
-                "docker-compose",
+                "docker",
+                "compose",
                 "-f", "/docker-compose.yml",
-                "-p", "transformer-maintenance-system",
                 "stop", "finetune-api"
             );
             pb.directory(new java.io.File("/"));
+            pb.environment().put("COMPOSE_PROJECT_NAME", System.getenv().getOrDefault("COMPOSE_PROJECT_NAME", "thermo-track"));
             pb.redirectErrorStream(true);
             Process process = pb.start();
             process.waitFor(30, TimeUnit.SECONDS);

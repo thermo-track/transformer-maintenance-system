@@ -76,7 +76,8 @@ export default function VerifyOtpPage() {
     setIsResending(true);
 
     try {
-      const response = await fetch(`http://localhost:8080/api/auth/resend-otp?email=${encodeURIComponent(email)}`, {
+      // const response = await fetch(`http://localhost:8080/api/auth/resend-otp?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`/api/auth/resend-otp?email=${encodeURIComponent(email)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
