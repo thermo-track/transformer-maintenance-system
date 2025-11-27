@@ -18,4 +18,8 @@ public interface RoleChangeRequestRepository extends JpaRepository<RoleChangeReq
     Optional<RoleChangeRequest> findByUserAndStatus(User user, String status);
     
     List<RoleChangeRequest> findAllByOrderByRequestedAtDesc();
+    
+    void deleteByUser(User user);
+    
+    void deleteByReviewedBy(User reviewer);
 }

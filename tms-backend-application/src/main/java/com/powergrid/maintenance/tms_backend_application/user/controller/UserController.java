@@ -242,10 +242,23 @@ public class UserController {
             }
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String role = userDetails.getAuthorities().iterator().next().getAuthority();
+            String username = userDetails.getUsername();
+            
+            // Fetch fresh user data from database to get the latest role
+            User user = userService.getUserByUsername(username);
+            if (user == null) {
+                log.error("User {} not found in database", username);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                        new LoginResponse(false, "User not found")
+                );
+            }
+            
+            // Return the role from database, not from security context
+            String currentRole = user.getRole();
+            log.debug("User {} fetched from database with role: {}", username, currentRole);
 
             return ResponseEntity.ok(
-                    new LoginResponse(true, "Authenticated", userDetails.getUsername(), role)
+                    new LoginResponse(true, "Authenticated", username, currentRole)
             );
 
         } catch (Exception e) {

@@ -3,6 +3,7 @@ package com.powergrid.maintenance.tms_backend_application.user.service;
 import com.powergrid.maintenance.tms_backend_application.user.model.User;
 import com.powergrid.maintenance.tms_backend_application.user.repository.UserRepository;
 import com.powergrid.maintenance.tms_backend_application.user.repository.OtpRepository;
+import com.powergrid.maintenance.tms_backend_application.user.repository.RoleChangeRequestRepository;
 import com.powergrid.maintenance.tms_backend_application.user.dto.UpdateUserProfileRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,9 @@ public class UserService {
 
     @Autowired
     private OtpRepository otpRepository;
+
+    @Autowired
+    private RoleChangeRequestRepository roleChangeRequestRepository;
 
     /**
      * Register a new user with encrypted password (account disabled until email verification).
@@ -174,9 +178,64 @@ public class UserService {
             otpRepository.deleteByEmail(user.getEmail());
         }
 
+        // Delete role change requests made by this user
+        roleChangeRequestRepository.deleteByUser(user);
+        
+        // Set reviewed_by to null for requests reviewed by this user
+        roleChangeRequestRepository.deleteByReviewedBy(user);
+
         // Delete user
         userRepository.delete(user);
         log.info("Account deleted: {}", username);
         return true;
+    }
+
+    /**
+     * Admin function to directly update a user's role
+     * @param userId the ID of the user to update
+     * @param newRole the new role to assign
+     * @return the updated user
+     * @throws IllegalArgumentException if user not found or invalid role
+     */
+    @Transactional
+    public User updateUserRole(Integer userId, String newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // Validate role
+        if (!isValidRole(newRole)) {
+            throw new IllegalArgumentException("Invalid role: " + newRole);
+        }
+
+        String oldRole = user.getRole();
+        user.setRole(newRole);
+        User updatedUser = userRepository.save(user);
+        
+        log.info("Admin updated user role: {} (ID: {}) from {} to {}", 
+                user.getUsername(), userId, oldRole, newRole);
+        
+        return updatedUser;
+    }
+
+    /**
+     * Get all users (admin function)
+     * @return list of all users
+     */
+    public java.util.List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Validate if a role string is valid
+     */
+    private boolean isValidRole(String role) {
+        return role != null && (
+                role.equals("ROLE_USER") || 
+                role.equals("ROLE_MAINTENANCE_ENGINEER") || 
+                role.equals("ROLE_SENIOR_ENGINEER") ||
+                role.equals("ROLE_TEAM_LEAD") ||
+                role.equals("ROLE_SUPERVISOR") ||
+                role.equals("ROLE_ADMIN")
+        );
     }
 }

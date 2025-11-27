@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [roleChangeNotification, setRoleChangeNotification] = useState(null); // {oldRole, newRole, timestamp}
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -57,6 +58,13 @@ export const AuthProvider = ({ children }) => {
             };
             localStorage.setItem('user', JSON.stringify(userData));
             setUser(userData);
+            
+            // Set notification for role change
+            setRoleChangeNotification({
+              oldRole: currentRole,
+              newRole: newRole,
+              timestamp: Date.now()
+            });
           } else {
             console.log('[AuthContext] Role unchanged:', currentRole);
           }
@@ -249,23 +257,36 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Clear the role change notification
+   */
+  const clearRoleChangeNotification = () => {
+    setRoleChangeNotification(null);
+  };
+
+  /**
    * Refresh user data from backend.
    * Useful when user's role or profile changes on the server.
    */
   const refreshUser = async () => {
     try {
+      console.log('[AuthContext] refreshUser called');
       const auth = localStorage.getItem('auth');
       if (!auth) {
+        console.log('[AuthContext] No auth found in localStorage');
         return { success: false, error: 'Not authenticated' };
       }
 
+      console.log('[AuthContext] Calling authAPI.getCurrentUser()...');
       const response = await authAPI.getCurrentUser();
+      console.log('[AuthContext] API response:', response);
       
-      if (response.success) {
+      if (response && response.success) {
         const userData = {
           username: response.username,
           role: response.role,
         };
+        
+        console.log('[AuthContext] Updating user to:', userData);
         
         // Update localStorage and state
         localStorage.setItem('user', JSON.stringify(userData));
@@ -273,11 +294,12 @@ export const AuthProvider = ({ children }) => {
         
         return { success: true, user: userData };
       } else {
-        return { success: false, error: 'Failed to fetch user data' };
+        console.log('[AuthContext] Response not successful:', response);
+        return { success: false, error: response?.message || 'Failed to fetch user data' };
       }
     } catch (err) {
-      console.error('Error refreshing user:', err);
-      return { success: false, error: err.message };
+      console.error('[AuthContext] Error refreshing user:', err);
+      return { success: false, error: err.message || 'Unknown error' };
     }
   };
 
@@ -294,6 +316,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     hasRole,
     refreshUser,
+    roleChangeNotification,
+    clearRoleChangeNotification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
