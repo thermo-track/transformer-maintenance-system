@@ -1,40 +1,73 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import authFetch from '../../lib/authFetch';
 import './RequestRoleChange.css';
 
 const RequestRoleChange = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, refreshUser, roleChangeNotification, clearRoleChangeNotification } = useAuth();
   const [availableRoles, setAvailableRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
   const [reason, setReason] = useState('');
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
 
   const getRoleDisplayName = (role) => {
     switch(role) {
       case 'ROLE_USER': return 'User';
       case 'ROLE_MAINTENANCE_ENGINEER': return 'Maintenance Engineer';
+      case 'ROLE_SENIOR_ENGINEER': return 'Senior Engineer';
+      case 'ROLE_TEAM_LEAD': return 'Team Lead';
+      case 'ROLE_SUPERVISOR': return 'Supervisor';
       case 'ROLE_ADMIN': return 'Administrator';
       default: return role;
     }
   };
 
+  // Redirect admins to user management page
+  useEffect(() => {
+    if (user?.role === 'ROLE_ADMIN') {
+      navigate('/admin/user-management', { replace: true });
+    }
+  }, [user, navigate]);
+
   useEffect(() => {
     // Define available roles for upgrade (excluding current role and admin)
     const roles = [
-      { value: 'ROLE_MAINTENANCE_ENGINEER', label: 'Maintenance Engineer' }
+      { value: 'ROLE_MAINTENANCE_ENGINEER', label: 'Maintenance Engineer' },
+      { value: 'ROLE_SENIOR_ENGINEER', label: 'Senior Engineer' },
+      { value: 'ROLE_TEAM_LEAD', label: 'Team Lead' },
+      { value: 'ROLE_SUPERVISOR', label: 'Supervisor' }
     ];
     
-    // Filter out user's current role
+    // Filter out user's current role and admin role
     const filteredRoles = roles.filter(r => r.value !== user?.role);
     setAvailableRoles(filteredRoles);
     
     // Load user's previous requests
     loadMyRequests();
   }, [user]);
+
+  // Show notification when role changes
+  useEffect(() => {
+    if (roleChangeNotification) {
+      setShowNotification(true);
+      loadMyRequests(); // Refresh requests when role changes
+      
+      // Auto-hide notification after 10 seconds
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+        setTimeout(() => clearRoleChangeNotification(), 500); // Clear after fade out
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [roleChangeNotification]);
 
   const loadMyRequests = async () => {
     try {
@@ -99,6 +132,42 @@ const RequestRoleChange = () => {
     }
   };
 
+  const handleRefreshRole = async () => {
+    setRefreshing(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      console.log('[RequestRoleChange] Refreshing user role...');
+      const result = await refreshUser();
+      console.log('[RequestRoleChange] Refresh result:', result);
+      
+      if (result && result.success) {
+        setSuccess('Role information updated!');
+        // Reload requests to reflect any changes
+        await loadMyRequests();
+        
+        // Force re-render by updating available roles
+        const roles = [
+          { value: 'ROLE_MAINTENANCE_ENGINEER', label: 'Maintenance Engineer' }
+        ];
+        const filteredRoles = roles.filter(r => r.value !== result.user?.role);
+        setAvailableRoles(filteredRoles);
+      } else {
+        setError(result?.error || 'Failed to refresh role information');
+      }
+    } catch (err) {
+      console.error('[RequestRoleChange] Refresh error:', err);
+      setError('Failed to refresh role information: ' + err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleDismissNotification = () => {
+    setShowNotification(false);
+    setTimeout(() => clearRoleChangeNotification(), 500); // Clear after fade out
+  };
+
   const getStatusBadgeClass = (status) => {
     switch(status.toUpperCase()) {
       case 'PENDING': return 'badge-pending';
@@ -114,6 +183,28 @@ const RequestRoleChange = () => {
         <h1>Request Role Change</h1>
         <p>Request additional permissions by applying for a new role</p>
       </div>
+
+      {/* Role Change Notification */}
+      {showNotification && roleChangeNotification && (
+        <div className="role-change-notification">
+          <div className="notification-icon">🎉</div>
+          <div className="notification-content">
+            <h3>Your Role Has Been Updated!</h3>
+            <p>
+              An administrator has changed your role from{' '}
+              <strong className="old-role">{getRoleDisplayName(roleChangeNotification.oldRole)}</strong>
+              {' '}to{' '}
+              <strong className="new-role">{getRoleDisplayName(roleChangeNotification.newRole)}</strong>
+            </p>
+            <p className="notification-subtext">
+              You now have access to features associated with your new role.
+            </p>
+          </div>
+          <button className="notification-close" onClick={handleDismissNotification}>
+            ×
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert-error">
@@ -137,6 +228,15 @@ const RequestRoleChange = () => {
           <div className="current-role-info">
             <span className="label">Your Current Role:</span>
             <span className="role-badge current-role">{getRoleDisplayName(user?.role)}</span>
+            <button 
+              type="button"
+              onClick={handleRefreshRole} 
+              disabled={refreshing}
+              className="refresh-button"
+              title="Refresh role information"
+            >
+              {refreshing ? '🔄 Refreshing...' : '🔄 Refresh'}
+            </button>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -229,7 +329,7 @@ const RequestRoleChange = () => {
                       <>
                         <div className="request-info-row">
                           <span className="info-label">Reviewed By:</span>
-                          <span className="info-value">{request.reviewedBy}</span>
+                          <span className="info-value">{request.reviewedByUsername || 'N/A'}</span>
                         </div>
                         <div className="request-info-row">
                           <span className="info-label">Reviewed On:</span>

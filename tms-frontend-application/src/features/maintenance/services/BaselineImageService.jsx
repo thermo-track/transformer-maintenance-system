@@ -334,7 +334,7 @@ class BaselineImageService {
     try {
       console.log('Getting last updated time for transformer:', transformerId);
       
-      const response = await authFetch(`${this.backendApiUrl}/api/transformers/${transformerId}/last-updated`, {
+      const response = await authFetch(`${this.backendApiUrl}/transformers/${transformerId}/last-updated`, {
         method: 'GET',
       });
 
