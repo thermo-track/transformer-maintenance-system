@@ -231,22 +231,6 @@ Comprehensive feedback logging and export system for model retraining:
 - **Missing Detection Tracking**: User-added annotations show gaps in model
 - **Continuous Improvement**: Feedback loop enables iterative model refinement
 
-
-### User Roles & Access Control
-
-#### Regular Users
-- ✅ View and annotate their own inspections
-- ✅ View annotation history (read-only)
-- ✅ Export annotation data
-- ❌ Cannot trigger model retraining
-
-#### Admin Users
-- ✅ All regular user capabilities
-- ✅ Trigger model retraining with feedback data
-- ✅ View retraining status and progress
-- ✅ View all users' annotations
-- ✅ Admin user approvals
-
 ## 🔵 Phase 4: Automated Maintenance Record Generation & Cloud Deployment
 
 Phase 4 introduces automated maintenance record generation capabilities and full system containerization with cloud deployment.
@@ -292,10 +276,35 @@ Phase 4 introduces automated maintenance record generation capabilities and full
 
 #### Deployment Features
 - **Automated Scripts**: Build and push scripts for streamlined deployment
-  - `build_and_push.py`: Automated Docker image building
+  - `build_and_push.py`: Automated Docker image building and registry management
   - `tag_and_push.py`: Image versioning and registry management
 - **Health Monitoring**: Service health checks and uptime monitoring
 - **Log Management**: Centralized logging for debugging and monitoring
+
+
+### User Roles & Access Control
+
+#### Regular Users
+- ✅ View and annotate their own inspections
+- ✅ View annotation history (read-only)
+- ✅ Export annotation data
+- ✅ Cannot trigger model retraining
+- ✅ Can view maintenance records but cannot edit or modify
+
+#### Maintenance Engineer
+- ✅ View and annotate their own inspections
+- ✅ View annotation history (read-only)
+- ✅ Export annotation data
+- ✅ Cannot trigger model retraining
+- ✅ Full edit access to maintenance records
+ 
+#### Admin Users
+- ✅ All regular user capabilities
+- ✅ Trigger model retraining with feedback data
+- ✅ View retraining status and progress
+- ✅ View all users' annotations
+- ✅ Admin user approvals
+- ✅ Full edit access to maintenance records
 
 ## 👤 User Management & Authentication
 
@@ -322,15 +331,35 @@ Comprehensive user authentication and profile management system with secure acco
 - **Account Information Display**: View all account details in an organized grid layout
 - **Account Deletion**: Secure account deletion with password verification
 
+### Role Change Request System
+
+**For Non-Admin Users:**
+- **Request Interface**: Dedicated page to request role changes to higher positions
+- **Available Roles**: Can request upgrade to:
+  - Maintenance Engineer
+  - Senior Engineer
+- **Justification Required**: Must provide detailed reasoning for role change request
+- **Request Tracking**: View status of submitted requests (Pending, Approved, Rejected)
+- **Request History**: Complete history of all role change requests
+
+**For Administrators:**
+- **Request Review Dashboard**: Centralized interface to review all pending role change requests
+- **Approval Workflow**: 
+  - Review user details, current role, and requested role
+  - View user's justification and reasoning
+  - Add admin comments during review process
+  - Approve or reject requests with optional feedback
+- **Direct Role Management**: 
+  - Immediate role changes without approval process
+  - Bulk role management capabilities
+  - Role change history tracking
+- **Safety Controls**: Prevents administrators from changing their own roles
+
 ### Security Features
 - **Password Verification**: Required for sensitive operations like account deletion
 - **Session Management**: Proper logout flow with localStorage clearing
 - **Race Condition Prevention**: Triple-layer auth validation to prevent unauthorized requests
 - **Public Endpoint Whitelist**: Protected API routes with proper access control
-
-### User Experience
-- **Smooth Transitions**: 1-second delay for success messages before redirects
-- **Responsive Design**: Mobile-optimized layouts for all user management screens
 
 ### Technical Implementation
 - **Spring Security Integration**: Constructor injection pattern for secure authentication
@@ -602,8 +631,8 @@ python tag_and_push.py
 - **Request Size Limits**: No constraints on file upload sizes beyond basic validation
 
 ### Annotation System
-- ⚠️ **Concurrent Editing**: No locking mechanism - last edit wins if multiple users edit simultaneously
-- ⚠️ **Undo/Redo**: Not yet implemented (manual reversal of actions required)
+- **Concurrent Editing**: No locking mechanism - last edit wins if multiple users edit simultaneously
+- **Undo/Redo**: Not yet implemented (manual reversal of actions required)
 
 ### Data & Analytics
 - **Data Backup**: No automated backup strategy for database and images
